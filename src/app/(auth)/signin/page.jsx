@@ -1,6 +1,6 @@
 "use client";
 import React, { useContext, useState } from "react";
-import { CommonInput } from "@/components/input";
+import { CommonInput, CommonInputIcon } from "@/components/input";
 import { HiLockClosed, HiOutlineMail } from "react-icons/hi";
 import { CommonButtonFull } from "@/components/button";
 import { API_URL } from "@/utils/constant";
@@ -63,7 +63,7 @@ const SignIn = () => {
               Login
             </h2>
 
-            <CommonInput
+            <CommonInputIcon
               placeholder={"Enter your email"}
               type={"text"}
               error={inputEmailError}
@@ -76,9 +76,9 @@ const SignIn = () => {
               }}
             >
               <HiOutlineMail className="h-7 w-7"></HiOutlineMail>
-            </CommonInput>
+            </CommonInputIcon>
             <div className="mb-5" />
-            <CommonInput
+            <CommonInputIcon
               placeholder={"Enter your password"}
               type={"password"}
               error={inputPasswordError}
@@ -91,7 +91,7 @@ const SignIn = () => {
               }}
             >
               <HiLockClosed className="h-7 w-7" />
-            </CommonInput>
+            </CommonInputIcon>
             <div className="mb-10" />
             <div className="w-full">
               <CommonButtonFull

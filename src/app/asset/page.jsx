@@ -90,6 +90,7 @@ export default function ListAsset() {
                     item["Type"] == "K" ? "mobil" : item["Description"];
                   const image = `${IMAGE_ASSET}/${item["Image"]}`;
                   const idAsset = item["ID_Asset"];
+
                   return (
                     <div
                       key={index}
@@ -100,12 +101,16 @@ export default function ListAsset() {
                     >
                       <div className="flex flex-row py-3">
                         <div>
-                          <img
-                            className="h-20 w-20 rounded-lg object-cover"
-                            src={image}
-                          />
+                          {image == "" || image == null ? (
+                            <div className="h-20 w-20 rounded-lg"></div>
+                          ) : (
+                            <img
+                              className="h-20 w-20  rounded-full object-cover"
+                              src={image}
+                            />
+                          )}
                         </div>
-                        <div className="flex flex-col">
+                        <div className="ml-5 flex flex-col">
                           <div>{item["ID_Asset"]}</div>
                           <div>{title}</div>
                           <div>{item["User"]}</div>

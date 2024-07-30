@@ -114,14 +114,22 @@ export default function Home() {
                 <div className="grid grid-cols-4 gap-4">
                   <div
                     onClick={() => {
-                      localStorage.setItem("menu", "MP");
+                      localStorage.setItem("menu", "K");
                       router.push("/asset");
-                      console.log("dfskd");
                     }}
                   >
                     <Menu url={"bmw.png"}>Kendaraan</Menu>
                   </div>
-                  <Menu url={"mesin.png"}>Mesin</Menu>
+                  <div
+                    onClick={() => {
+                      localStorage.setItem("menu", "MP");
+                      router.push("/asset");
+                    }}
+                  >
+                    {" "}
+                    <Menu url={"mesin.png"}>Mesin</Menu>
+                  </div>
+
                   <Menu url={"ac.png"}>AC</Menu>
                   <Menu url={"pc.png"}>Komputer</Menu>
                   <Menu url={"apar.png"}>Fire Safety</Menu>
@@ -133,7 +141,7 @@ export default function Home() {
 
               <div className="p-5">
                 <div className="">
-                  {maintenanceMachine.length > 0 ? (
+                  {servisMachine.length > 0 ? (
                     <div className="mb-5 flex flex-row justify-between">
                       <div
                         onClick={() => {
@@ -142,7 +150,7 @@ export default function Home() {
                       >
                         Outstanding
                       </div>
-                      <div>Lihat semua </div>
+                      <div>{`Lihat semua (${servisMachine.length})`} </div>
                     </div>
                   ) : (
                     <></>
@@ -194,14 +202,8 @@ export default function Home() {
 
               <div className="p-5">
                 <div className="">
-                  <div className="flex flex-row justify-between">
-                    <div
-                      onClick={() => {
-                        console.log(servisMachine);
-                      }}
-                    >
-                      Maintenance
-                    </div>
+                  <div className=" mb-5 flex flex-row justify-between">
+                    <div>Maintenance</div>
                     <div>{`Lihat semua (${maintenanceMachine.length})`} </div>
                   </div>
                   <div className=" flex space-x-4 overflow-x-auto">
@@ -216,11 +218,11 @@ export default function Home() {
                         <div key={index}>
                           <div>
                             <img
-                              className="h-30 w-[175px] rounded-t-lg object-cover"
+                              className="h-30 w-[140px] rounded-t-lg object-cover"
                               src={image}
                             />
                           </div>
-                          <div className="col  w-[175px] rounded-b-lg bg-white p-2">
+                          <div className="col  w-[140px] rounded-b-lg bg-white p-2">
                             <div className=" overflow-hidden truncate whitespace-nowrap text-sm">
                               {title}
                             </div>
