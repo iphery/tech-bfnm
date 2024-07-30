@@ -33,7 +33,7 @@ export const CommonInput = ({
       ) : (
         <></>
       )}
-      <span className="absolute right-4 top-3">
+      <span className="absolute right-4 top-1">
         <div opacity="0.5">{children}</div>
       </span>
     </div>
