@@ -133,16 +133,21 @@ export default function Home() {
 
               <div className="p-5">
                 <div className="">
-                  <div className="mb-5 flex flex-row justify-between">
-                    <div
-                      onClick={() => {
-                        console.log(servisMachine);
-                      }}
-                    >
-                      Outstanding
+                  {maintenanceMachine.length > 0 ? (
+                    <div className="mb-5 flex flex-row justify-between">
+                      <div
+                        onClick={() => {
+                          console.log(servisMachine);
+                        }}
+                      >
+                        Outstanding
+                      </div>
+                      <div>Lihat semua </div>
                     </div>
-                    <div>Lihat semua </div>
-                  </div>
+                  ) : (
+                    <></>
+                  )}
+
                   <div className=" flex space-x-4 overflow-x-auto">
                     {servisMachine.map((item, index) => {
                       const title =
@@ -197,7 +202,7 @@ export default function Home() {
                     >
                       Maintenance
                     </div>
-                    <div>Lihat semua </div>
+                    <div>{`Lihat semua (${maintenanceMachine.length})`} </div>
                   </div>
                   <div className=" flex space-x-4 overflow-x-auto">
                     {maintenanceMachine.map((item, index) => {
