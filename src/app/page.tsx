@@ -61,6 +61,14 @@ export default function Home() {
     fetch_data();
   }, []);
 
+  useEffect(() => {
+    const scan_result = localStorage.getItem("qrcode");
+    if (scan_result != "") {
+      localStorage.setItem("qrcode", "");
+      router.push(`/asset/${scan_result}`);
+    }
+  }, [router]);
+
   const fetch_data_2 = async () => {
     const apiUrl = `/api/outstanding`;
     const response = await axios.post(apiUrl, { data: "data" });
@@ -165,7 +173,13 @@ export default function Home() {
                       const image = `${IMAGE_ASSET}/${item["Image"]}`;
                       console.log(image);
                       return (
-                        <div key={index}>
+                        <div
+                          className="cursor-default"
+                          onClick={() => {
+                            router.push(`/asset/${item["ID_Asset"]}`);
+                          }}
+                          key={index}
+                        >
                           <div>
                             <img
                               className="h-40 w-[175px] rounded-t-lg object-cover"
@@ -215,7 +229,13 @@ export default function Home() {
                       const image = `${IMAGE_ASSET}/${item["Image"]}`;
 
                       return (
-                        <div key={index}>
+                        <div
+                          className="cursor-default"
+                          onClick={() => {
+                            router.push(`/asset/${item["ID_Asset"]}`);
+                          }}
+                          key={index}
+                        >
                           <div>
                             <img
                               className="h-30 w-[140px] rounded-t-lg object-cover"
