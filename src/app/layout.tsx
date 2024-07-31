@@ -1,5 +1,11 @@
+import "jsvectormap/dist/jsvectormap.css";
+import "flatpickr/dist/flatpickr.min.css";
+import "@/css/satoshi.css";
+import "@/css/style.css";
+
 import { Metadata } from "next";
-import Main from "./main";
+import { ReactNode } from "react";
+//import Main from "./main";
 
 export const metadata: Metadata = {
   title: "MITA BFNM",
@@ -7,13 +13,15 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
 };
 
-export default function RootLayout() {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html lang="en">
       <body suppressHydrationWarning={true}>
-        <div className="dark:bg-boxdark-2 dark:text-bodydark">
-          <Main></Main>
-        </div>
+        <div className="dark:bg-boxdark-2 dark:text-bodydark">{children}</div>
       </body>
     </html>
   );
@@ -27,14 +35,6 @@ import "@/css/satoshi.css";
 import "@/css/style.css";
 import React, { useEffect, useState } from "react";
 import Loader from "@/components/common/Loader";
-
-
-export const metadata: Metadata = {
-  title: "MITA BFNM",
-  description: "Maintenance Apps",
-  manifest: "/manifest.json",
-};
-
 
 export default function RootLayout({
   children,
@@ -79,4 +79,5 @@ export default function RootLayout({
     </html>
   );
 }
+
 */
