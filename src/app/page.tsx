@@ -48,7 +48,7 @@ export default function Home() {
 
     if (response.status == 200) {
       const array = response.data["response"]["data"];
-      console.log(array);
+      //console.log(array);
       if (array[0]["dataDetail"] != "") {
         setServiceMachine(array[0]["dataDetail"]);
       }

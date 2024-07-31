@@ -1,25 +1,3 @@
-import { Metadata } from "next";
-import Main from "./main";
-
-export const metadata: Metadata = {
-  title: "MITA BFNM",
-  description: "Maintenance Apps",
-  manifest: "/manifest.json",
-};
-
-export default function RootLayout() {
-  return (
-    <html lang="en">
-      <body suppressHydrationWarning={true}>
-        <div className="dark:bg-boxdark-2 dark:text-bodydark">
-          <Main></Main>
-        </div>
-      </body>
-    </html>
-  );
-}
-
-/*
 "use client";
 import "jsvectormap/dist/jsvectormap.css";
 import "flatpickr/dist/flatpickr.min.css";
@@ -27,20 +5,17 @@ import "@/css/satoshi.css";
 import "@/css/style.css";
 import React, { useEffect, useState } from "react";
 import Loader from "@/components/common/Loader";
+import Home from "./page";
 
-
+/*
 export const metadata: Metadata = {
   title: "MITA BFNM",
   description: "Maintenance Apps",
   manifest: "/manifest.json",
 };
+*/
 
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function Main() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -69,14 +44,9 @@ export default function RootLayout({
     setTimeout(() => setLoading(false), 1000);
   }, []);
 
-  return (
-    <html lang="en">
-      <body suppressHydrationWarning={true}>
-        <div className="dark:bg-boxdark-2 dark:text-bodydark">
-          {loading ? <Loader /> : children}
-        </div>
-      </body>
-    </html>
-  );
+  if (loading) {
+    return <Loader />;
+  } else {
+    return <Home />;
+  }
 }
-*/
