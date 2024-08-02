@@ -13,8 +13,9 @@ import { useRouter } from "next/navigation";
 import { TableContent, TableHeader } from "@/components/table";
 import { GoChevronRight } from "react-icons/go";
 import paginateData from "@/utils/pagination";
+import { CommonButton } from "@/components/button";
 
-export default function ListPart() {
+export default function PartsIn() {
   const router = useRouter();
   const isSmallScreen = useMediaQuery({ query: "(max-width: 640px)" });
 
@@ -23,6 +24,19 @@ export default function ListPart() {
   const [keyword, setKeyword] = useState("");
   const [keywordError, setKeywordError] = useState(false);
   const [filteredList, setFilteredList] = useState([]);
+
+  ///dari sini
+  //input, error, error message
+
+  const [inputItem, setInputItem] = useState([""]);
+  const [inputItemError, setInputItemError] = useState([false]);
+  const [inputItemMessage, setInputItemMessage] = useState([""]);
+
+  const [inputQuantity, setInputQuantity] = useState([0]);
+  const [inputQuantityError, setInputQuantityError] = useState([false]);
+  const [inputQuantityMessage, setInputQuantityMessage] = useState([""]);
+
+  ///
 
   //const [lastPage, setLastPage] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -128,41 +142,87 @@ export default function ListPart() {
           <table>
             <thead>
               <tr>
-                <TableHeader>Kode</TableHeader>
-                <TableHeader>Deskripsi</TableHeader>
-                <TableHeader>Part No</TableHeader>
-                <TableHeader>Kode Pabrik</TableHeader>
-                <TableHeader>Kode </TableHeader>
-                <TableHeader>Lokasi Simpan</TableHeader>
+                <th>Item</th>
+                <th>Quantity</th>
               </tr>
             </thead>
             <tbody>
-              {!loading ? (
-                filteredList.map((item, index) => {
-                  return (
-                    <tr key={index}>
-                      <TableContent>{item["part_code"]}</TableContent>
-                      <TableContent>{item["description"]}</TableContent>
-                      <TableContent>{item["part_no"]}</TableContent>
-                      <TableContent>{item["manufacture_code"]}</TableContent>
-                      <TableContent>{item["location"]}</TableContent>
-                    </tr>
-                  );
-                })
-              ) : (
-                <></>
-              )}
+              {inputItem.map((item, index) => {
+                return (
+                  <tr key={index}>
+                    <td>
+                      <CommonInput
+                        placeholder={"search item"}
+                        input={inputItem[index]}
+                        error={false}
+                        errorMessage={""}
+                        onInputChange={(val) => {
+                          //copy input
+                          const inputs = [...inputItem];
+                          //update input index
+                          inputs[index] = val;
+                          setInputItem(inputs);
+                          console.log(index);
+                          console.log(val);
+                        }}
+                        onKeyChange={() => {}}
+                      ></CommonInput>
+                    </td>
+                    <td>
+                      <CommonInput
+                        placeholder={"search item"}
+                        input={inputQuantity[index]}
+                        error={false}
+                        errorMessage={""}
+                        onInputChange={(val) => {
+                          //copy input
+                          const inputs = [...inputQuantity];
+                          //update input index
+                          inputs[index] = val;
+                          setInputQuantity(inputs);
+                        }}
+                        onKeyChange={() => {}}
+                      ></CommonInput>
+                    </td>
+                    <td>
+                      <div
+                        onClick={() => {
+                          console.log(index);
+                          const inputs = [...inputItem];
+                          const quantities = [...inputQuantity];
+                          inputs.splice(index, 1);
+
+                          quantities.splice(index, 1);
+
+                          setInputItem(inputs);
+                          setInputQuantity(quantities);
+                          //const updated = inputItem.splice(index, 1);
+                          //setInputItem(updated);
+                        }}
+                      >
+                        Delete
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
-
-          <div className="p-1">
-            <div
-              className="flex h-8 w-8 items-center justify-center rounded-full border shadow-md"
-              onClick={onPageChange}
-            >
-              <GoChevronRight></GoChevronRight>
-            </div>
-          </div>
+          <CommonButton
+            label={"Add"}
+            onClick={() => {
+              //const nextRow = inputItem.length;
+              setInputItem((prev) => [...prev, ""]);
+              setInputQuantity((prev) => [...prev, 0]);
+            }}
+          />
+          <CommonButton
+            label={"print"}
+            onClick={() => {
+              console.log(inputItem);
+              console.log(inputQuantity);
+            }}
+          />
         </DefaultLayout>
       )}
     </UserAuth>

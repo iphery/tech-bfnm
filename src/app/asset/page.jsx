@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation";
 
 export default function ListAsset() {
   const router = useRouter();
+  const [isClient, setIsClient] = useState(false);
   const isSmallScreen = useMediaQuery({ query: "(max-width: 640px)" });
 
   const [detailData, setDetailData] = useState([]);
@@ -60,6 +61,15 @@ export default function ListAsset() {
   useEffect(() => {
     fetch_data();
   }, []);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    return null;
+  }
+
   return (
     <UserAuth>
       {isSmallScreen ? (

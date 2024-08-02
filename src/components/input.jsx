@@ -9,13 +9,18 @@ export const CommonInput = ({
   onInputChange,
   onKeyChange,
   children,
+  reference,
+  isDisabled,
+  onChg,
 }) => {
   return (
     <div className="relative">
       <input
         value={input}
         type={type}
+        ref={reference}
         placeholder={placeholder}
+        disabled={isDisabled}
         onInput={(event) => {
           const value = event.target.value;
 
@@ -24,6 +29,7 @@ export const CommonInput = ({
           onInputChange(value);
         }}
         onKeyDown={onKeyChange}
+        onChange={onChg}
         className={`w-full rounded-sm border-[1.5px] bg-white  px-2 py-1 outline-none transition ${
           error ? "border-red" : "border-stroke"
         } bg-transparent text-black focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary`}

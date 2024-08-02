@@ -2,9 +2,11 @@ import "jsvectormap/dist/jsvectormap.css";
 import "flatpickr/dist/flatpickr.min.css";
 import "@/css/satoshi.css";
 import "@/css/style.css";
+import "react-toastify/dist/ReactToastify.css";
 
 import { Metadata } from "next";
 import { ReactNode } from "react";
+import { ToastContainer } from "react-toastify";
 //import Main from "./main";
 
 export const metadata: Metadata = {
@@ -21,6 +23,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body suppressHydrationWarning={true}>
+        <ToastContainer />
         <div className="dark:bg-boxdark-2 dark:text-bodydark">{children}</div>
       </body>
     </html>

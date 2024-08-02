@@ -9,4 +9,7 @@ export const IMAGE_ASSET =
 export const IMAGE_USER =
   "http://mita.balifoam.com/mobile/flutter/image_user_profile";
 
+export const IMAGE_GALLERY =
+  "http://mita.balifoam.com/mobile/flutter/image_case";
+
 export const ICON = "https://mita.balifoam.com/mobile/flutter/image_group";
