@@ -76,7 +76,7 @@ export default function ListAsset() {
         <>
           <div className="min-h-screen  justify-center bg-boxdark-2">
             <Appbar></Appbar>
-            <div className="p-5">
+            <div className="p-2">
               <CommonInput
                 input={keyword}
                 type={"text"}
@@ -93,7 +93,7 @@ export default function ListAsset() {
               </CommonInput>
             </div>
 
-            <div className="p-5">
+            <div className="p-2">
               <div className="">
                 {filteredList.map((item, index) => {
                   const title =
@@ -107,7 +107,7 @@ export default function ListAsset() {
                       onClick={() => {
                         router.push(`/asset/${idAsset}`);
                       }}
-                      className="cursor-default"
+                      className="cursor-default hover:bg-form-strokedark"
                     >
                       <div className="flex flex-row py-3">
                         <div>

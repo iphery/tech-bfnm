@@ -4,7 +4,12 @@ import UserAuth from "@/components/auth";
 import Loader from "@/components/common/Loader";
 import { CommonInput } from "@/components/input";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
-import { API_URL, IMAGE_ASSET, IMAGE_USER } from "@/utils/constant";
+import {
+  API_URL,
+  IMAGE_ASSET,
+  IMAGE_USER,
+  IMAGE_GALLERY,
+} from "@/utils/constant";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
@@ -23,6 +28,7 @@ import paginateData from "@/utils/pagination";
 import { IoTime, IoTimeOutline } from "react-icons/io5";
 import DetailAssetWeb from "@/components/detailassetweb";
 import { ProgressCard, ProgressSummary } from "@/components/card";
+import Image from "next/image";
 
 export default function DetailAssetMobile({ idAsset }) {
   //params.idAsset
@@ -46,6 +52,8 @@ export default function DetailAssetMobile({ idAsset }) {
   const [showLoadMore, setShowLoadMore] = useState(false);
   const [partList, setPartList] = useState([]);
   const [galleryList, setGalleryList] = useState([]);
+
+  const [test] = useState([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
 
   const fetch_data = async () => {
     const apiUrl = `${API_URL}/fetchassetdetail`;
@@ -359,32 +367,48 @@ export default function DetailAssetMobile({ idAsset }) {
                     <ProgressSummary title={"Repair Time"} hour={1} />
                   </div>
                 </div>
-                <div>Spare Part</div>
-                <div className="p-2">
-                  <div className="bg-form-strokedark p-1">
-                    {partList.map((item, index) => {
-                      return (
-                        <div key={index} className="flex justify-between">
-                          <div>{item["description"]}</div>
-                          <div>{item["quantity"]}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-                <div>Gallery</div>
-                <div className="p-2">
-                  <div className="bg-form-strokedark p-1">
-                    <div className=" flex space-x-4 overflow-x-auto">
-                      <div className="mr-2 h-10 w-30 bg-red"></div>
-                      <div className="mr-2 h-10 w-30 bg-red"></div>
-                      <div className="mr-2 h-10 w-30 bg-red"></div>
-                      <div className="mr-2 h-10 w-30 bg-red"></div>
-                      <div className="mr-2 h-10 w-30 bg-red"></div>
-                      <div className="mr-2 h-10 w-30 bg-red"></div>
+                {partList.length > 0 ? (
+                  <div>
+                    <div className="ml-2">Spare Part</div>
+                    <div className="p-2">
+                      <div className="bg-form-strokedark p-1">
+                        {partList.map((item, index) => {
+                          return (
+                            <div key={index} className="flex justify-between">
+                              <div>{item["description"]}</div>
+                              <div>{item["quantity"]}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <></>
+                )}
+                {galleryList.length > 0 ? (
+                  <div>
+                    <div className="ml-2">Gallery</div>
+                    <div className="p-2">
+                      <div className="">
+                        <div className=" flex w-full space-x-2 overflow-x-auto">
+                          {galleryList.map((item, index) => {
+                            return (
+                              <div className="relative h-40 w-60" key={index}>
+                                <img
+                                  className="object-cover"
+                                  src={`${IMAGE_GALLERY}/${item["Image_Name"]}`} // Replace with your image path
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <></>
+                )}
               </div>
             )}
           </div>
