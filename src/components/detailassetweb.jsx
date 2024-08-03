@@ -384,7 +384,7 @@ export default function DetailAssetWeb({ idAsset }) {
                     <tbody>
                       {transactionStock.map((item, index) => {
                         return (
-                          <tr>
+                          <tr key={index}>
                             <td>{item["description"]}</td>
                             <td>{item["quantity"]}</td>
                             <td>pcs</td>
