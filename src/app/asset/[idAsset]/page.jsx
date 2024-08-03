@@ -27,8 +27,16 @@ import DetailAssetMobile from "@/components/detailassetmobile";
 export default function DetailAsset({ params }) {
   //params.idAsset
   const router = useRouter();
-  const isSmallScreen = useMediaQuery({ query: "(max-width: 640px)" });
+  const [isClient, setIsClient] = useState(false);
 
+  const isSmallScreen = useMediaQuery({ query: "(max-width: 640px)" });
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    return null;
+  }
   return (
     <UserAuth>
       {isSmallScreen ? (
