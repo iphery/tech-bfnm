@@ -215,17 +215,6 @@ export default function PartsOut() {
     return null;
   }
 
-  const notify = (message, mode) =>
-    toast.success(message, {
-      position: "top-right",
-      autoClose: 3000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      progress: undefined,
-      theme: "dark",
-    });
-
   return (
     <UserAuth>
       <div className="min-h-screen  bg-boxdark-2">
