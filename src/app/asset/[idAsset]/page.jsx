@@ -40,7 +40,7 @@ export default function DetailAsset({ params }) {
   return (
     <UserAuth>
       {isSmallScreen ? (
-        <DetailAssetMobile idAsset={params.idAsset} />
+        <div>{params.idAsset}</div>
       ) : (
         <DetailAssetWeb idAsset={params.idAsset} />
       )}
