@@ -75,7 +75,7 @@ export default function DetailAssetMobile({ idAsset }) {
     const apiUrl = `${API_URL}/fetchassetservice`;
     const response = await axios.post(apiUrl, {
       idAsset: idAsset,
-      keyword: keyword,
+      // keyword: keyword,
     });
 
     if (response.status == 200) {
