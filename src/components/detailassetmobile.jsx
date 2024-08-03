@@ -80,7 +80,7 @@ export default function DetailAssetMobile({ idAsset }) {
 
     if (response.status == 200) {
       const array = response.data["service"];
-      // console.log(array["data"]);
+      console.log(array);
       setDataService(array);
     }
     setSecondLoading(false);
