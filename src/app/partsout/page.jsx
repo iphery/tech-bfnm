@@ -11,9 +11,13 @@ import { useRouter } from "next/navigation";
 import { GoAlert, GoChevronRight } from "react-icons/go";
 import { CommonButton } from "@/components/button";
 import { toast } from "react-toastify";
-import { NotifyError, NotifySuccess } from "@/utils/notify";
+import { AlertMessage, NotifyError, NotifySuccess } from "@/utils/notify";
 import Loader from "@/components/common/Loader";
 import { CommonLoader, PageLoader } from "@/components/loader";
+import { PageCard } from "@/components/card";
+import { TbArrowsExchange2 } from "react-icons/tb";
+import { IoWarningSharp } from "react-icons/io5";
+import { IoMdRemoveCircle } from "react-icons/io";
 
 export default function PartsOut() {
   const router = useRouter();
@@ -30,6 +34,7 @@ export default function PartsOut() {
   const [tempIdPart, setTempIdPart] = useState("");
   const [tempQuantity, setTempQuantity] = useState("");
   const [tempAvailableQuantity, setTempAvailableQuantity] = useState(0);
+  const [tempUnit, setTempUnit] = useState("");
   const focusTempQuantity = useRef();
   const focusKeyword = useRef();
 
@@ -220,402 +225,446 @@ export default function PartsOut() {
 
   return (
     <UserAuth>
-      {loader ? (
-        <PageLoader />
-      ) : (
-        <div className="min-h-screen  bg-boxdark-2">
-          {isSmallScreen ? (
-            <>
-              <div>in progerss</div>
-            </>
-          ) : (
-            <DefaultLayout>
-              <div className=" w-full rounded-sm border border-strokedark bg-boxdark shadow-default ">
-                <div className="flex flex-row justify-evenly">
-                  <div className="w-full">
-                    <div className="flex justify-between">
-                      <div
-                        onClick={() => {
-                          console.log(detailData);
-                        }}
-                      >
-                        Tanggal
-                      </div>
-                      <div className="w-1/2">
-                        <CommonInput
-                          type={"date"}
-                          input={inputDate}
-                          error={inputDateError}
-                          errorMessage={inputDateMessage}
-                          onInputChange={(val) => {
-                            setInputDate(val);
+      <div className="min-h-screen  bg-boxdark-2">
+        {isSmallScreen ? (
+          <>
+            <div>in progerss</div>
+          </>
+        ) : (
+          <DefaultLayout>
+            {loader ? (
+              <div className="flex items-center justify-center"></div>
+            ) : (
+              <>
+                <div className="mb-3 flex items-center justify-start">
+                  <div className="text-lg text-white">Stock Out</div>
+                </div>
+
+                <PageCard>
+                  <div className="flex flex-row justify-evenly">
+                    <div className="w-full">
+                      <div className="mb-2 flex justify-between">
+                        <div
+                          onClick={() => {
+                            console.log(detailData);
                           }}
-                          onChg={() => {
-                            setInputDateError(false);
-                          }}
-                        ></CommonInput>
-                      </div>
-                    </div>
-                    <div className="flex justify-between">
-                      <div>Penerima</div>
-                      <div className="w-1/2">
-                        <CommonInput
-                          type={"text"}
-                          input={inputReceiver}
-                          error={inputReceiverError}
-                          errorMessage={inputReceiverMessage}
-                          onInputChange={(val) => {
-                            setInputReceiver(val);
-                          }}
-                          onKeyChange={() => {
-                            setInputReceiverError(false);
-                          }}
-                        ></CommonInput>
-                      </div>
-                    </div>
-                    <div className="flex justify-between">
-                      <div>Nomer Service</div>
-                      <div className="w-1/2">
-                        <CommonInput isDisabled={true}>{idService}</CommonInput>
-                      </div>
-                    </div>
-                    <div className="flex justify-between">
-                      <div className="flex justify-center">
-                        <div>Category</div>
-                        {categoryTrans == "Service" ? (
-                          <div
-                            className="bg-grey flex  border text-sm"
-                            onClick={() => {
-                              setCategoryTrans("Umum");
-                              setIdService("");
-                              localStorage.setItem("id_service", "");
-                              localStorage.setItem("data_asset", "");
-                              setDataAsset({
-                                id_asset: "",
-                                deskripsi: "",
-                                manufacture: "",
-                                model: "",
-                                no: "",
-                                type: "",
-                                user: "",
-                              });
-                            }}
-                          >
-                            Ubah ke umum
-                          </div>
-                        ) : (
-                          <></>
-                        )}
-                      </div>
-                      <div className="w-1/2">
-                        <CommonInput
-                          isDisabled={true}
-                          input={categoryTrans}
-                        ></CommonInput>
-                      </div>
-                    </div>
-                    {categoryTrans == "Umum" ? (
-                      <div>
-                        <div className="w-full">
+                        >
+                          Tanggal
+                        </div>
+                        <div className="w-1/2">
                           <CommonInput
-                            placeholder={"Search asset..."}
-                            input={keywordAsset}
+                            type={"date"}
+                            input={inputDate}
+                            error={inputDateError}
+                            errorMessage={inputDateMessage}
                             onInputChange={(val) => {
-                              setKeywordAsset(val);
-                              console.log(val);
+                              setInputDate(val);
                             }}
-                          >
-                            <HiOutlineSearch />
+                            onChg={() => {
+                              setInputDateError(false);
+                            }}
+                          ></CommonInput>
+                        </div>
+                      </div>
+                      <div className="mb-2 flex justify-between">
+                        <div>Penerima</div>
+                        <div className="w-1/2">
+                          <CommonInput
+                            type={"text"}
+                            input={inputReceiver}
+                            error={inputReceiverError}
+                            errorMessage={inputReceiverMessage}
+                            onInputChange={(val) => {
+                              setInputReceiver(val);
+                            }}
+                            onKeyChange={() => {
+                              setInputReceiverError(false);
+                            }}
+                          ></CommonInput>
+                        </div>
+                      </div>
+                      <div className="mb-2 flex justify-between">
+                        <div>Nomer Service</div>
+                        <div className="w-1/2">
+                          <CommonInput isDisabled={true}>
+                            {idService}
                           </CommonInput>
                         </div>
-                        {keywordAsset.length >= 3 ? (
-                          searchAssetNotFound ? (
-                            <div>Tidak ketemu</div>
-                          ) : (
-                            <div className="h-20 overflow-y-auto bg-white">
-                              <table>
-                                <tbody>
-                                  {filteredAsset.map((item, index) => {
-                                    return (
-                                      <tr
-                                        key={index}
-                                        className={`cursor-default hover:text-red`}
-                                        onClick={() => {
-                                          setKeywordAsset("");
-                                          setDataAsset({
-                                            id_asset: item["id_asset"],
-                                            description: item["description"],
-                                            manufacture: item["manufacture"],
-                                            model: item["model"],
-                                            no: item["no"],
-                                            user: item["user"],
-                                          });
-                                        }}
-                                      >
-                                        <td>{item["id_asset"]}</td>
-                                        <td>
-                                          {item["type"] == "K"
-                                            ? item["description"] + item["no"]
-                                            : item["description"]}
-                                        </td>
-                                        <td>{item["manufacture"]}</td>
-                                        <td>{item["user"]}</td>
-                                      </tr>
-                                    );
-                                  })}
-                                </tbody>
-                              </table>
+                      </div>
+                      <div className="mb-2 flex justify-between">
+                        <div className="flex justify-center">
+                          <div>Category</div>
+                          {categoryTrans == "Service" ? (
+                            <div
+                              className=" bg-grey ml-2 flex h-7 w-7 items-center justify-center rounded-full border border-black text-sm hover:bg-black"
+                              onClick={() => {
+                                setCategoryTrans("Umum");
+                                setIdService("");
+                                localStorage.setItem("id_service", "");
+                                localStorage.setItem("data_asset", "");
+                                setDataAsset({
+                                  id_asset: "",
+                                  deskripsi: "",
+                                  manufacture: "",
+                                  model: "",
+                                  no: "",
+                                  type: "",
+                                  user: "",
+                                });
+                              }}
+                            >
+                              <TbArrowsExchange2 className="hover:text-white" />
                             </div>
-                          )
-                        ) : (
-                          <></>
-                        )}
-                      </div>
-                    ) : (
-                      <></>
-                    )}
-                  </div>
-
-                  <div className="px-3" />
-                  <div className="w-full">
-                    <div className="flex justify-between">
-                      <div>Nomer Asset</div>
-                      <div className="w-1/2">
-                        <CommonInput
-                          isDisabled={true}
-                          input={dataAsset["id_asset"] || ""}
-                        ></CommonInput>
-                      </div>
-                    </div>
-                    <div className="flex justify-between">
-                      <div>Deskripsi</div>
-                      <div className="w-1/2">
-                        <CommonInput
-                          isDisabled={true}
-                          input={dataAsset["description"] || ""}
-                        ></CommonInput>
-                      </div>
-                    </div>
-                    <div className="flex justify-between">
-                      <div>Manufacture</div>
-                      <div className="w-1/2">
-                        <CommonInput
-                          isDisabled={true}
-                          input={dataAsset["manufacture"] || ""}
-                        ></CommonInput>
-                      </div>
-                    </div>
-                    <div className="flex justify-between">
-                      <div>Model</div>
-                      <div className="w-1/2">
-                        <CommonInput
-                          isDisabled={true}
-                          input={dataAsset["model"] || ""}
-                        ></CommonInput>
-                      </div>
-                    </div>
-                    <div className="flex justify-between">
-                      <div>User</div>
-                      <div className="w-1/2">
-                        <CommonInput
-                          isDisabled={true}
-                          input={dataAsset["user"] || ""}
-                        ></CommonInput>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mb-10"></div>
-
-                <div className="flex flex-row justify-evenly">
-                  <div className="w-full">
-                    <CommonInput
-                      input={keyword}
-                      type={"text"}
-                      reference={focusKeyword}
-                      onInputChange={(val) => {
-                        //setKeyword(val);
-                        //  fetch_data();
-                        setKeyword(val);
-                        setCurrentPage(1);
-                      }}
-                      placeholder={"Search"}
-                    >
-                      <HiOutlineSearch />
-                    </CommonInput>
-                  </div>
-                  <div className="w-full">
-                    <CommonInput
-                      input={tempItem}
-                      isDisabled={true}
-                    ></CommonInput>
-                  </div>
-
-                  <div className="w-1/2">
-                    <CommonInput
-                      input={tempQuantity}
-                      type="text"
-                      reference={focusTempQuantity}
-                      onInputChange={(val) => {
-                        setTempQuantity(val);
-                      }}
-                      onKeyChange={(event) => {
-                        if (event.key == "Enter") {
-                          if (tempQuantity > tempAvailableQuantity) {
-                            console.log("stok ga cukup");
-                          } else {
-                            //cek jika exist
-                            const newList = [...listOrder];
-                            const findIndex = newList.findIndex(
-                              (value) => value.id_part == tempIdPart,
-                            );
-
-                            if (findIndex != -1) {
-                              const qty =
-                                newList[findIndex].quantity +
-                                parseInt(tempQuantity);
-
-                              if (qty > tempAvailableQuantity) {
-                                console.log("stock ora cukup");
-                              } else {
-                                newList[findIndex].quantity = qty;
-                              }
-
-                              //exist
-                            } else {
-                              //not exist
-                              const order = {
-                                id_part: tempIdPart,
-                                description: tempItem,
-                                quantity: tempQuantity,
-                              };
-                              newList.push(order);
-                              setEmptyListAlert(false);
-                            }
-
-                            //setListOrder();
-                            setListOrder(newList);
-                          }
-                          setTempItem("");
-                          setTempQuantity("");
-                          focusKeyword.current.focus();
-                          console.log(listOrder);
-                        }
-                      }}
-                    />
-                  </div>
-                </div>
-                <div className="mb-2"></div>
-                {emptyListAlert ? (
-                  <div className="flex flex-row items-center bg-white">
-                    <GoAlert></GoAlert>
-                    <div>List ini tidak boleh kosong</div>
-                  </div>
-                ) : (
-                  <></>
-                )}
-
-                <div>
-                  {keyword.length >= 3 ? (
-                    searchNotFound ? (
-                      <div>ga ketemu</div>
-                    ) : (
-                      <div className=" p-2">
-                        <div className="h-20 overflow-y-auto bg-white">
-                          <table className="w-full">
-                            <tbody className="">
-                              {filteredList.map((item, index) => {
-                                return (
-                                  <tr
-                                    className={`cursor-default hover:bg-secondary hover:text-white ${index % 2 === 0 ? "bg-gray" : "bg-white"}`}
-                                    key={index}
-                                    onClick={() => {
-                                      console.log(item.description);
-                                      setTempIdPart(item.id_part);
-                                      setTempItem(item.description);
-                                      setTempAvailableQuantity(
-                                        item.available_quantity,
-                                      );
-                                      setKeyword("");
-                                      if (focusTempQuantity.current) {
-                                        focusTempQuantity.current.focus();
-                                      }
-                                    }}
-                                  >
-                                    <td>{item["description"]}</td>
-                                    <td>{item["vendor_code"]}</td>
-                                    <td>{item["remark"]}</td>
-                                    <td>{item["available_quantity"]}</td>
-                                    <td>{item["unit"]}</td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
+                          ) : (
+                            <></>
+                          )}
                         </div>
+                        <div className="w-1/2">
+                          <CommonInput
+                            isDisabled={true}
+                            input={categoryTrans}
+                          ></CommonInput>
+                        </div>
+                      </div>
+                      {categoryTrans == "Umum" ? (
+                        <div>
+                          <div className="w-full">
+                            <CommonInput
+                              placeholder={"Search asset..."}
+                              input={keywordAsset}
+                              onInputChange={(val) => {
+                                setKeywordAsset(val);
+                                console.log(val);
+                              }}
+                            >
+                              <HiOutlineSearch />
+                            </CommonInput>
+                          </div>
+                        </div>
+                      ) : (
+                        <></>
+                      )}
+                    </div>
+
+                    <div className="px-3" />
+                    <div className="w-full">
+                      <div className="mb-2 flex justify-between">
+                        <div>Nomer Asset</div>
+                        <div className="w-1/2">
+                          <CommonInput
+                            isDisabled={true}
+                            input={dataAsset["id_asset"] || ""}
+                          ></CommonInput>
+                        </div>
+                      </div>
+                      <div className="mb-2 flex justify-between">
+                        <div>Deskripsi</div>
+                        <div className="w-1/2">
+                          <CommonInput
+                            isDisabled={true}
+                            input={dataAsset["description"] || ""}
+                          ></CommonInput>
+                        </div>
+                      </div>
+                      <div className="mb-2 flex justify-between">
+                        <div>Manufacture</div>
+                        <div className="w-1/2">
+                          <CommonInput
+                            isDisabled={true}
+                            input={dataAsset["manufacture"] || ""}
+                          ></CommonInput>
+                        </div>
+                      </div>
+                      <div className="mb-2 flex justify-between">
+                        <div>Model</div>
+                        <div className="w-1/2">
+                          <CommonInput
+                            isDisabled={true}
+                            input={dataAsset["model"] || ""}
+                          ></CommonInput>
+                        </div>
+                      </div>
+                      <div className="mb-2 flex justify-between">
+                        <div>User</div>
+                        <div className="w-1/2">
+                          <CommonInput
+                            isDisabled={true}
+                            input={dataAsset["user"] || ""}
+                          ></CommonInput>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  {keywordAsset.length >= 3 ? (
+                    searchAssetNotFound ? (
+                      <div className="flex flex-row items-center">
+                        <IoWarningSharp />
+                        <div className="ml-2">Not found</div>
+                      </div>
+                    ) : (
+                      <div className="h-20 overflow-y-auto bg-white">
+                        <table>
+                          <tbody>
+                            {filteredAsset.map((item, index) => {
+                              return (
+                                <tr
+                                  key={index}
+                                  className={`cursor-default hover:text-red`}
+                                  onClick={() => {
+                                    setKeywordAsset("");
+                                    setDataAsset({
+                                      id_asset: item["id_asset"],
+                                      description: item["description"],
+                                      manufacture: item["manufacture"],
+                                      model: item["model"],
+                                      no: item["no"],
+                                      user: item["user"],
+                                      unit: item["unit"],
+                                    });
+                                  }}
+                                >
+                                  <td className="w-1/5">{item["id_asset"]}</td>
+                                  <td className="w-1/5">
+                                    {item["type"] == "K"
+                                      ? item["description"] + item["no"]
+                                      : item["description"]}
+                                  </td>
+                                  <td className="w-1/5">
+                                    {item["manufacture"]}
+                                  </td>
+                                  <td className="w-1/5">{item["model"]}</td>
+                                  <td className="w-1/5">{item["user"]}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
                       </div>
                     )
                   ) : (
                     <></>
                   )}
-                </div>
-
+                </PageCard>
                 <div className="mb-5"></div>
-                <table className="w-full">
-                  <thead>
-                    <tr>
-                      <th>No</th>
-                      <th>Item</th>
-                      <th>Quantity</th>
-                      <th>Unit</th>
-                      <th>Opsi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {listOrder.map((item, index) => {
-                      return (
-                        <tr key={index}>
-                          <td>{index + 1}</td>
-                          <td>{item.description}</td>
-                          <td>{item.quantity}</td>
-                          <td>pcs</td>
-                          <td>
-                            <div
-                              onClick={() => {
-                                const foundIndex = listOrder.findIndex(
-                                  (value) => value.id_part == item.id_part,
-                                );
+                <PageCard>
+                  <div className="flex flex-row justify-evenly ">
+                    <div className="w-full">
+                      <CommonInput
+                        input={keyword}
+                        type={"text"}
+                        reference={focusKeyword}
+                        onInputChange={(val) => {
+                          //setKeyword(val);
+                          //  fetch_data();
+                          setKeyword(val);
+                          setCurrentPage(1);
+                        }}
+                        placeholder={"Search"}
+                      >
+                        <HiOutlineSearch />
+                      </CommonInput>
+                    </div>
+                    <div className="ml-3"></div>
+                    <div className="w-full">
+                      <CommonInput
+                        input={tempItem}
+                        isDisabled={true}
+                      ></CommonInput>
+                    </div>
+                    <div className="ml-3"></div>
+                    <div className="w-1/2">
+                      <CommonInput
+                        input={tempQuantity}
+                        type="number"
+                        reference={focusTempQuantity}
+                        onInputChange={(val) => {
+                          setTempQuantity(val);
+                        }}
+                        onKeyChange={(event) => {
+                          if (event.key == "Enter") {
+                            if (tempQuantity > tempAvailableQuantity) {
+                              AlertMessage("Stock tidak cukup");
+                            } else {
+                              //cek jika exist
+                              const newList = [...listOrder];
+                              const findIndex = newList.findIndex(
+                                (value) => value.id_part == tempIdPart,
+                              );
 
-                                const list = [...listOrder];
-                                list.splice(foundIndex, 1);
-                                setListOrder(list);
-                              }}
-                            >
-                              delete
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                <div className="mb-20"></div>
+                              if (findIndex != -1) {
+                                const qty =
+                                  newList[findIndex].quantity +
+                                  parseInt(tempQuantity);
 
-                <CommonButton
-                  label={"Submit"}
-                  onload={loadingSubmit}
-                  disabled={loadingSubmit}
-                  onClick={() => {
-                    save_data();
-                    //router.back();
-                  }}
-                />
-              </div>
-            </DefaultLayout>
-          )}
-        </div>
-      )}
+                                if (qty > tempAvailableQuantity) {
+                                  AlertMessage("Stock tidak cukup");
+                                } else {
+                                  newList[findIndex].quantity = qty;
+                                }
+
+                                //exist
+                              } else {
+                                //not exist
+                                const order = {
+                                  id_part: tempIdPart,
+                                  description: tempItem,
+                                  quantity: tempQuantity,
+                                  unit: tempUnit,
+                                };
+                                newList.push(order);
+                                setEmptyListAlert(false);
+                              }
+
+                              //setListOrder();
+                              setListOrder(newList);
+                            }
+                            setTempItem("");
+                            setTempQuantity("");
+                            setTempUnit("");
+                            focusKeyword.current.focus();
+                            // console.log(listOrder);
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {emptyListAlert ? (
+                    <div className="mt-5">
+                      <div className="mb-5 flex flex-row items-center rounded-lg border p-2">
+                        <GoAlert className="text-warning"></GoAlert>
+
+                        <div className="ml-2 text-warning">
+                          List ini tidak boleh kosong
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <></>
+                  )}
+
+                  <div>
+                    {keyword.length >= 3 ? (
+                      searchNotFound ? (
+                        <div className="flex flex-row items-center">
+                          <IoWarningSharp />
+                          <div className="ml-2">Not found</div>
+                        </div>
+                      ) : (
+                        <div className=" py-2">
+                          <div className="h-40 overflow-y-auto bg-white">
+                            <table className="w-full">
+                              <tbody className="">
+                                {filteredList.map((item, index) => {
+                                  return (
+                                    <tr
+                                      className={`cursor-default hover:bg-secondary hover:text-white ${index % 2 === 0 ? "bg-gray" : "bg-white"}`}
+                                      key={index}
+                                      onClick={() => {
+                                        console.log(item.description);
+                                        setTempIdPart(item.id_part);
+                                        setTempItem(item.description);
+                                        setTempUnit(item.unit);
+                                        setTempAvailableQuantity(
+                                          item.available_quantity,
+                                        );
+                                        setKeyword("");
+                                        if (focusTempQuantity.current) {
+                                          focusTempQuantity.current.focus();
+                                        }
+                                      }}
+                                    >
+                                      <td className="w-1/5 ">
+                                        {item["description"]}
+                                      </td>
+                                      <td className="w-1/5">
+                                        {item["vendor_code"]}
+                                      </td>
+
+                                      <td className="w-1/5">
+                                        {item["remark"]}
+                                      </td>
+                                      <td className="w-1/5 text-center">
+                                        {item["available_quantity"]}
+                                      </td>
+                                      <td className="w-1/5 text-center">
+                                        {item["unit"]}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )
+                    ) : (
+                      <></>
+                    )}
+                  </div>
+
+                  <div className="mb-5"></div>
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-black">
+                        <th className="text-center">No</th>
+                        <th className="text-center">Item</th>
+
+                        <th className="text-center">Quantity</th>
+                        <th className="text-center">Unit</th>
+                        <th className="text-center">Opsi</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {listOrder.map((item, index) => {
+                        return (
+                          <tr key={index}>
+                            <td className="text-center">{index + 1}</td>
+                            <td>{item.description}</td>
+                            <td className="text-center">{item.quantity}</td>
+                            <td className="text-center">{item.unit}</td>
+                            <td>
+                              <div
+                                className="flex justify-center"
+                                onClick={() => {
+                                  const foundIndex = listOrder.findIndex(
+                                    (value) => value.id_part == item.id_part,
+                                  );
+
+                                  const list = [...listOrder];
+                                  list.splice(foundIndex, 1);
+                                  setListOrder(list);
+                                }}
+                              >
+                                <div className="h-5 w-5">
+                                  <IoMdRemoveCircle className="hover:text-white" />
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  <div className="mb-20"></div>
+
+                  <div className="flex justify-end">
+                    <CommonButton
+                      label={"Submit"}
+                      onload={loadingSubmit}
+                      disabled={loadingSubmit}
+                      onClick={() => {
+                        save_data();
+                        //router.back();
+                      }}
+                    />
+                  </div>
+                </PageCard>
+              </>
+            )}
+          </DefaultLayout>
+        )}
+      </div>
     </UserAuth>
   );
 }

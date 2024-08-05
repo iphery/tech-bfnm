@@ -3,13 +3,15 @@ import React, { useContext, useEffect, useState } from "react";
 import { AppContext } from "../appcontext";
 import axios from "axios";
 import { useMediaQuery } from "react-responsive";
-import { IMAGE_ASSET } from "@/utils/constant";
+import { API_URL, IMAGE_ASSET } from "@/utils/constant";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import UserAuth from "@/components/auth";
 import { Appbar } from "@/components/appbar";
 import { CommonInput } from "@/components/input";
 import { HiOutlineSearch } from "react-icons/hi";
 import { useRouter } from "next/navigation";
+import { PageCard } from "@/components/card";
+import paginateData from "@/utils/pagination";
 
 export default function ListAsset() {
   const router = useRouter();
@@ -21,28 +23,30 @@ export default function ListAsset() {
   const [keyword, setKeyword] = useState("");
   const [keywordError, setKeywordError] = useState(false);
   const [filteredList, setFilteredList] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const fetch_data = async () => {
     const menu = localStorage.getItem("menu");
 
-    const apiUrl = `/api/detail`;
-    const response = await axios.post(apiUrl, {
-      category: menu,
-    });
+    const apiUrl = `${API_URL}/getallasset`;
+    const response = await axios.post(apiUrl, {});
 
     if (response.status == 200) {
       const array = response.data["response"];
-
-      setDetailData(array.dataDetail);
-      setFilteredList(array.dataDetail);
-      setCountData(array.exist);
       console.log(array);
+      setDetailData(array);
+      setFilteredList(array);
+      setCountData(array.length);
     }
   };
 
-  const search_data = () => {
-    //filteredList = [];
-    const data = detailData.filter((item) => {
+  useEffect(() => {
+    fetch_data();
+  }, []);
+
+  useEffect(() => {
+    //if (!loading) {
+    const filterData = detailData.filter((item) => {
       const description =
         item["Description"] &&
         item["Description"].toLowerCase().includes(keyword.toLowerCase());
@@ -54,13 +58,17 @@ export default function ListAsset() {
         item["User"].toLowerCase().includes(keyword.toLowerCase());
       return description || manufacture || user;
     });
-
+    console.log(filterData);
+    const { data, pageCurrent, start, end } = paginateData(
+      filterData,
+      //keyword,
+      currentPage,
+      15,
+    );
     setFilteredList(data);
-  };
 
-  useEffect(() => {
-    fetch_data();
-  }, []);
+    //}
+  }, [detailData, keyword, currentPage]);
 
   useEffect(() => {
     setIsClient(true);
@@ -134,10 +142,70 @@ export default function ListAsset() {
           </div>
         </>
       ) : (
-        <DefaultLayout>
-          <div onClick={() => {}}>bbb</div>
-          <div onClick={() => {}}>ccc</div>
-        </DefaultLayout>
+        <div className="min-h-screen  bg-boxdark-2">
+          <DefaultLayout>
+            <div className="mb-3 flex items-center justify-start">
+              <div className="text-lg text-white">Asset</div>
+            </div>
+            <PageCard>
+              <div className="flex flex-row items-center">
+                <div className="w-1/2">
+                  <CommonInput
+                    input={keyword}
+                    type={"text"}
+                    onInputChange={(val) => {
+                      //setKeyword(val);
+                      //  fetch_data();
+                      setKeyword(val);
+                      setCurrentPage(1);
+                    }}
+                    onKeyChange={() => {
+                      setKeywordError(false);
+                    }}
+                    placeholder={"Search"}
+                  >
+                    <HiOutlineSearch />
+                  </CommonInput>
+                </div>
+              </div>
+              <div className="mb-3"></div>
+              <div className="h-120 overflow-y-auto">
+                <table className="w-full">
+                  <thead className="sticky top-0 bg-black">
+                    <tr>
+                      <th className="w-1/5">ID</th>
+                      <th className="w-1/5">Deskripsi</th>
+                      <th className="w-1/5">Manufacture</th>
+                      <th className="w-1/5">Model</th>
+                      <th className="w-1/5">User</th>
+                    </tr>
+                  </thead>
+                  <tbody className=" overflow-y-auto">
+                    {filteredList.map((item, index) => {
+                      const desc =
+                        item["Type"] == "K" ? item["No"] : item["Description"];
+                      return (
+                        <tr
+                          key={index}
+                          className={`cursor-default hover:bg-secondary hover:text-white `}
+                          onClick={() => {
+                            router.push(`asset/${item["ID_Asset"]}`);
+                          }}
+                        >
+                          <td>{item["ID_Asset"]}</td>
+                          <td>{desc}</td>
+                          <td>{item["Manufacture"]}</td>
+                          <td>{item["Model"]}</td>
+                          <td>{item["User"]}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </PageCard>
+          </DefaultLayout>
+        </div>
       )}
     </UserAuth>
   );

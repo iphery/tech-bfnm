@@ -61,6 +61,7 @@ const config: Config = {
         buttonhover: "#5B21B6",
         info: "#FEF9E7",
       },
+
       fontSize: {
         "title-xxl": ["44px", "55px"],
         "title-xxl2": ["42px", "58px"],

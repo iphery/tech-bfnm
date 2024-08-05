@@ -106,111 +106,107 @@ export default function ListPart() {
 
   return (
     <UserAuth>
-      {loader ? (
-        <PageLoader />
-      ) : (
-        <div className="min-h-screen  bg-boxdark-2">
-          {isSmallScreen ? (
-            <>
-              <div>in progerss</div>
-            </>
-          ) : (
-            <DefaultLayout>
-              <div className="mb-3 flex items-center justify-center">
-                <div className="text-lg text-white">Inventory</div>
+      <div className="min-h-screen  bg-boxdark-2">
+        {isSmallScreen ? (
+          <>
+            <div>in progerss</div>
+          </>
+        ) : (
+          <DefaultLayout>
+            <div className="mb-3 flex items-center justify-center">
+              <div className="text-lg text-white">Inventory</div>
 
-                <div className="w-full">
-                  <div className="flex justify-end">
-                    <div
-                      className="flex cursor-default items-center justify-center px-5  hover:text-white"
-                      onClick={() => {
-                        router.push("/partsout");
+              <div className="w-full">
+                <div className="flex justify-end">
+                  <div
+                    className="flex cursor-default items-center justify-center px-5  hover:text-white"
+                    onClick={() => {
+                      router.push("/partsout");
+                    }}
+                  >
+                    <BsCartPlus />
+                    <div className="ml-1">Stock Out</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className=" w-full rounded-sm border border-strokedark bg-boxdark shadow-default">
+              <div className="p-5">
+                <div className="flex flex-row items-center">
+                  <div className="w-1/2">
+                    <CommonInput
+                      input={keyword}
+                      type={"text"}
+                      onInputChange={(val) => {
+                        //setKeyword(val);
+                        //  fetch_data();
+                        setKeyword(val);
+                        setCurrentPage(1);
                       }}
+                      onKeyChange={() => {
+                        setKeywordError(false);
+                      }}
+                      placeholder={"Search"}
                     >
-                      <BsCartPlus />
-                      <div className="ml-1">Stock Out</div>
-                    </div>
+                      <HiOutlineSearch />
+                    </CommonInput>
+                  </div>
+                </div>
+
+                <div className="mb-5"></div>
+
+                <div className="h-100 ">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-black">
+                        <th>No</th>
+                        <th>Deskripsi</th>
+                        <th>Part No</th>
+                        <th>Remark</th>
+                        <th>Quantity</th>
+
+                        <th>Lokasi Simpan</th>
+                      </tr>
+                    </thead>
+                    <tbody className="h-100 ">
+                      {!loading ? (
+                        filteredList.map((item, index) => {
+                          return (
+                            <tr
+                              key={index}
+                              className="cursor-default"
+                              onClick={() => {
+                                router.push(`/parts/${item["id_part"]}`);
+                              }}
+                            >
+                              <td>{index + 1}</td>
+                              <td>{item["description"]}</td>
+                              <td>{item["part_code"]}</td>
+                              <td>{item["remark"]}</td>
+                              <td>{item["location"]}</td>
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        <></>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="p-1">
+                  <div
+                    className="flex h-8 w-8 items-center justify-center rounded-full border shadow-md"
+                    onClick={onPageChange}
+                  >
+                    <GoChevronRight></GoChevronRight>
                   </div>
                 </div>
               </div>
-              <div className=" w-full rounded-sm border border-strokedark bg-boxdark shadow-default">
-                <div className="p-5">
-                  <div className="flex flex-row items-center">
-                    <div className="w-1/2">
-                      <CommonInput
-                        input={keyword}
-                        type={"text"}
-                        onInputChange={(val) => {
-                          //setKeyword(val);
-                          //  fetch_data();
-                          setKeyword(val);
-                          setCurrentPage(1);
-                        }}
-                        onKeyChange={() => {
-                          setKeywordError(false);
-                        }}
-                        placeholder={"Search"}
-                      >
-                        <HiOutlineSearch />
-                      </CommonInput>
-                    </div>
-                  </div>
-
-                  <div className="mb-5"></div>
-
-                  <div className="h-100 ">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="bg-black">
-                          <th>No</th>
-                          <th>Deskripsi</th>
-                          <th>Part No</th>
-                          <th>Remark</th>
-                          <th>Quantity</th>
-
-                          <th>Lokasi Simpan</th>
-                        </tr>
-                      </thead>
-                      <tbody className="h-100 ">
-                        {!loading ? (
-                          filteredList.map((item, index) => {
-                            return (
-                              <tr
-                                key={index}
-                                className="cursor-default"
-                                onClick={() => {
-                                  router.push(`/parts/${item["id_part"]}`);
-                                }}
-                              >
-                                <td>{index + 1}</td>
-                                <td>{item["description"]}</td>
-                                <td>{item["part_code"]}</td>
-                                <td>{item["remark"]}</td>
-                                <td>{item["location"]}</td>
-                              </tr>
-                            );
-                          })
-                        ) : (
-                          <></>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div className="p-1">
-                    <div
-                      className="flex h-8 w-8 items-center justify-center rounded-full border shadow-md"
-                      onClick={onPageChange}
-                    >
-                      <GoChevronRight></GoChevronRight>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </DefaultLayout>
-          )}
-        </div>
-      )}
+            </div>
+          </DefaultLayout>
+        )}
+      </div>
     </UserAuth>
   );
 }

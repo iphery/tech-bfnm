@@ -21,3 +21,14 @@ export const NotifyError = (message) =>
     progress: undefined,
     theme: "dark",
   });
+
+export const AlertMessage = (message) =>
+  toast.info(message, {
+    position: "top-center",
+    autoClose: 1000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    progress: undefined,
+    theme: "light",
+  });

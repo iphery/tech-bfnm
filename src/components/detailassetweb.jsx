@@ -51,7 +51,7 @@ export default function DetailAssetWeb({ idAsset }) {
     if (response.status == 200) {
       // console.log(response.data["detail"][0].ID_Asset);
       const detail = response.data["detail"][0];
-      console.log(detail);
+
       setDataAsset(detail);
     }
 
@@ -67,11 +67,14 @@ export default function DetailAssetWeb({ idAsset }) {
 
     if (response.status == 200) {
       const array = response.data["service"];
-      // console.log(array["data"]);
-      setDataService(array);
+      console.log("dfd");
+      console.log(array);
+      setFilteredDataService(array);
+      //setDataService(array);
     }
   };
 
+  /*
   const fetch_detail_service = async (id) => {
     //console.log(id);
     const apiUrl = `${API_URL}/fetchdetailservice`;
@@ -84,7 +87,7 @@ export default function DetailAssetWeb({ idAsset }) {
       setSelectedCase(array);
     }
   };
-
+*/
   const fetch_stock = async () => {
     const apiUrl = `${API_URL}/stocklist`;
     const response = await axios.post(apiUrl);
@@ -161,7 +164,7 @@ export default function DetailAssetWeb({ idAsset }) {
                         <div>
                           <div className="flex justify-between px-5 py-2">
                             <div>Kode</div>
-                            <div>BFNM</div>
+                            <div>{dataAsset.ID_Asset}</div>
                           </div>
                           <div className="flex justify-between px-5 py-2">
                             <div>Deskripsi</div>
@@ -213,48 +216,89 @@ export default function DetailAssetWeb({ idAsset }) {
                         </div>
                       </div>
                       <table className="w-full">
-                        <thead>
+                        <thead className="h-10 bg-black">
                           <tr>
-                            <TableHeader>ID</TableHeader>
-                            <TableHeader>Requestor</TableHeader>
-                            <TableHeader>Kendala</TableHeader>
-                            <TableHeader>Spare Part</TableHeader>
+                            <th>ID Asset</th>
+                            <th>Requestor</th>
+                            <th>Kendala</th>
+                            <th>Status</th>
+                            <th>Spare Part</th>
                           </tr>
                         </thead>
                         <tbody>
                           {filteredDataService.map((item, index) => {
+                            let status = "Issued";
+                            let cardColor = "bg-red";
+                            switch (item["Step"]) {
+                              case "2":
+                                status = "Responsed";
+                                cardColor = "bg-warning";
+                                break;
+                              case "3":
+                                status = "Waiting part";
+                                cardColor = "bg-warning";
+                                break;
+                              case "4":
+                                status = "Continue repairing";
+                                cardColor = "bg-warning";
+                                break;
+                              case "5":
+                                status = "Completed";
+                                cardColor = "bg-meta-10";
+                                break;
+                              case "6":
+                                status = "Checked";
+                                cardColor = "bg-meta-10";
+                                break;
+                              case "7":
+                                status = "Accepted";
+                                cardColor = "bg-success";
+                                break;
+
+                              default:
+                                "";
+                            }
+
                             return (
-                              <tr key={index}>
-                                <TableContent index={index}>
+                              <tr
+                                key={index}
+                                className={`cursor-default hover:bg-form-strokedark hover:text-white`}
+                              >
+                                <td index={index} className="p-2">
                                   {item["ID_Request"]}
-                                </TableContent>
-                                <TableContent index={index}>
-                                  {item["Requestor"]}
-                                </TableContent>
-                                <TableContent index={index}>
-                                  {item["Problem"]}
-                                </TableContent>
-                                <TableContent index={index}>
+                                </td>
+                                <td index={index}>{item["Requestor"]}</td>
+                                <td index={index}>{item["Problem"]}</td>
+                                <td>
                                   <div
-                                    onClick={() => {
-                                      //setModalStocks(true);
-                                      const assetInfo =
-                                        JSON.stringify(dataAsset);
-                                      localStorage.setItem(
-                                        "data_asset",
-                                        assetInfo,
-                                      );
-                                      localStorage.setItem(
-                                        "id_service",
-                                        item["ID_Request"],
-                                      );
-                                      router.push("/partsout");
-                                    }}
-                                    className="flex h-8 w-8 cursor-default items-center justify-center rounded-full bg-red p-2 hover:bg-black"
+                                    className={`flex items-center justify-center rounded-md ${cardColor} text-sm text-white`}
                                   >
-                                    <FaPlus />
+                                    {status}
                                   </div>
-                                </TableContent>
+                                </td>
+                                <td className=" text-center" index={index}>
+                                  <div className="flex justify-center">
+                                    <div
+                                      onClick={() => {
+                                        //setModalStocks(true);
+                                        const assetInfo =
+                                          JSON.stringify(dataAsset);
+                                        localStorage.setItem(
+                                          "data_asset",
+                                          assetInfo,
+                                        );
+                                        localStorage.setItem(
+                                          "id_service",
+                                          item["ID_Request"],
+                                        );
+                                        router.push("/partsout");
+                                      }}
+                                      className="flex h-6 w-6 cursor-default items-center justify-center rounded-full  p-2 hover:bg-black"
+                                    >
+                                      <FaPlus />
+                                    </div>
+                                  </div>
+                                </td>
                               </tr>
                             );
                           })}

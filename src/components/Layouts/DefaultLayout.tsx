@@ -3,8 +3,7 @@ import React, { useState, ReactNode, useContext } from "react";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
 import { AppContext } from "@/app/appcontext";
-import Snackbar from "@/components/snackbar"
-
+import Snackbar from "@/components/snackbar";
 
 export default function DefaultLayout({
   children,
@@ -12,7 +11,7 @@ export default function DefaultLayout({
   children: React.ReactNode;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  
+
   const { easyMessage, easyStatusMessage } = useContext(AppContext);
   return (
     <>
@@ -30,7 +29,7 @@ export default function DefaultLayout({
 
           {/* <!-- ===== Main Content Start ===== --> */}
           <main>
-          <Snackbar message={easyMessage} show={easyStatusMessage} />
+            <Snackbar message={easyMessage} show={easyStatusMessage} />
             <div className="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-10">
               {children}
             </div>
