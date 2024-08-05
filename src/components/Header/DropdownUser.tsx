@@ -2,9 +2,18 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import ClickOutside from "@/components/ClickOutside";
+import { IMAGE_USER } from "@/utils/constant";
+import { auth } from "@/app/firebase-config";
+import { signOut } from "firebase/auth";
+import { useRouter } from "next/navigation";
 
 const DropdownUser = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const router = useRouter();
+
+  const user = localStorage.getItem("info")!;
+  const parseUser = JSON.parse(user);
+  const imageUrl = parseUser[0]["imageUrl"];
 
   return (
     <ClickOutside onClick={() => setDropdownOpen(false)} className="relative">
@@ -20,16 +29,21 @@ const DropdownUser = () => {
           <span className="block text-xs">UX Designer</span>
         </span>
 
-        <span className="h-12 w-12 rounded-full">
+        <span className="relative h-12 w-12 overflow-hidden rounded-full">
           <Image
             width={112}
             height={112}
-            src={"/images/user/user-01.png"}
+            //src={"/images/user/user-01.png"}
+            src={`${IMAGE_USER}/${imageUrl}`}
+            /*
             style={{
               width: "auto",
               height: "auto",
             }}
+              */
+
             alt="User"
+            className="object-cover"
           />
         </span>
 
@@ -55,6 +69,7 @@ const DropdownUser = () => {
         <div
           className={`absolute right-0 mt-4 flex w-62.5 flex-col rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark`}
         >
+          {/*
           <ul className="flex flex-col gap-5 border-b border-stroke px-6 py-7.5 dark:border-strokedark">
             <li>
               <Link
@@ -128,7 +143,15 @@ const DropdownUser = () => {
               </Link>
             </li>
           </ul>
-          <button className="flex items-center gap-3.5 px-6 py-4 text-sm font-medium duration-300 ease-in-out hover:text-primary lg:text-base">
+          */}
+          <button
+            className="flex items-center gap-3.5 px-6 py-4 text-sm font-medium duration-300 ease-in-out hover:text-primary lg:text-base"
+            onClick={async () => {
+              await signOut(auth);
+
+              router.push("/");
+            }}
+          >
             <svg
               className="fill-current"
               width="22"

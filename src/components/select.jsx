@@ -29,6 +29,7 @@ export const CustomSelect = ({
   error,
   errorMessage,
   mode,
+  onChg,
 }) => {
   const customStyles = {
     control: (baseStyles, state) => ({
@@ -59,7 +60,7 @@ export const CustomSelect = ({
           onSelected(option);
         }}
         isSearchable={true}
-        isClearable={true}
+        //isClearable={true}
         options={optionData}
         placeholder={placeholder}
         components={{ Option: mode == 0 ? GroupOption : GroupOptionWithSub }}

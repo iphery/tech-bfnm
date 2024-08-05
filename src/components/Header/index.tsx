@@ -57,15 +57,10 @@ const Header = (props: {
           {/* <!-- Hamburger Toggle BTN --> */}
 
           <Link className="block flex-shrink-0 lg:hidden" href="/">
-            <Image
-              width={32}
-              height={32}
-              src={"/images/logo/logo-icon.svg"}
-              alt="Logo"
-            />
+            <Image width={32} height={32} src={"/logo/logo.png"} alt="Logo" />
           </Link>
         </div>
-
+        {/*
         <div className="hidden sm:block">
           <form action="https://formbold.com/s/unique_form_id" method="POST">
             <div className="relative">
@@ -101,20 +96,18 @@ const Header = (props: {
             </div>
           </form>
         </div>
-
+*/}
         <div className="flex items-center gap-3 2xsm:gap-7">
           <ul className="flex items-center gap-2 2xsm:gap-4">
-            {/* <!-- Dark Mode Toggler --> */}
+            {/* 
             <DarkModeSwitcher />
-            {/* <!-- Dark Mode Toggler --> */}
+             */}
 
             {/* <!-- Notification Menu Area --> */}
             <DropdownNotification />
             {/* <!-- Notification Menu Area --> */}
 
-            {/* <!-- Chat Notification Area --> */}
-            <DropdownMessage />
-            {/* <!-- Chat Notification Area --> */}
+            {/*<DropdownMessage />*/}
           </ul>
 
           {/* <!-- User Area --> */}

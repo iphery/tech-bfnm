@@ -19,3 +19,11 @@ export const ProgressSummary = ({ title, hour }) => {
     </div>
   );
 };
+
+export const PageCard = ({ children }) => {
+  return (
+    <div className=" w-full rounded-sm border border-strokedark bg-boxdark shadow-default">
+      <div className="p-3">{children}</div>
+    </div>
+  );
+};

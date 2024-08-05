@@ -12,15 +12,15 @@ import { CustomModal } from "./modal";
 import { CommonInput } from "@/components/input";
 import { CommonButton } from "./button";
 import { useAsync } from "react-select/async";
-import { HiArrowRight, HiMinus, HiPlus } from "react-icons/hi";
+import { HiArrowRight, HiMinus, HiOutlineSearch, HiPlus } from "react-icons/hi";
+import { PageLoader } from "./loader";
 
 export default function DetailAssetWeb({ idAsset }) {
   const router = useRouter();
 
   const [dataAsset, setDataAsset] = useState({});
   const [dataService, setDataService] = useState([]);
-  const [firstLoading, setFirstLoading] = useState(true);
-  const [secondLoading, setSecondLoading] = useState(false);
+  const [loader, setLoader] = useState(true);
 
   const [keyword, setKeyword] = useState("");
   const [keywordError, setKeywordError] = useState(false);
@@ -54,8 +54,8 @@ export default function DetailAssetWeb({ idAsset }) {
       console.log(detail);
       setDataAsset(detail);
     }
-    setFirstLoading(false);
-    setSecondLoading(true);
+
+    setLoader(false);
   };
 
   const fetch_data_service = async () => {
@@ -70,7 +70,6 @@ export default function DetailAssetWeb({ idAsset }) {
       // console.log(array["data"]);
       setDataService(array);
     }
-    setSecondLoading(false);
   };
 
   const fetch_detail_service = async (id) => {
@@ -133,115 +132,364 @@ export default function DetailAssetWeb({ idAsset }) {
     }
     console.log(data);
     console.log(pageLast);
-  }, [keyword, dataService, itemPerPage]);
+  }, [keyword, dataAsset, itemPerPage]);
 
   useEffect(() => {
     const filterData = listStock.filter((item) =>
       item["description"].toLowerCase().includes(keywordStock.toLowerCase()),
     );
-    console.log(filterData);
+    // console.log(filterData);
     setFilteredStock(filterData);
-  }, [listStock, keywordStock]);
+  }, [keywordStock]);
 
   return (
     <UserAuth>
-      <div className="relative">
-        <div className="absolute z-0 h-full w-full">
-          <div className="min-h-screen  bg-boxdark-2">
-            <DefaultLayout>
-              <div className=" w-full rounded-sm border border-strokedark bg-boxdark shadow-default ">
-                <div className="flex  flex-col">
-                  <div className="p-5">
-                    <div>Informasi</div>
-                  </div>
-                  <hr className="border-t" />
-
-                  <div className="flex=row flex justify-evenly">
-                    <div className="w-full">
-                      <div>
-                        <div className="flex justify-between px-5 py-2">
-                          <div>Kode</div>
-                          <div>BFNM</div>
+      {loader ? (
+        <PageLoader />
+      ) : (
+        <div className="relative">
+          <div className="absolute z-0 h-full w-full">
+            <div className="min-h-screen  bg-boxdark-2">
+              <DefaultLayout>
+                <div className="mb-3 flex items-center justify-start">
+                  <div className="text-lg text-white">Asset Detail</div>
+                </div>
+                <div className=" w-full rounded-sm border border-strokedark bg-boxdark shadow-default ">
+                  <div className="flex  flex-col">
+                    <div className="flex=row flex justify-evenly">
+                      <div className="w-full">
+                        <div>
+                          <div className="flex justify-between px-5 py-2">
+                            <div>Kode</div>
+                            <div>BFNM</div>
+                          </div>
+                          <div className="flex justify-between px-5 py-2">
+                            <div>Deskripsi</div>
+                            <div>{dataAsset.Description}</div>
+                          </div>
                         </div>
                         <div className="flex justify-between px-5 py-2">
-                          <div>Deskripsi</div>
-                          <div>{dataAsset.Description}</div>
+                          <div>Manufacture</div>
+                          <div>{dataAsset.Manufacture}</div>
+                        </div>
+                        <div className="flex justify-between px-5 py-2">
+                          <div>Model</div>
+                          <div>{dataAsset.Model}</div>
+                        </div>
+                        <div className="flex justify-between px-5 py-2">
+                          <div>User</div>
+                          <div>{dataAsset.User}</div>
                         </div>
                       </div>
-                      <div className="flex justify-between px-5 py-2">
-                        <div>Manufacture</div>
-                        <div>{dataAsset.Manufacture}</div>
-                      </div>
-                      <div className="flex justify-between px-5 py-2">
-                        <div>Model</div>
-                        <div>{dataAsset.Model}</div>
-                      </div>
-                      <div className="flex justify-between px-5 py-2">
-                        <div>User</div>
-                        <div>{dataAsset.User}</div>
-                      </div>
-                    </div>
-                    <div className="w-full">
-                      <div>
-                        <div className="flex justify-between px-5 py-2">
-                          <div>Kategory PM</div>
-                          <div>{dataAsset.PM_Category}</div>
+                      <div className="w-full">
+                        <div>
+                          <div className="flex justify-between px-5 py-2">
+                            <div>Kategory PM</div>
+                            <div>{dataAsset.PM_Category}</div>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-              <div className="mb-5"></div>
-              <div className=" w-full rounded-sm border border-strokedark bg-boxdark shadow-default ">
-                <div className="flex  flex-col">
-                  <div className="p-5">
-                    <div>Riwayat Maintenance</div>
+                <div className="mb-5"></div>
+                <div className=" w-full rounded-sm border border-strokedark bg-boxdark shadow-default ">
+                  <div className="flex  flex-col">
+                    <div className="p-5">
+                      <div className="flex flex-row items-center">
+                        <div className="mb-5 w-1/2">
+                          <CommonInput
+                            input={keyword}
+                            type={"text"}
+                            onInputChange={(val) => {
+                              //setKeyword(val);
+                              //  fetch_data();
+                              setKeyword(val);
+                            }}
+                            placeholder={"Search"}
+                          >
+                            <HiOutlineSearch />
+                          </CommonInput>
+                        </div>
+                      </div>
+                      <table className="w-full">
+                        <thead>
+                          <tr>
+                            <TableHeader>ID</TableHeader>
+                            <TableHeader>Requestor</TableHeader>
+                            <TableHeader>Kendala</TableHeader>
+                            <TableHeader>Spare Part</TableHeader>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredDataService.map((item, index) => {
+                            return (
+                              <tr key={index}>
+                                <TableContent index={index}>
+                                  {item["ID_Request"]}
+                                </TableContent>
+                                <TableContent index={index}>
+                                  {item["Requestor"]}
+                                </TableContent>
+                                <TableContent index={index}>
+                                  {item["Problem"]}
+                                </TableContent>
+                                <TableContent index={index}>
+                                  <div
+                                    onClick={() => {
+                                      //setModalStocks(true);
+                                      const assetInfo =
+                                        JSON.stringify(dataAsset);
+                                      localStorage.setItem(
+                                        "data_asset",
+                                        assetInfo,
+                                      );
+                                      localStorage.setItem(
+                                        "id_service",
+                                        item["ID_Request"],
+                                      );
+                                      router.push("/partsout");
+                                    }}
+                                    className="flex h-8 w-8 cursor-default items-center justify-center rounded-full bg-red p-2 hover:bg-black"
+                                  >
+                                    <FaPlus />
+                                  </div>
+                                </TableContent>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                  <hr className="border-t" />
-                  <div className="p-5">
-                    <table>
+                </div>
+              </DefaultLayout>
+            </div>
+          </div>
+
+          <CustomModal
+            isVisible={modalStocks}
+            onClose={() => {
+              setModalStocks(false);
+            }}
+          >
+            <div className="flex w-full justify-evenly">
+              <div className="w-full">
+                <div>
+                  <CommonInput
+                    input={keywordStock}
+                    onInputChange={(val) => {
+                      setKeywordStock(val);
+                    }}
+                    error={false}
+                    type={"text"}
+                    placeholder={"Search stock"}
+                  ></CommonInput>
+                  <div className="">
+                    <table className="w-full border">
+                      <div className="h-30 overflow-y-auto">
+                        <thead>
+                          <tr>
+                            <th className="text-center">Deskripsi</th>
+                            <th className="bg-red text-center">Quantity</th>
+                            <th className="text-center">Unit</th>
+                            <th>Opsi</th>
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          {filteredStock.map((item, index) => {
+                            return (
+                              <tr key={index}>
+                                <td>{item["description"]}</td>
+                                <td className="bg-red text-center">
+                                  {item["quantity"]}
+                                </td>
+                                <td className="text-center">{item["unit"]}</td>
+                                <td>
+                                  {enabledAddButton.includes(
+                                    item["id_part"],
+                                  ) ? (
+                                    <div className="flex justify-center">
+                                      <div
+                                        className="cursor-detail flex h-5 w-5 items-center justify-center rounded-full bg-red hover:bg-black"
+                                        onClick={() => {
+                                          const updateStock = [
+                                            ...transactionStock,
+                                          ];
+                                          setTransactionStock([]);
+
+                                          let foundIndex =
+                                            updateStock.findIndex(
+                                              (value) =>
+                                                value.id_part ==
+                                                item["id_part"],
+                                            );
+
+                                          if (foundIndex == -1) {
+                                            updateStock.push({
+                                              id_part: item["id_part"],
+                                              quantity: 1,
+                                              description: item["description"],
+                                            });
+                                          } else {
+                                            const qty =
+                                              updateStock[foundIndex].quantity +
+                                              1;
+                                            updateStock[foundIndex] = {
+                                              id_part: item["id_part"],
+                                              quantity: qty,
+                                              description: item["description"],
+                                            };
+                                          }
+                                          setEnabledAddButton(
+                                            enabledAddButton.filter(
+                                              (val) => val !== item["id_part"],
+                                            ),
+                                          );
+                                          setTransactionStock(updateStock);
+                                          console.log(transactionStock);
+                                        }}
+                                      >
+                                        <HiArrowRight />
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <></>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </div>
+                    </table>
+                  </div>
+
+                  <div className="mb-5"></div>
+                  <div>
+                    <div>Not find in stock ? You can import the data</div>
+                    <div className="h-30">
+                      <CommonInput type={"file"}></CommonInput>
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <CommonButton label={"Import"} />
+                  </div>
+                </div>
+              </div>
+              <div className="px-2"></div>
+              <div className="w-full">
+                <div>
+                  <div
+                    onClick={() => {
+                      console.log(enabledAddButton);
+                    }}
+                  >
+                    Stock
+                  </div>
+                  <div className="h-30">
+                    <table className="w-full">
                       <thead>
                         <tr>
-                          <TableHeader>ID</TableHeader>
-                          <TableHeader>Requestor</TableHeader>
-                          <TableHeader>Kendala</TableHeader>
-                          <TableHeader>Spare Part</TableHeader>
+                          <th>Deskripsi</th>
+                          <th>Quantity</th>
+                          <th>Uni</th>
+                          <th>Opsi</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredDataService.map((item, index) => {
+                        {transactionStock.map((item, index) => {
                           return (
                             <tr key={index}>
-                              <TableContent index={index}>
-                                {item["ID_Request"]}
-                              </TableContent>
-                              <TableContent index={index}>
-                                {item["Requestor"]}
-                              </TableContent>
-                              <TableContent index={index}>
-                                {item["Problem"]}
-                              </TableContent>
-                              <TableContent index={index}>
-                                <div
-                                  onClick={() => {
-                                    //setModalStocks(true);
-                                    const assetInfo = JSON.stringify(dataAsset);
-                                    localStorage.setItem(
-                                      "data_asset",
-                                      assetInfo,
-                                    );
-                                    localStorage.setItem(
-                                      "id_service",
-                                      item["ID_Request"],
-                                    );
-                                    router.push("/parts_out");
-                                  }}
-                                  className="flex h-8 w-8 cursor-default items-center justify-center rounded-full bg-red p-2 hover:bg-black"
-                                >
-                                  <FaPlus />
+                              <td>{item["description"]}</td>
+                              <td>{item["quantity"]}</td>
+                              <td>pcs</td>
+                              <td>
+                                <div className="flex justify-center">
+                                  <div
+                                    className="cursor-detail flex h-5 w-5 items-center justify-center rounded-full bg-red hover:bg-black"
+                                    onClick={() => {
+                                      const updateStock = [...transactionStock];
+                                      setTransactionStock([]);
+
+                                      let foundIndex = updateStock.findIndex(
+                                        (value) =>
+                                          value.id_part == item["id_part"],
+                                      );
+
+                                      if (foundIndex == -1) {
+                                        updateStock.push({
+                                          id_part: item["id_part"],
+                                          quantity: 1,
+                                          description: item["description"],
+                                        });
+                                      } else {
+                                        const qty =
+                                          updateStock[foundIndex].quantity + 1;
+                                        updateStock[foundIndex] = {
+                                          id_part: item["id_part"],
+                                          quantity: qty,
+                                          description: item["description"],
+                                        };
+                                      }
+                                      setEnabledAddButton(
+                                        enabledAddButton.filter(
+                                          (val) => val !== item["id_part"],
+                                        ),
+                                      );
+                                      setTransactionStock(updateStock);
+                                      console.log(transactionStock);
+                                    }}
+                                  >
+                                    <HiPlus></HiPlus>
+                                  </div>
+                                  <div className="mr-2"></div>
+                                  <div
+                                    className="cursor-detail flex h-5 w-5 items-center justify-center rounded-full bg-red hover:bg-black"
+                                    onClick={() => {
+                                      const updateStock = [...transactionStock];
+                                      setTransactionStock([]);
+
+                                      let foundIndex = updateStock.findIndex(
+                                        (value) =>
+                                          value.id_part == item["id_part"],
+                                      );
+
+                                      const qty =
+                                        updateStock[foundIndex].quantity - 1;
+                                      const id_part =
+                                        updateStock[foundIndex].id_part;
+                                      if (qty < 1) {
+                                        console.log(foundIndex);
+                                        updateStock.splice(foundIndex, 1);
+                                        setEnabledAddButton((prev) => {
+                                          // Check if id is already in the array
+                                          if (prev.includes(id_part)) {
+                                            // Optionally remove id if it exists
+                                            return prev.filter(
+                                              (item) => item !== id_part,
+                                            );
+                                          } else {
+                                            // Add id to the array if it does not exist
+                                            return [...prev, id_part];
+                                          }
+                                        });
+                                      } else {
+                                        updateStock[foundIndex] = {
+                                          id_part: item["id_part"],
+                                          quantity: qty,
+                                          description: item["description"],
+                                        };
+                                      }
+                                      console.log(updateStock);
+                                      setTransactionStock(updateStock);
+                                    }}
+                                  >
+                                    <HiMinus />
+                                  </div>
                                 </div>
-                              </TableContent>
+                              </td>
                             </tr>
                           );
                         })}
@@ -250,240 +498,10 @@ export default function DetailAssetWeb({ idAsset }) {
                   </div>
                 </div>
               </div>
-            </DefaultLayout>
-          </div>
+            </div>
+          </CustomModal>
         </div>
-
-        <CustomModal
-          isVisible={modalStocks}
-          onClose={() => {
-            setModalStocks(false);
-          }}
-        >
-          <div className="flex w-full justify-evenly">
-            <div className="w-full">
-              <div>
-                <CommonInput
-                  input={keywordStock}
-                  onInputChange={(val) => {
-                    setKeywordStock(val);
-                  }}
-                  error={false}
-                  type={"text"}
-                  placeholder={"Search stock"}
-                ></CommonInput>
-                <div className="">
-                  <table className="w-full border">
-                    <div className="h-30 overflow-y-auto">
-                      <thead>
-                        <tr>
-                          <th className="text-center">Deskripsi</th>
-                          <th className="bg-red text-center">Quantity</th>
-                          <th className="text-center">Unit</th>
-                          <th>Opsi</th>
-                        </tr>
-                      </thead>
-
-                      <tbody>
-                        {filteredStock.map((item, index) => {
-                          return (
-                            <tr key={index}>
-                              <td>{item["description"]}</td>
-                              <td className="bg-red text-center">
-                                {item["quantity"]}
-                              </td>
-                              <td className="text-center">{item["unit"]}</td>
-                              <td>
-                                {enabledAddButton.includes(item["id_part"]) ? (
-                                  <div className="flex justify-center">
-                                    <div
-                                      className="cursor-detail flex h-5 w-5 items-center justify-center rounded-full bg-red hover:bg-black"
-                                      onClick={() => {
-                                        const updateStock = [
-                                          ...transactionStock,
-                                        ];
-                                        setTransactionStock([]);
-
-                                        let foundIndex = updateStock.findIndex(
-                                          (value) =>
-                                            value.id_part == item["id_part"],
-                                        );
-
-                                        if (foundIndex == -1) {
-                                          updateStock.push({
-                                            id_part: item["id_part"],
-                                            quantity: 1,
-                                            description: item["description"],
-                                          });
-                                        } else {
-                                          const qty =
-                                            updateStock[foundIndex].quantity +
-                                            1;
-                                          updateStock[foundIndex] = {
-                                            id_part: item["id_part"],
-                                            quantity: qty,
-                                            description: item["description"],
-                                          };
-                                        }
-                                        setEnabledAddButton(
-                                          enabledAddButton.filter(
-                                            (val) => val !== item["id_part"],
-                                          ),
-                                        );
-                                        setTransactionStock(updateStock);
-                                        console.log(transactionStock);
-                                      }}
-                                    >
-                                      <HiArrowRight />
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <></>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </div>
-                  </table>
-                </div>
-
-                <div className="mb-5"></div>
-                <div>
-                  <div>Not find in stock ? You can import the data</div>
-                  <div className="h-30">
-                    <CommonInput type={"file"}></CommonInput>
-                  </div>
-                </div>
-                <div className="flex justify-end">
-                  <CommonButton label={"Import"} />
-                </div>
-              </div>
-            </div>
-            <div className="px-2"></div>
-            <div className="w-full">
-              <div>
-                <div
-                  onClick={() => {
-                    console.log(enabledAddButton);
-                  }}
-                >
-                  Stock
-                </div>
-                <div className="h-30">
-                  <table className="w-full">
-                    <thead>
-                      <tr>
-                        <th>Deskripsi</th>
-                        <th>Quantity</th>
-                        <th>Uni</th>
-                        <th>Opsi</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {transactionStock.map((item, index) => {
-                        return (
-                          <tr key={index}>
-                            <td>{item["description"]}</td>
-                            <td>{item["quantity"]}</td>
-                            <td>pcs</td>
-                            <td>
-                              <div className="flex justify-center">
-                                <div
-                                  className="cursor-detail flex h-5 w-5 items-center justify-center rounded-full bg-red hover:bg-black"
-                                  onClick={() => {
-                                    const updateStock = [...transactionStock];
-                                    setTransactionStock([]);
-
-                                    let foundIndex = updateStock.findIndex(
-                                      (value) =>
-                                        value.id_part == item["id_part"],
-                                    );
-
-                                    if (foundIndex == -1) {
-                                      updateStock.push({
-                                        id_part: item["id_part"],
-                                        quantity: 1,
-                                        description: item["description"],
-                                      });
-                                    } else {
-                                      const qty =
-                                        updateStock[foundIndex].quantity + 1;
-                                      updateStock[foundIndex] = {
-                                        id_part: item["id_part"],
-                                        quantity: qty,
-                                        description: item["description"],
-                                      };
-                                    }
-                                    setEnabledAddButton(
-                                      enabledAddButton.filter(
-                                        (val) => val !== item["id_part"],
-                                      ),
-                                    );
-                                    setTransactionStock(updateStock);
-                                    console.log(transactionStock);
-                                  }}
-                                >
-                                  <HiPlus></HiPlus>
-                                </div>
-                                <div className="mr-2"></div>
-                                <div
-                                  className="cursor-detail flex h-5 w-5 items-center justify-center rounded-full bg-red hover:bg-black"
-                                  onClick={() => {
-                                    const updateStock = [...transactionStock];
-                                    setTransactionStock([]);
-
-                                    let foundIndex = updateStock.findIndex(
-                                      (value) =>
-                                        value.id_part == item["id_part"],
-                                    );
-
-                                    const qty =
-                                      updateStock[foundIndex].quantity - 1;
-                                    const id_part =
-                                      updateStock[foundIndex].id_part;
-                                    if (qty < 1) {
-                                      console.log(foundIndex);
-                                      updateStock.splice(foundIndex, 1);
-                                      setEnabledAddButton((prev) => {
-                                        // Check if id is already in the array
-                                        if (prev.includes(id_part)) {
-                                          // Optionally remove id if it exists
-                                          return prev.filter(
-                                            (item) => item !== id_part,
-                                          );
-                                        } else {
-                                          // Add id to the array if it does not exist
-                                          return [...prev, id_part];
-                                        }
-                                      });
-                                    } else {
-                                      updateStock[foundIndex] = {
-                                        id_part: item["id_part"],
-                                        quantity: qty,
-                                        description: item["description"],
-                                      };
-                                    }
-                                    console.log(updateStock);
-                                    setTransactionStock(updateStock);
-                                  }}
-                                >
-                                  <HiMinus />
-                                </div>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CustomModal>
-      </div>
+      )}
     </UserAuth>
   );
 }

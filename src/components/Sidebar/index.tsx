@@ -47,7 +47,7 @@ const menuGroups = [
         ),
         label: "Dashboard",
         route: "#",
-        children: [{ label: "eCommerce", route: "/" }],
+        //children: [{ label: "eCommerce", route: "/" }],
       },
       {
         icon: (
@@ -198,6 +198,8 @@ const menuGroups = [
       },
     ],
   },
+
+  /*
   {
     name: "OTHERS",
     menuItems: [
@@ -320,6 +322,7 @@ const menuGroups = [
       },
     ],
   },
+*/
 ];
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
@@ -335,15 +338,18 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
       >
         {/* <!-- SIDEBAR HEADER --> */}
         <div className="flex items-center justify-between gap-2 px-6 py-5.5 lg:py-6.5">
-          <Link href="/">
-            <Image
-              width={176}
-              height={32}
-              src={"/images/logo/logo.svg"}
-              alt="Logo"
-              priority
-            />
-          </Link>
+          <div className="flex flex-col items-center justify-center">
+            <Link href="/">
+              <Image
+                width={52}
+                height={52}
+                src={"/logo/logo.png"}
+                alt="Logo"
+                priority
+              />
+            </Link>
+            <div className="text-white">MITA</div>
+          </div>
 
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}

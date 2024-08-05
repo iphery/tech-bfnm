@@ -18,6 +18,7 @@ import { API_URL, ICON, IMAGE_ASSET, OLD_API_URL } from "@/utils/constant";
 import axios from "axios";
 import { Menu } from "@/components/menu";
 import UserAuth from "@/components/auth";
+import DefaultLayout from "@/components/Layouts/DefaultLayout";
 
 export default function Home() {
   const [isClient, setIsClient] = useState(false);
@@ -275,7 +276,9 @@ export default function Home() {
           </div>
         </div>
       ) : (
-        <div>bb</div>
+        <div className="min-h-screen  bg-boxdark-2">
+          <DefaultLayout>aa</DefaultLayout>
+        </div>
       )}
     </UserAuth>
   );

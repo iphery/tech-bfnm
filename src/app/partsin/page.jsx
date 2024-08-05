@@ -319,12 +319,12 @@ export default function PartsIn() {
                 ) : (
                   <div className=" p-2">
                     <div className="h-20 overflow-y-auto bg-white">
-                      <table>
-                        <tbody className="">
+                      <table className="w-full">
+                        <tbody>
                           {filteredList.map((item, index) => {
                             return (
                               <tr
-                                className="cursor-default hover:text-red"
+                                className={`cursor-default hover:bg-secondary hover:text-white ${index % 2 === 0 ? "bg-gray" : "bg-white"}`}
                                 key={index}
                                 onClick={() => {
                                   console.log(item.description);
@@ -341,6 +341,8 @@ export default function PartsIn() {
                                 }}
                               >
                                 <td>{item["description"]}</td>
+                                <td>{item["vendor_code"]}</td>
+                                <td>{item["remark"]}</td>
                                 <td>{item["available_quantity"]}</td>
                                 <td>{item["unit"]}</td>
                               </tr>
