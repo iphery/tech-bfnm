@@ -14,9 +14,11 @@ const DropdownUser = () => {
 
   useEffect(() => {
     const user = localStorage.getItem("info")!;
-    const parseUser = JSON.parse(user);
-    const imageUrl = parseUser[0]["imageUrl"];
-    setImageUrl(imageUrl);
+    if (user != null) {
+      const parseUser = JSON.parse(user);
+      const imageUrl = parseUser[0]["imageUrl"];
+      setImageUrl(imageUrl);
+    }
   }, []);
 
   return (
