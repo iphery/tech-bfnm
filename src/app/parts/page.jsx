@@ -89,7 +89,7 @@ export default function ListPart() {
       filterData,
       //keyword,
       currentPage,
-      10,
+      15,
     );
     setFilteredList(data);
 
@@ -159,7 +159,6 @@ export default function ListPart() {
                   <table className="w-full">
                     <thead>
                       <tr className="bg-black">
-                        <th>No</th>
                         <th>Deskripsi</th>
                         <th>Part No</th>
                         <th>Remark</th>
@@ -168,7 +167,7 @@ export default function ListPart() {
                         <th>Lokasi Simpan</th>
                       </tr>
                     </thead>
-                    <tbody className="h-100 ">
+                    <tbody className=" ">
                       {!loading ? (
                         filteredList.map((item, index) => {
                           return (
@@ -179,7 +178,6 @@ export default function ListPart() {
                                 router.push(`/parts/${item["id_part"]}`);
                               }}
                             >
-                              <td>{index + 1}</td>
                               <td>{item["description"]}</td>
                               <td>{item["part_code"]}</td>
                               <td>{item["remark"]}</td>
@@ -192,15 +190,6 @@ export default function ListPart() {
                       )}
                     </tbody>
                   </table>
-                </div>
-
-                <div className="p-1">
-                  <div
-                    className="flex h-8 w-8 items-center justify-center rounded-full border shadow-md"
-                    onClick={onPageChange}
-                  >
-                    <GoChevronRight></GoChevronRight>
-                  </div>
                 </div>
               </div>
             </div>
