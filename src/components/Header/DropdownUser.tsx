@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import ClickOutside from "@/components/ClickOutside";
@@ -10,10 +10,14 @@ import { useRouter } from "next/navigation";
 const DropdownUser = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const router = useRouter();
+  const [imageUrl, setImageUrl] = useState("");
 
-  const user = localStorage.getItem("info")!;
-  const parseUser = JSON.parse(user);
-  const imageUrl = parseUser[0]["imageUrl"];
+  useEffect(() => {
+    const user = localStorage.getItem("info")!;
+    const parseUser = JSON.parse(user);
+    const imageUrl = parseUser[0]["imageUrl"];
+    setImageUrl(imageUrl);
+  }, []);
 
   return (
     <ClickOutside onClick={() => setDropdownOpen(false)} className="relative">
@@ -33,7 +37,7 @@ const DropdownUser = () => {
           <Image
             width={112}
             height={112}
-            //src={"/images/user/user-01.png"}
+            // src={"/images/user/user-01.png"}
             src={`${IMAGE_USER}/${imageUrl}`}
             /*
             style={{
