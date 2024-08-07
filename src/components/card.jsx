@@ -27,3 +27,11 @@ export const PageCard = ({ children }) => {
     </div>
   );
 };
+
+export const PageCardLimited = ({ children }) => {
+  return (
+    <div className=" w-full flex-1 rounded-sm border border-strokedark bg-boxdark shadow-default">
+      <div className="p-3">{children}</div>
+    </div>
+  );
+};

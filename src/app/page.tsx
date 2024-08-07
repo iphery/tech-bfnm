@@ -63,6 +63,7 @@ export default function Home() {
 
   useEffect(() => {
     const scan_result = localStorage.getItem("qrcode");
+
     if (scan_result != "") {
       localStorage.setItem("qrcode", "");
       router.push(`/asset/${scan_result}`);
@@ -109,6 +110,7 @@ export default function Home() {
                     </div>
                     <div
                       onClick={() => {
+                        localStorage.setItem("scanner_mode", "0");
                         router.push("/scanner");
                       }}
                       className="px-3 py-2"

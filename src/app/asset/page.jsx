@@ -10,7 +10,7 @@ import { Appbar } from "@/components/appbar";
 import { CommonInput } from "@/components/input";
 import { HiOutlineSearch } from "react-icons/hi";
 import { useRouter } from "next/navigation";
-import { PageCard } from "@/components/card";
+import { PageCard, PageCardLimited } from "@/components/card";
 import paginateData from "@/utils/pagination";
 
 export default function ListAsset() {
@@ -63,9 +63,9 @@ export default function ListAsset() {
       filterData,
       //keyword,
       currentPage,
-      15,
+      10,
     );
-    setFilteredList(data);
+    setFilteredList(filterData);
 
     //}
   }, [detailData, keyword, currentPage]);
@@ -77,7 +77,6 @@ export default function ListAsset() {
   if (!isClient) {
     return null;
   }
-
   return (
     <UserAuth>
       {isSmallScreen ? (
@@ -144,66 +143,75 @@ export default function ListAsset() {
       ) : (
         <div className="min-h-screen  bg-boxdark-2">
           <DefaultLayout>
-            <div className="mb-3 flex items-center justify-start">
-              <div className="text-lg text-white">Asset</div>
-            </div>
-            <PageCard>
-              <div className="flex flex-row items-center">
-                <div className="w-1/2">
-                  <CommonInput
-                    input={keyword}
-                    type={"text"}
-                    onInputChange={(val) => {
-                      //setKeyword(val);
-                      //  fetch_data();
-                      setKeyword(val);
-                      setCurrentPage(1);
-                    }}
-                    onKeyChange={() => {
-                      setKeywordError(false);
-                    }}
-                    placeholder={"Search"}
-                  >
-                    <HiOutlineSearch />
-                  </CommonInput>
+            <div className="flex min-h-[calc(100vh-115px)] flex-col">
+              <div className="mb-3 flex items-center justify-start">
+                <div className="text-lg text-white">Asset</div>
+              </div>
+
+              <PageCardLimited>
+                <div className="flex flex-row items-center">
+                  <div className="w-1/2">
+                    <CommonInput
+                      input={keyword}
+                      type={"text"}
+                      onInputChange={(val) => {
+                        //setKeyword(val);
+                        //  fetch_data();
+                        setKeyword(val);
+                        setCurrentPage(1);
+                      }}
+                      onKeyChange={() => {
+                        setKeywordError(false);
+                      }}
+                      placeholder={"Search"}
+                    >
+                      <HiOutlineSearch />
+                    </CommonInput>
+                  </div>
                 </div>
-              </div>
-              <div className="mb-3"></div>
-              <div className="h-120 overflow-y-auto">
-                <table className="w-full">
-                  <thead className="sticky top-0 bg-black">
-                    <tr>
-                      <th className="w-1/5">ID</th>
-                      <th className="w-1/5">Deskripsi</th>
-                      <th className="w-1/5">Manufacture</th>
-                      <th className="w-1/5">Model</th>
-                      <th className="w-1/5">User</th>
-                    </tr>
-                  </thead>
-                  <tbody className=" overflow-y-auto">
-                    {filteredList.map((item, index) => {
-                      const desc =
-                        item["Type"] == "K" ? item["No"] : item["Description"];
-                      return (
-                        <tr
-                          key={index}
-                          className={`cursor-default hover:bg-secondary hover:text-white `}
-                          onClick={() => {
-                            router.push(`asset/${item["ID_Asset"]}`);
-                          }}
-                        >
-                          <td>{item["ID_Asset"]}</td>
-                          <td>{desc}</td>
-                          <td>{item["Manufacture"]}</td>
-                          <td>{item["Model"]}</td>
-                          <td>{item["User"]}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </PageCard>
+                <div className="mb-3"></div>
+                <div className="h-[calc(100vh-235px)] overflow-y-auto">
+                  <table className="w-full ">
+                    <thead className="sticky top-0 bg-black">
+                      <tr>
+                        <th className="w-1/5">ID</th>
+                        <th className="w-1/5">Deskripsi</th>
+                        <th className="w-1/5">Manufacture</th>
+                        <th className="w-1/5">Model</th>
+                        <th className="w-1/5">User</th>
+                      </tr>
+                    </thead>
+                    <tbody className="">
+                      {filteredList.map((item, index) => {
+                        const desc =
+                          item["Type"] == "K"
+                            ? item["No"]
+                            : item["Description"];
+                        return (
+                          <tr
+                            key={index}
+                            className={`cursor-default   hover:bg-secondary hover:text-white`}
+                            onClick={() => {
+                              router.push(`asset/${item["ID_Asset"]}`);
+                            }}
+                          >
+                            <td className="p-2 align-top">
+                              {item["ID_Asset"]}
+                            </td>
+                            <td className="p-2 align-top">{desc}</td>
+                            <td className="p-2 align-top">
+                              {item["Manufacture"]}
+                            </td>
+                            <td className="p-2 align-top">{item["Model"]}</td>
+                            <td className="p-2 align-top">{item["User"]}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </PageCardLimited>
+            </div>
           </DefaultLayout>
         </div>
       )}

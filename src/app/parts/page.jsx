@@ -15,6 +15,7 @@ import { GoChevronRight } from "react-icons/go";
 import paginateData from "@/utils/pagination";
 import { BsCartPlus } from "react-icons/bs";
 import { PageLoader } from "@/components/loader";
+import { PageCardLimited } from "@/components/card";
 
 export default function ListPart() {
   const router = useRouter();
@@ -91,7 +92,7 @@ export default function ListPart() {
       currentPage,
       15,
     );
-    setFilteredList(data);
+    setFilteredList(filterData);
 
     //}
   }, [detailData, keyword, currentPage]);
@@ -113,85 +114,102 @@ export default function ListPart() {
           </>
         ) : (
           <DefaultLayout>
-            <div className="mb-3 flex items-center justify-center">
-              <div className="text-lg text-white">Inventory</div>
+            <div className="flex min-h-[calc(100vh-115px)] flex-col">
+              <div className="mb-3 flex items-center justify-center">
+                <div className="text-lg text-white">Inventory</div>
 
-              <div className="w-full">
-                <div className="flex justify-end">
-                  <div
-                    className="flex cursor-default items-center justify-center px-5  hover:text-white"
-                    onClick={() => {
-                      router.push("/partsout");
-                    }}
-                  >
-                    <BsCartPlus />
-                    <div className="ml-1">Stock Out</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className=" w-full rounded-sm border border-strokedark bg-boxdark shadow-default">
-              <div className="p-5">
-                <div className="flex flex-row items-center">
-                  <div className="w-1/2">
-                    <CommonInput
-                      input={keyword}
-                      type={"text"}
-                      onInputChange={(val) => {
-                        //setKeyword(val);
-                        //  fetch_data();
-                        setKeyword(val);
-                        setCurrentPage(1);
+                <div className="w-full">
+                  <div className="flex justify-end">
+                    <div
+                      className="flex cursor-default items-center justify-center px-5  hover:text-white"
+                      onClick={() => {
+                        router.push("/partsout");
                       }}
-                      onKeyChange={() => {
-                        setKeywordError(false);
-                      }}
-                      placeholder={"Search"}
                     >
-                      <HiOutlineSearch />
-                    </CommonInput>
+                      <BsCartPlus />
+                      <div className="ml-1">Stock Out</div>
+                    </div>
                   </div>
                 </div>
-
-                <div className="mb-5"></div>
-
-                <div className="h-100 ">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="bg-black">
-                        <th>Deskripsi</th>
-                        <th>Part No</th>
-                        <th>Remark</th>
-                        <th>Quantity</th>
-
-                        <th>Lokasi Simpan</th>
-                      </tr>
-                    </thead>
-                    <tbody className=" ">
-                      {!loading ? (
-                        filteredList.map((item, index) => {
-                          return (
-                            <tr
-                              key={index}
-                              className="cursor-default"
-                              onClick={() => {
-                                router.push(`/parts/${item["id_part"]}`);
-                              }}
-                            >
-                              <td>{item["description"]}</td>
-                              <td>{item["part_code"]}</td>
-                              <td>{item["remark"]}</td>
-                              <td>{item["location"]}</td>
-                            </tr>
-                          );
-                        })
-                      ) : (
-                        <></>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
               </div>
+              <PageCardLimited>
+                <div className="p-5">
+                  <div className="flex flex-row items-center">
+                    <div className="w-1/2">
+                      <CommonInput
+                        input={keyword}
+                        type={"text"}
+                        onInputChange={(val) => {
+                          //setKeyword(val);
+                          //  fetch_data();
+                          setKeyword(val);
+                          setCurrentPage(1);
+                        }}
+                        onKeyChange={() => {
+                          setKeywordError(false);
+                        }}
+                        placeholder={"Search"}
+                      >
+                        <HiOutlineSearch />
+                      </CommonInput>
+                    </div>
+                  </div>
+
+                  <div className="mb-5"></div>
+
+                  <div className="h-[calc(100vh-280px)] overflow-y-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-black">
+                          <th>Deskripsi</th>
+                          <th>Part No</th>
+                          <th>Remark</th>
+                          <th>Quantity</th>
+                          <th>Unit</th>
+
+                          <th>Lokasi Simpan</th>
+                        </tr>
+                      </thead>
+                      <tbody className=" ">
+                        {!loading ? (
+                          filteredList.map((item, index) => {
+                            return (
+                              <tr
+                                key={index}
+                                className={`cursor-default   hover:bg-secondary hover:text-white`}
+                                onClick={() => {
+                                  router.push(`/parts/${item["id_part"]}`);
+                                }}
+                              >
+                                <td className="p-2 align-top">
+                                  {item["description"]}
+                                </td>
+                                <td className=" p-2 align-top">
+                                  {item["vendor_code"]}
+                                </td>
+                                <td className="p-2 align-top">
+                                  {item["remark"]}
+                                </td>
+                                <td className="p-2 align-top">
+                                  {item["available_quantity"]}
+                                </td>
+                                <td className="p-2 align-top">
+                                  {item["unit"]}
+                                </td>
+                                <td className="p-2 align-top">
+                                  {item["location"]}
+                                </td>
+                              </tr>
+                            );
+                          })
+                        ) : (
+                          <></>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </PageCardLimited>
             </div>
           </DefaultLayout>
         )}

@@ -14,6 +14,8 @@ import { CommonButton } from "./button";
 import { useAsync } from "react-select/async";
 import { HiArrowRight, HiMinus, HiOutlineSearch, HiPlus } from "react-icons/hi";
 import { PageLoader } from "./loader";
+import { PageCard, PageCardLimited } from "@/components/card";
+import { formatDate } from "@/utils/dateformat";
 
 export default function DetailAssetWeb({ idAsset }) {
   const router = useRouter();
@@ -154,131 +156,135 @@ export default function DetailAssetWeb({ idAsset }) {
           <div className="absolute z-0 h-full w-full">
             <div className="min-h-screen  bg-boxdark-2">
               <DefaultLayout>
-                <div className="mb-3 flex items-center justify-start">
-                  <div className="text-lg text-white">Asset Detail</div>
-                </div>
-                <div className=" w-full rounded-sm border border-strokedark bg-boxdark shadow-default ">
-                  <div className="flex  flex-col">
-                    <div className="flex=row flex justify-evenly">
-                      <div className="w-full">
-                        <div>
-                          <div className="flex justify-between px-5 py-2">
-                            <div>Kode</div>
-                            <div>{dataAsset.ID_Asset}</div>
+                <div className="flex min-h-[calc(100vh-115px)] flex-col">
+                  <div className="mb-3 flex items-center justify-start">
+                    <div className="text-lg text-white">Asset Detail</div>
+                  </div>
+                  <PageCard>
+                    <div className="flex  flex-col">
+                      <div className="flex=row flex justify-evenly">
+                        <div className="w-full">
+                          <div>
+                            <div className="flex justify-between px-5 py-2">
+                              <div>Kode</div>
+                              <div>{dataAsset.ID_Asset}</div>
+                            </div>
+                            <div className="flex justify-between px-5 py-2">
+                              <div>Deskripsi</div>
+                              <div>{dataAsset.Description}</div>
+                            </div>
                           </div>
                           <div className="flex justify-between px-5 py-2">
-                            <div>Deskripsi</div>
-                            <div>{dataAsset.Description}</div>
+                            <div>Manufacture</div>
+                            <div>{dataAsset.Manufacture}</div>
+                          </div>
+                          <div className="flex justify-between px-5 py-2">
+                            <div>Model</div>
+                            <div>{dataAsset.Model}</div>
+                          </div>
+                          <div className="flex justify-between px-5 py-2">
+                            <div>User</div>
+                            <div>{dataAsset.User}</div>
                           </div>
                         </div>
-                        <div className="flex justify-between px-5 py-2">
-                          <div>Manufacture</div>
-                          <div>{dataAsset.Manufacture}</div>
-                        </div>
-                        <div className="flex justify-between px-5 py-2">
-                          <div>Model</div>
-                          <div>{dataAsset.Model}</div>
-                        </div>
-                        <div className="flex justify-between px-5 py-2">
-                          <div>User</div>
-                          <div>{dataAsset.User}</div>
-                        </div>
-                      </div>
-                      <div className="w-full">
-                        <div>
-                          <div className="flex justify-between px-5 py-2">
-                            <div>Kategory PM</div>
-                            <div>{dataAsset.PM_Category}</div>
+                        <div className="w-full">
+                          <div>
+                            <div className="flex justify-between px-5 py-2">
+                              <div>Kategory PM</div>
+                              <div>{dataAsset.PM_Category}</div>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-                <div className="mb-5"></div>
-                <div className=" w-full rounded-sm border border-strokedark bg-boxdark shadow-default ">
-                  <div className="flex  flex-col">
-                    <div className="p-5">
-                      <div className="flex flex-row items-center">
-                        <div className="mb-5 w-1/2">
-                          <CommonInput
-                            input={keyword}
-                            type={"text"}
-                            onInputChange={(val) => {
-                              //setKeyword(val);
-                              //  fetch_data();
-                              setKeyword(val);
-                            }}
-                            placeholder={"Search"}
-                          >
-                            <HiOutlineSearch />
-                          </CommonInput>
+                  </PageCard>
+                  <div className="mb-5"></div>
+                  <PageCardLimited>
+                    <div className="flex  flex-col">
+                      <div className="p-5">
+                        <div className="flex flex-row items-center">
+                          <div className="mb-5 w-1/2">
+                            <CommonInput
+                              input={keyword}
+                              type={"text"}
+                              onInputChange={(val) => {
+                                //setKeyword(val);
+                                //  fetch_data();
+                                setKeyword(val);
+                              }}
+                              placeholder={"Search"}
+                            >
+                              <HiOutlineSearch />
+                            </CommonInput>
+                          </div>
                         </div>
-                      </div>
-                      <table className="w-full">
-                        <thead className="h-10 bg-black">
-                          <tr>
-                            <th>ID Asset</th>
-                            <th>Requestor</th>
-                            <th>Kendala</th>
-                            <th>Status</th>
-                            <th>Spare Part</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredDataService.map((item, index) => {
-                            let status = "Issued";
-                            let cardColor = "bg-red";
-                            switch (item["Step"]) {
-                              case "2":
-                                status = "Responsed";
-                                cardColor = "bg-warning";
-                                break;
-                              case "3":
-                                status = "Waiting part";
-                                cardColor = "bg-warning";
-                                break;
-                              case "4":
-                                status = "Continue repairing";
-                                cardColor = "bg-warning";
-                                break;
-                              case "5":
-                                status = "Completed";
-                                cardColor = "bg-meta-10";
-                                break;
-                              case "6":
-                                status = "Checked";
-                                cardColor = "bg-meta-10";
-                                break;
-                              case "7":
-                                status = "Accepted";
-                                cardColor = "bg-success";
-                                break;
+                        <div className="h-[calc(100vh-520px)] overflow-y-auto">
+                          <table className="w-full">
+                            <thead className="sticky top-0 h-10 bg-black">
+                              <tr>
+                                <th>ID Request</th>
+                                <th>Date</th>
+                                <th>Requestor</th>
+                                <th>Kendala</th>
+                                <th>Status</th>
+                                <th>Spare Part</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {filteredDataService.map((item, index) => {
+                                let status = "Issued";
+                                let cardColor = "bg-red";
+                                switch (item["Step"]) {
+                                  case "2":
+                                    status = "Responsed";
+                                    cardColor = "bg-warning";
+                                    break;
+                                  case "3":
+                                    status = "Waiting part";
+                                    cardColor = "bg-warning";
+                                    break;
+                                  case "4":
+                                    status = "Continue repairing";
+                                    cardColor = "bg-warning";
+                                    break;
+                                  case "5":
+                                    status = "Completed";
+                                    cardColor = "bg-meta-10";
+                                    break;
+                                  case "6":
+                                    status = "Checked";
+                                    cardColor = "bg-meta-10";
+                                    break;
+                                  case "7":
+                                    status = "Accepted";
+                                    cardColor = "bg-success";
+                                    break;
 
-                              default:
-                                "";
-                            }
+                                  default:
+                                    "";
+                                }
 
-                            return (
-                              <tr
-                                key={index}
-                                className={`cursor-default hover:bg-form-strokedark hover:text-white`}
-                              >
-                                <td index={index} className="p-2">
-                                  {item["ID_Request"]}
-                                </td>
-                                <td index={index}>{item["Requestor"]}</td>
-                                <td index={index}>{item["Problem"]}</td>
-                                <td>
-                                  <div
-                                    className={`flex items-center justify-center rounded-md ${cardColor} text-sm text-white`}
+                                return (
+                                  <tr
+                                    key={index}
+                                    className={`cursor-default hover:bg-form-strokedark hover:text-white`}
                                   >
-                                    {status}
-                                  </div>
-                                </td>
-                                <td className=" text-center" index={index}>
-                                  <div className="flex justify-center">
-                                    <div
+                                    <td index={index} className="p-2">
+                                      {item["ID_Request"]}
+                                    </td>
+                                    <td>{formatDate(item["Time_Request"])}</td>
+                                    <td index={index}>{item["Requestor"]}</td>
+                                    <td index={index}>{item["Problem"]}</td>
+                                    <td>
+                                      <div
+                                        className={`flex items-center justify-center rounded-md ${cardColor} text-sm text-white`}
+                                      >
+                                        {status}
+                                      </div>
+                                    </td>
+                                    <td
+                                      className=" text-center"
+                                      index={index}
                                       onClick={() => {
                                         //setModalStocks(true);
                                         const assetInfo =
@@ -293,19 +299,22 @@ export default function DetailAssetWeb({ idAsset }) {
                                         );
                                         router.push("/partsout");
                                       }}
-                                      className="flex h-6 w-6 cursor-default items-center justify-center rounded-full  p-2 hover:bg-black"
                                     >
-                                      <FaPlus />
-                                    </div>
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
+                                      <div className="flex justify-center">
+                                        <div className="flex h-6 w-6 cursor-default items-center justify-center rounded-full  p-2 hover:bg-black">
+                                          <FaPlus />
+                                        </div>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  </PageCardLimited>
                 </div>
               </DefaultLayout>
             </div>
