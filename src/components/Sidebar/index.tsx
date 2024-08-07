@@ -104,9 +104,12 @@ const menuGroups = [
         route: "#",
         children: [
           { label: "List", route: "/parts" },
+          { label: "Transaction", route: "/partstransaction" },
           { label: "Order", route: "/partsorder" },
         ],
       },
+
+      /*
       {
         icon: (
           <svg
@@ -235,6 +238,7 @@ const menuGroups = [
         label: "Settings",
         route: "/settings",
       },
+      */
     ],
   },
 

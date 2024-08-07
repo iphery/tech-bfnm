@@ -35,6 +35,7 @@ export default function PartsOut() {
   const [tempQuantity, setTempQuantity] = useState("");
   const [tempAvailableQuantity, setTempAvailableQuantity] = useState(0);
   const [tempUnit, setTempUnit] = useState("");
+  const [tempTypePart, setTempTypePart] = useState("");
   const focusTempQuantity = useRef();
   const focusKeyword = useRef();
 
@@ -117,9 +118,18 @@ export default function PartsOut() {
   }, []);
 
   const search_list = () => {
-    const filterData = detailData.filter((item) =>
-      item["description"].toLowerCase().includes(keyword.toLowerCase()),
-    );
+    const filterData = detailData.filter((item) => {
+      const arr_description =
+        item["description"] &&
+        item["description"].toLowerCase().includes(keyword.toLowerCase());
+
+      const arr_vendor_code =
+        item["vendor_code"] &&
+        item["vendor_code"].toLowerCase().includes(keyword.toLowerCase());
+      return arr_description || arr_vendor_code;
+    });
+
+    console.log(filterData);
 
     if (filterData.length == 0) {
       setSearchNotFound(true);
@@ -130,9 +140,16 @@ export default function PartsOut() {
   };
 
   const search_asset = () => {
-    const filterDataAsset = listAsset.filter((item) =>
-      item["description"].toLowerCase().includes(keywordAsset.toLowerCase()),
-    );
+    const filterDataAsset = listAsset.filter((item) => {
+      const arr_description =
+        item["description"] &&
+        item["description"].toLowerCase().includes(keywordAsset.toLowerCase());
+      /*
+      const arr_vendor_code =
+        item["vendor_code"] &&
+        item["vendor_code"].toLowerCase().includes(keywordAsset.toLowerCase());*/
+      return arr_description;
+    });
 
     if (filterDataAsset.length == 0) {
       setSearchAssetNotFound(true);
@@ -467,6 +484,7 @@ export default function PartsOut() {
                     <div className="ml-3"></div>
                     <div className="w-full">
                       <CommonInput
+                        placeholder={"Description"}
                         input={tempItem}
                         isDisabled={true}
                       ></CommonInput>
@@ -474,6 +492,7 @@ export default function PartsOut() {
                     <div className="ml-3"></div>
                     <div className="w-1/2">
                       <CommonInput
+                        placeholder={"Enter quantity"}
                         input={tempQuantity}
                         type="number"
                         reference={focusTempQuantity}
@@ -482,6 +501,9 @@ export default function PartsOut() {
                         }}
                         onKeyChange={(event) => {
                           if (event.key == "Enter") {
+                            console.log(tempAvailableQuantity);
+                            console.log(tempQuantity);
+
                             if (tempQuantity > tempAvailableQuantity) {
                               AlertMessage("Stock tidak cukup");
                             } else {
@@ -493,7 +515,7 @@ export default function PartsOut() {
 
                               if (findIndex != -1) {
                                 const qty =
-                                  newList[findIndex].quantity +
+                                  parseInt(newList[findIndex].quantity) +
                                   parseInt(tempQuantity);
 
                                 if (qty > tempAvailableQuantity) {
@@ -508,6 +530,7 @@ export default function PartsOut() {
                                 const order = {
                                   id_part: tempIdPart,
                                   description: tempItem,
+                                  type: tempTypePart,
                                   quantity: tempQuantity,
                                   unit: tempUnit,
                                 };
@@ -521,6 +544,7 @@ export default function PartsOut() {
                             setTempItem("");
                             setTempQuantity("");
                             setTempUnit("");
+                            setTempTypePart("");
                             focusKeyword.current.focus();
                             // console.log(listOrder);
                           }
@@ -563,11 +587,17 @@ export default function PartsOut() {
                                       onClick={() => {
                                         console.log(item.description);
                                         setTempIdPart(item.id_part);
-                                        setTempItem(item.description);
+                                        setTempItem(
+                                          item.description +
+                                            " " +
+                                            item.vendor_code,
+                                        );
                                         setTempUnit(item.unit);
                                         setTempAvailableQuantity(
                                           item.available_quantity,
                                         );
+                                        setTempTypePart(item.vendor_code);
+
                                         setKeyword("");
                                         if (focusTempQuantity.current) {
                                           focusTempQuantity.current.focus();
@@ -609,6 +639,7 @@ export default function PartsOut() {
                       <tr className="bg-black">
                         <th className="text-center">No</th>
                         <th className="text-center">Item</th>
+                        <th className="text-center">Detail</th>
 
                         <th className="text-center">Quantity</th>
                         <th className="text-center">Unit</th>
@@ -621,8 +652,10 @@ export default function PartsOut() {
                           <tr key={index}>
                             <td className="text-center">{index + 1}</td>
                             <td>{item.description}</td>
+                            <td>{item.type}</td>
                             <td className="text-center">{item.quantity}</td>
                             <td className="text-center">{item.unit}</td>
+
                             <td>
                               <div
                                 className="flex justify-center"

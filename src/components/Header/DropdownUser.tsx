@@ -11,13 +11,22 @@ const DropdownUser = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const router = useRouter();
   const [imageUrl, setImageUrl] = useState("");
+  const [userName, setUserName] = useState("");
+  const [userDivisi, setUserDivisi] = useState("User");
 
   useEffect(() => {
     const user = localStorage.getItem("info")!;
     if (user != null) {
       const parseUser = JSON.parse(user);
       const imageUrl = parseUser[0]["imageUrl"];
+      const name = parseUser[0]["Name"];
+      const divisi = parseUser[0]["divisi"];
+      console.log(parseUser);
       setImageUrl(imageUrl);
+      setUserName(name);
+      if (divisi != null) {
+        setUserDivisi(divisi);
+      }
     }
   }, []);
 
@@ -30,9 +39,9 @@ const DropdownUser = () => {
       >
         <span className="hidden text-right lg:block">
           <span className="block text-sm font-medium text-black dark:text-white">
-            Thomas Anree
+            {userName}
           </span>
-          <span className="block text-xs">UX Designer</span>
+          <span className="block text-xs">{userDivisi}</span>
         </span>
 
         <span className="relative h-12 w-12 overflow-hidden rounded-full">
