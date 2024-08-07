@@ -12,6 +12,7 @@ import { PageLoader } from "@/components/loader";
 import { HiOutlineSearch } from "react-icons/hi";
 import { CommonInput } from "@/components/input";
 import { formatDate } from "@/utils/dateformat";
+import { AiOutlineDelete } from "react-icons/ai";
 
 export default function PartOrder() {
   const router = useRouter();

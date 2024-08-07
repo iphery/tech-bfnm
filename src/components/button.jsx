@@ -12,6 +12,25 @@ export const CommonButton = ({ label, onload, disabled, onClick }) => {
   );
 };
 
+export const CommonButtonColor = ({
+  color1,
+  color2,
+  label,
+  onload,
+  disabled,
+  onClick,
+}) => {
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded-sm border border-bodydark ${color1}  p-2 text-sm text-white shadow-md hover:${color2}`}
+      disabled={disabled}
+    >
+      {onload ? <ButtonLoader color={"white"} /> : label}
+    </button>
+  );
+};
+
 export const CommonButtonFull = ({ label, onload, disabled, onClick }) => {
   return (
     <button

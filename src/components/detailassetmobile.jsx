@@ -64,6 +64,8 @@ export default function DetailAssetMobile({ idAsset }) {
 
   const [caseId, setCaseId] = useState("");
 
+  const [requestId, setRequestId] = useState("");
+
   const [test] = useState([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
 
   const fetch_data = async () => {
@@ -92,6 +94,7 @@ export default function DetailAssetMobile({ idAsset }) {
     if (response.status == 200) {
       const array = response.data["service"];
       console.log(array);
+
       setDataService(array);
     }
     setSecondLoading(false);
@@ -111,7 +114,8 @@ export default function DetailAssetMobile({ idAsset }) {
       setSelectedCase(array);
       setPartList(parts);
       setGalleryList(galleries);
-      console.log(array);
+      //console.log(array);
+      console.log("refresh dta servic");
     }
   };
 
@@ -145,49 +149,52 @@ export default function DetailAssetMobile({ idAsset }) {
     console.log(pageLast);
   }, [keyword, dataService, itemPerPage]);
 
-  const setup_action = (step) => {
+  useEffect(() => {}, [requestId]);
+
+  const setup_action = (step, idRequest) => {
     switch (step) {
       case "received":
         localStorage.setItem("scanner_mode", 1);
         router.push("/scanner");
+        break;
       case "completed":
         setCaseLoaderCompleted(true);
-        do_action("completed").then(() => {
+        do_action("completed", idRequest).then(() => {
           setCaseLoaderCompleted(false);
-          fetch_data_service();
+          fetch_detail_service();
         });
+        break;
       case "order_part":
         setCaseLoaderOrder(true);
-        console.log("jancuk");
-        console.log(caseId);
-      /*
-        do_action("order_part").then(() => {
+
+        do_action("order_part", idRequest).then(() => {
           setCaseLoaderOrder(false);
-          fetch_data_service();
+
+          fetch_detail_service(idRequest);
         });
-        */
+
+        break;
       case "receive_part": //spare part send by admin
       case "checked": //complete
       case "accepted":
+      default:
     }
   };
 
-  const do_action = (step) => {
-    console.log("disininin");
-    console.log(caseId);
-  };
-
-  const do_actionx = async (step) => {
+  const do_action = async (step, id_request) => {
     // setCaseLoader(true);
+    console.log(step);
+    console.log(id_request);
     const apiUrl = `${API_URL}/updatecase`;
     const response = await axios.post(apiUrl, {
-      idRequest: caseId,
+      idRequest: id_request,
       status: step,
     });
 
     if (response.status == 200) {
       // console.log(response.data["detail"][0].ID_Asset);
       const detail = response.data["response"];
+      console.log(detail);
       NotifySuccess(detail);
     }
     // setCaseLoader(false);
@@ -197,11 +204,10 @@ export default function DetailAssetMobile({ idAsset }) {
     const qr = localStorage.getItem("qrcode_case");
     if (qr != "") {
       localStorage.setItem("qrcode_case", "");
-      if (qr != caseId) {
+      if (qr != idAsset) {
         NotifyError("Invalid QRCode");
       } else {
-        //valid
-        //do action kirim 1 dan case id
+        do_action();
       }
     }
   }, [router]);
@@ -385,7 +391,7 @@ export default function DetailAssetMobile({ idAsset }) {
                             <CommonButtonFull
                               label={"Terima"}
                               onClick={() => {
-                                setCaseId(selectedCase.ID_Request);
+                                setRequestId(selectedCase.ID_Request);
                                 setup_action("received");
                               }}
                               disabled={caseLoaderReceived}
@@ -400,12 +406,10 @@ export default function DetailAssetMobile({ idAsset }) {
                               <CommonButtonFull
                                 label={"Spare Part"}
                                 onClick={() => {
-                                  console.log("hsdfhjdf");
-                                  console.log(selectedCase.ID_Request);
-                                  setCaseId(selectedCase.ID_Request);
-                                  setup_action("order_part");
-                                  //console.log(selectedCase.ID_Request);
-                                  // setup_action(2);
+                                  setup_action(
+                                    "order_part",
+                                    selectedCase.ID_Request,
+                                  );
                                 }}
                                 disabled={caseLoaderOrder}
                                 onload={caseLoaderOrder}

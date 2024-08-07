@@ -6,7 +6,7 @@ import { API_URL } from "@/utils/constant";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { CustomSelect } from "@/components/select";
-import { CommonButton } from "@/components/button";
+import { CommonButton, CommonButtonColor } from "@/components/button";
 import { NotifySuccess } from "@/utils/notify";
 import { useRouter } from "next/navigation";
 import { PageCard } from "@/components/card";
@@ -37,6 +37,7 @@ export default function PartOrderDetail({ params }) {
   const [dateReceiveError, setDateReceiveError] = useState(false);
   const [onSubmit, setOnSubmit] = useState(false);
   const [loader, setLoader] = useState(true);
+  const [loaderDelete, setLoaderDelete] = useState(false);
 
   const fetch_data = async () => {
     const apiUrl = `${API_URL}/getorderdetail`;
@@ -163,6 +164,22 @@ export default function PartOrderDetail({ params }) {
         router.back();
       }
     }
+  };
+
+  const delete_order = async () => {
+    setLoaderDelete(true);
+    const apiUrl = `${API_URL}/deleteorder`;
+    const response = await axios.post(apiUrl, {
+      idOrder: params,
+    });
+
+    if (response.status == 200) {
+      const result = response.data["response"];
+      NotifySuccess(result);
+
+      router.back();
+    }
+    setLoaderDelete(false);
   };
 
   useEffect(() => {
@@ -347,6 +364,15 @@ export default function PartOrderDetail({ params }) {
                 <>
                   <hr className="my-5"></hr>
                   <div className="flex justify-end">
+                    <CommonButtonColor
+                      label={"Delete"}
+                      color1={"bg-red"}
+                      color2={"bg-meta-1"}
+                      onload={loaderDelete}
+                      disabled={loaderDelete}
+                      onClick={delete_order}
+                    ></CommonButtonColor>
+                    <div className="mr-3"></div>
                     <CommonButton
                       label={"Receive"}
                       onClick={() => {
