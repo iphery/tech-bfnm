@@ -279,7 +279,7 @@ export default function Home() {
         </div>
       ) : (
         <div className="min-h-screen  bg-boxdark-2">
-          <DefaultLayout>aa</DefaultLayout>
+          <DefaultLayout>WELCOME TO MITA</DefaultLayout>
         </div>
       )}
     </UserAuth>
