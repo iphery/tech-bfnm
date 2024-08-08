@@ -24,6 +24,7 @@ export default function Home() {
   const [isClient, setIsClient] = useState(false);
   const isSmallScreen = useMediaQuery({ query: "(max-width: 640px)" });
   const router = useRouter();
+  const [openScanner, setOpenScanner] = useState(false);
 
   const { accountInfo, setMenu } = useContext(AppContext);
 
@@ -68,7 +69,7 @@ export default function Home() {
       localStorage.setItem("qrcode", "");
       router.push(`/asset/${scan_result}`);
     }
-  }, [router]);
+  }, [openScanner]);
 
   const fetch_data_2 = async () => {
     const apiUrl = `/api/outstanding`;
@@ -111,6 +112,7 @@ export default function Home() {
                     <div
                       onClick={() => {
                         localStorage.setItem("scanner_mode", "0");
+                        setOpenScanner(true);
                         router.push("/scanner");
                       }}
                       className="px-3 py-2"
