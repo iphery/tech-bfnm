@@ -171,7 +171,7 @@ export default function PartsIn() {
       if (response.status == 200) {
         const result = response.data["response"];
         NotifySuccess(result);
-        //router.back();
+        router.back();
       }
     }
     setLoadingSubmit(false);

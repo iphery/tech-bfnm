@@ -2,7 +2,7 @@
 import { Appbar } from "@/components/appbar";
 import UserAuth from "@/components/auth";
 import Loader from "@/components/common/Loader";
-import { CommonInput } from "@/components/input";
+import { CommonInput, CommonTextArea } from "@/components/input";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import {
   API_URL,
@@ -32,6 +32,7 @@ import Image from "next/image";
 import { PageLoader } from "./loader";
 import { CommonButton, CommonButtonFull } from "./button";
 import { NotifyError, NotifySuccess } from "@/utils/notify";
+import { RepairStatus } from "@/utils/repairstatus";
 
 export default function DetailAssetMobile({ idAsset }) {
   //params.idAsset
@@ -62,9 +63,12 @@ export default function DetailAssetMobile({ idAsset }) {
   const [caseLoaderChecked, setCaseLoaderChecked] = useState(false);
   const [caseLoaderAccepted, setCaseLoaderAccepted] = useState(false);
 
-  const [caseId, setCaseId] = useState("");
+  const [caseSolution, setCaseSolution] = useState("");
+  const [showSolution, setShowSolution] = useState("");
+  const [caseSolutionError, setCaseSolutionError] = useState(false);
 
   const [requestId, setRequestId] = useState("");
+  const [updatedStep, setUpdatedStep] = useState("");
 
   const [test] = useState([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
 
@@ -149,46 +153,19 @@ export default function DetailAssetMobile({ idAsset }) {
     console.log(pageLast);
   }, [keyword, dataService, itemPerPage]);
 
-  useEffect(() => {}, [requestId]);
-
-  const setup_action = (step, idRequest) => {
-    switch (step) {
-      case "received":
-        localStorage.setItem("scanner_mode", 1);
-        router.push("/scanner");
-        break;
-      case "completed":
-        setCaseLoaderCompleted(true);
-        do_action("completed", idRequest).then(() => {
-          setCaseLoaderCompleted(false);
-          fetch_detail_service();
-        });
-        break;
-      case "order_part":
-        setCaseLoaderOrder(true);
-
-        do_action("order_part", idRequest).then(() => {
-          setCaseLoaderOrder(false);
-
-          fetch_detail_service(idRequest);
-        });
-
-        break;
-      case "receive_part": //spare part send by admin
-      case "checked": //complete
-      case "accepted":
-      default:
+  useEffect(() => {
+    const idRequest = localStorage.getItem("selected_idRequest");
+    if (updatedStep != "") {
+      do_action(updatedStep, idRequest);
     }
-  };
+  }, [updatedStep]);
 
   const do_action = async (step, id_request) => {
-    // setCaseLoader(true);
-    console.log(step);
-    console.log(id_request);
     const apiUrl = `${API_URL}/updatecase`;
     const response = await axios.post(apiUrl, {
       idRequest: id_request,
       status: step,
+      solusi,
     });
 
     if (response.status == 200) {
@@ -197,7 +174,9 @@ export default function DetailAssetMobile({ idAsset }) {
       console.log(detail);
       NotifySuccess(detail);
     }
-    // setCaseLoader(false);
+    fetch_detail_service(id_request);
+
+    setCaseLoaderOrder(false);
   };
 
   useEffect(() => {
@@ -207,7 +186,7 @@ export default function DetailAssetMobile({ idAsset }) {
       if (qr != idAsset) {
         NotifyError("Invalid QRCode");
       } else {
-        do_action();
+        setUpdatedStep("received");
       }
     }
   }, [router]);
@@ -319,12 +298,18 @@ export default function DetailAssetMobile({ idAsset }) {
                 }
 
                 {filteredDataService.map((item, index) => {
+                  const cardStatus = RepairStatus(item["Step"]);
+
                   return (
                     <div
                       onClick={() => {
                         setSwitchPage(true);
 
                         fetch_detail_service(item["ID_Request"]);
+                        localStorage.setItem(
+                          "selected_idRequest",
+                          item["ID_Request"],
+                        );
                       }}
                       className="p-2"
                       key={index}
@@ -338,7 +323,14 @@ export default function DetailAssetMobile({ idAsset }) {
                         ) : (
                           <></>
                         )}
+
+                        <div
+                          className={`ml-2 flex items-center rounded-lg ${cardStatus.color} px-2 text-xs text-white`}
+                        >
+                          {cardStatus.status}
+                        </div>
                       </div>
+
                       <div className="bg-grey flex flex-row">
                         <div className="flex items-center justify-start">
                           <HiOutlineUser className="mr-2" />
@@ -391,8 +383,8 @@ export default function DetailAssetMobile({ idAsset }) {
                             <CommonButtonFull
                               label={"Terima"}
                               onClick={() => {
-                                setRequestId(selectedCase.ID_Request);
-                                setup_action("received");
+                                localStorage.setItem("scanner_mode", 1);
+                                router.push("/scanner");
                               }}
                               disabled={caseLoaderReceived}
                               onload={caseLoaderReceived}
@@ -406,10 +398,8 @@ export default function DetailAssetMobile({ idAsset }) {
                               <CommonButtonFull
                                 label={"Spare Part"}
                                 onClick={() => {
-                                  setup_action(
-                                    "order_part",
-                                    selectedCase.ID_Request,
-                                  );
+                                  setCaseLoaderOrder(true);
+                                  setUpdatedStep("order_part");
                                 }}
                                 disabled={caseLoaderOrder}
                                 onload={caseLoaderOrder}
@@ -419,13 +409,41 @@ export default function DetailAssetMobile({ idAsset }) {
                             <div className="w-full">
                               <CommonButtonFull
                                 label={"Selesai"}
-                                onClick={() => {
-                                  setCaseId(selectedCase.ID_Request);
-                                  setup_action("completed");
-                                }}
+                                onClick={() => {}}
                                 disabled={caseLoaderCompleted}
                                 onload={caseLoaderCompleted}
                               ></CommonButtonFull>
+                            </div>
+                          </div>
+                        );
+                      case "3":
+                        return (
+                          <div className=" border p-2">
+                            <div>
+                              <CommonTextArea
+                                placeholder="Tuliskan solusi untuk permasalahan di bawah"
+                                error={caseSolutionError}
+                                onInputChange={(val) => {
+                                  setCaseSolution(val);
+                                }}
+                                onChg={() => {
+                                  setCaseSolutionError(false);
+                                }}
+                                errorMessage={"Required"}
+                              ></CommonTextArea>
+                              <div className="mb-1"></div>
+                              <CommonButtonFull
+                                label={"Selesai"}
+                                onClick={() => {
+                                  if (caseSolution == "") {
+                                    setCaseSolutionError(true);
+                                  }
+                                  //setCaseLoaderCompleted(true);
+                                  //setUpdatedStep("completed");
+                                }}
+                                disabled={caseLoaderCompleted}
+                                onload={caseLoaderCompleted}
+                              />
                             </div>
                           </div>
                         );
@@ -435,7 +453,14 @@ export default function DetailAssetMobile({ idAsset }) {
                   })()}
                 </div>
 
-                <div className="px-2 text-white">Deskripsi</div>
+                <div
+                  className="px-2 text-white"
+                  onClick={() => {
+                    console.log(requestId);
+                  }}
+                >
+                  Deskripsi
+                </div>
                 <div className="p-2">
                   <div className="bg-form-strokedark p-1 text-white">
                     {selectedCase.Problem}

@@ -19,7 +19,9 @@ export default function DetailPart({ params }) {
   const isSmallScreen = useMediaQuery({ query: "(max-width: 640px)" });
   const [detailData, setDetailData] = useState({});
   const [stockData, setStockData] = useState([]);
-  const [startDate, setStartDate] = useState("2024-08-01");
+  const [startDate, setStartDate] = useState(
+    get_first_date().toISOString().substring(0, 10),
+  );
   const [endDate, setEndDate] = useState(
     new Date().toISOString().substring(0, 10),
   );
@@ -92,6 +94,11 @@ export default function DetailPart({ params }) {
 
     setDeleteOnload(false);
   };
+
+  function get_first_date() {
+    const today = new Date();
+    return new Date(today.getFullYear(), today.getMonth(), 1);
+  }
 
   useEffect(() => {
     fetch_data();
