@@ -165,7 +165,7 @@ export default function DetailAssetMobile({ idAsset }) {
     const response = await axios.post(apiUrl, {
       idRequest: id_request,
       status: step,
-      solusi,
+      solution: caseSolution,
     });
 
     if (response.status == 200) {
@@ -177,6 +177,7 @@ export default function DetailAssetMobile({ idAsset }) {
     fetch_detail_service(id_request);
 
     setCaseLoaderOrder(false);
+    setCaseLoaderCompleted(false);
   };
 
   useEffect(() => {
@@ -393,26 +394,47 @@ export default function DetailAssetMobile({ idAsset }) {
                         );
                       case "2":
                         return (
-                          <div className=" flex justify-evenly border p-2">
-                            <div className="w-full">
-                              <CommonButtonFull
-                                label={"Spare Part"}
-                                onClick={() => {
-                                  setCaseLoaderOrder(true);
-                                  setUpdatedStep("order_part");
-                                }}
-                                disabled={caseLoaderOrder}
-                                onload={caseLoaderOrder}
-                              ></CommonButtonFull>
-                            </div>
-                            <div className="ml-2"></div>
-                            <div className="w-full">
-                              <CommonButtonFull
-                                label={"Selesai"}
-                                onClick={() => {}}
-                                disabled={caseLoaderCompleted}
-                                onload={caseLoaderCompleted}
-                              ></CommonButtonFull>
+                          <div className="border p-2">
+                            <CommonTextArea
+                              placeholder="Tuliskan solusi untuk permasalahan di bawah"
+                              error={caseSolutionError}
+                              onInputChange={(val) => {
+                                setCaseSolution(val);
+                              }}
+                              onChg={() => {
+                                setCaseSolutionError(false);
+                              }}
+                              errorMessage={"Required"}
+                            ></CommonTextArea>
+
+                            <div className=" flex justify-evenly">
+                              <div className="w-full">
+                                <CommonButtonFull
+                                  label={"Spare Part"}
+                                  onClick={() => {
+                                    setCaseLoaderOrder(true);
+                                    setUpdatedStep("order_part");
+                                  }}
+                                  disabled={caseLoaderOrder}
+                                  onload={caseLoaderOrder}
+                                ></CommonButtonFull>
+                              </div>
+                              <div className="ml-2"></div>
+                              <div className="w-full">
+                                <CommonButtonFull
+                                  label={"Selesai"}
+                                  onClick={() => {
+                                    if (caseSolution == "") {
+                                      setCaseSolutionError(true);
+                                    } else {
+                                      setCaseLoaderCompleted(true);
+                                      setUpdatedStep("completed");
+                                    }
+                                  }}
+                                  disabled={caseLoaderCompleted}
+                                  onload={caseLoaderCompleted}
+                                ></CommonButtonFull>
+                              </div>
                             </div>
                           </div>
                         );
@@ -437,9 +459,10 @@ export default function DetailAssetMobile({ idAsset }) {
                                 onClick={() => {
                                   if (caseSolution == "") {
                                     setCaseSolutionError(true);
+                                  } else {
+                                    setCaseLoaderCompleted(true);
+                                    setUpdatedStep("completed");
                                   }
-                                  //setCaseLoaderCompleted(true);
-                                  //setUpdatedStep("completed");
                                 }}
                                 disabled={caseLoaderCompleted}
                                 onload={caseLoaderCompleted}
