@@ -227,7 +227,8 @@ export default function DetailAssetWeb({ idAsset }) {
                                 <th>Requestor</th>
                                 <th>Kendala</th>
                                 <th>Status</th>
-                                <th>Spare Part</th>
+                                <th>Part</th>
+                                <th>Service</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -265,10 +266,7 @@ export default function DetailAssetWeb({ idAsset }) {
                                 }
 
                                 return (
-                                  <tr
-                                    key={index}
-                                    className={`cursor-default hover:bg-form-strokedark hover:text-white`}
-                                  >
+                                  <tr key={index} className={`cursor-default`}>
                                     <td index={index} className="p-2">
                                       {item["ID_Request"]}
                                     </td>
@@ -282,28 +280,32 @@ export default function DetailAssetWeb({ idAsset }) {
                                         {status}
                                       </div>
                                     </td>
-                                    <td
-                                      className=" text-center"
-                                      index={index}
-                                      onClick={() => {
-                                        //setModalStocks(true);
-                                        const assetInfo =
-                                          JSON.stringify(dataAsset);
-                                        localStorage.setItem(
-                                          "data_asset",
-                                          assetInfo,
-                                        );
-                                        localStorage.setItem(
-                                          "id_service",
-                                          item["ID_Request"],
-                                        );
-                                        router.push("/partsout");
-                                      }}
-                                    >
+                                    <td className=" text-center" index={index}>
                                       <div className="flex justify-center">
-                                        <div className="flex h-6 w-6 cursor-default items-center justify-center rounded-full  p-2 hover:bg-black">
-                                          <FaPlus />
-                                        </div>
+                                        {parseInt(item["Step"]) >= 3 &&
+                                        parseInt(item["Step"]) <= 5 ? (
+                                          <div
+                                            onClick={() => {
+                                              //setModalStocks(true);
+                                              const assetInfo =
+                                                JSON.stringify(dataAsset);
+                                              localStorage.setItem(
+                                                "data_asset",
+                                                assetInfo,
+                                              );
+                                              localStorage.setItem(
+                                                "id_service",
+                                                item["ID_Request"],
+                                              );
+                                              router.push("/partsout");
+                                            }}
+                                            className="flex h-6 w-6 cursor-default items-center justify-center rounded-full  p-2 hover:bg-black"
+                                          >
+                                            <FaPlus />
+                                          </div>
+                                        ) : (
+                                          <></>
+                                        )}
                                       </div>
                                     </td>
                                   </tr>

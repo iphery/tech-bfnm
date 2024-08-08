@@ -161,11 +161,14 @@ export default function DetailAssetMobile({ idAsset }) {
   }, [updatedStep]);
 
   const do_action = async (step, id_request) => {
+    const user = localStorage.getItem("info");
+    const parseUser = JSON.parse(user);
     const apiUrl = `${API_URL}/updatecase`;
     const response = await axios.post(apiUrl, {
       idRequest: id_request,
       status: step,
       solution: caseSolution,
+      uid: parseUser[0]["Uid"],
     });
 
     if (response.status == 200) {
