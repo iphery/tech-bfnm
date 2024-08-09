@@ -160,7 +160,7 @@ export default function ListPart() {
                   <div className="h-[calc(100vh-280px)] overflow-y-auto">
                     <table className="w-full">
                       <thead>
-                        <tr className="bg-black">
+                        <tr className="sticky top-0 bg-black">
                           <th>Deskripsi</th>
                           <th>Part No</th>
                           <th>Remark</th>
