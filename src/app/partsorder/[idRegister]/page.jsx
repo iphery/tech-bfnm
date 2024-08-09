@@ -195,7 +195,7 @@ export default function PartOrderDetail({ params }) {
       {loader ? (
         <PageLoader />
       ) : (
-        <div className="min-h-screen  bg-boxdark-2">
+        <div className="  bg-boxdark-2">
           <DefaultLayout>
             <div className="mb-3 flex items-center justify-start">
               <div className="text-lg text-white">Order Detail</div>
@@ -263,8 +263,8 @@ export default function PartOrderDetail({ params }) {
             </PageCard>
             <div className="mb-3" />
             <PageCard>
-              <div className="h-90 w-full">
-                <table className="w-full overflow-x-auto">
+              <div className=" w-full">
+                <table className="w-full">
                   <thead className="sticky top-0">
                     <tr>
                       <th>No</th>
