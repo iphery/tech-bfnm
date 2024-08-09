@@ -1,6 +1,6 @@
 "use client";
 import UserAuth from "@/components/auth";
-import { CommonInput } from "@/components/input";
+import { CommonInput, CurrencyInput } from "@/components/input";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import { API_URL } from "@/utils/constant";
 import axios from "axios";
@@ -63,7 +63,7 @@ export default function PartOrderDetail({ params }) {
         // console.log(item);
         list.push({
           id: item["ids"],
-          amount: 0,
+          amount: "",
           budget: "",
           seller: "",
           stock: item["stock"],
@@ -197,196 +197,212 @@ export default function PartOrderDetail({ params }) {
       ) : (
         <div className="min-h-screen  bg-boxdark-2">
           <DefaultLayout>
-            <div className="mb-3 flex items-center justify-start">
-              <div className="text-lg text-white">Order Detail</div>
-            </div>
-
-            <PageCard>
-              <div className="flex flex-row">
-                <div className="w-full">
-                  <div className="flex justify-evenly">
-                    <div className="w-full">No Register</div>
-                    <div className="w-full">{dataOrder["id_register"]}</div>
-                  </div>
-                  <div className="flex justify-evenly">
-                    <div className="w-full">Date</div>
-                    <div className="w-full">
-                      {formatDate(dataOrder["date"])}
-                    </div>
-                  </div>
-                  <div className="flex justify-evenly">
-                    <div className="w-full">No DPM</div>
-                    <div className="w-full">{dataOrder["dpm"]}</div>
-                  </div>
-                  <div className="flex justify-evenly">
-                    <div className="w-full">Issued </div>
-                    <div className="w-full">{dataOrder["Name"]}</div>
-                  </div>
-                </div>
-                <div className="px-5"></div>
-
-                <div className="w-full">
-                  <div className="flex justify-evenly">
-                    <div className="w-full">Status</div>
-                    <div
-                      className={`w-full ${dataOrder["status"] == 0 ? "text-red" : "text-success"}`}
-                    >
-                      {dataOrder["status"] == 0 ? "Open" : "Close"}
-                    </div>
-                  </div>
-                  <div className="flex justify-evenly">
-                    <div className="w-full">Date Receive</div>
-
-                    {dataOrder["status"] == 1 ? (
-                      <div className="w-full">
-                        {formatDate(dataOrder["receive_date"])}
-                      </div>
-                    ) : (
-                      <div className="w-full">
-                        <CommonInput
-                          type={"date"}
-                          input={dateReceive}
-                          errorMessage="Required"
-                          error={dateReceiveError}
-                          onInputChange={(val) => {
-                            setDateReceive(val);
-                          }}
-                          onChg={() => {
-                            setDateReceiveError(false);
-                          }}
-                        ></CommonInput>
-                      </div>
-                    )}
-                  </div>
-                </div>
+            <div className="min-h-[calc(100vh-115px)]">
+              <div className="mb-3 flex items-center justify-start">
+                <div className="text-lg text-white">Order Detail</div>
               </div>
-            </PageCard>
-            <div className="mb-3" />
-            <PageCard>
-              <div className=" w-full">
-                <table className="w-full">
-                  <thead className="sticky top-0">
-                    <tr>
-                      <th>No</th>
-                      <th>Description</th>
-                      <th>Quantity</th>
-                      <th>Unit</th>
-                      <th>Type</th>
-                      <th>ID Service</th>
-                      <th>Note</th>
-                      {dataOrder["status"] == 0 ? (
-                        <th>Input Data</th>
+
+              <PageCard>
+                <div className="flex flex-row">
+                  <div className="w-full">
+                    <div className="flex justify-evenly">
+                      <div className="w-full">No Register</div>
+                      <div className="w-full">{dataOrder["id_register"]}</div>
+                    </div>
+                    <div className="flex justify-evenly">
+                      <div className="w-full">Date</div>
+                      <div className="w-full">
+                        {formatDate(dataOrder["date"])}
+                      </div>
+                    </div>
+                    <div className="flex justify-evenly">
+                      <div className="w-full">No DPM</div>
+                      <div className="w-full">{dataOrder["dpm"]}</div>
+                    </div>
+                    <div className="flex justify-evenly">
+                      <div className="w-full">Issued </div>
+                      <div className="w-full">{dataOrder["Name"]}</div>
+                    </div>
+                  </div>
+                  <div className="px-5"></div>
+
+                  <div className="w-full">
+                    <div className="flex justify-evenly">
+                      <div className="w-full">Status</div>
+                      <div
+                        className={`w-full ${dataOrder["status"] == 0 ? "text-red" : "text-success"}`}
+                      >
+                        {dataOrder["status"] == 0 ? "Open" : "Close"}
+                      </div>
+                    </div>
+                    <div className="flex justify-evenly">
+                      <div className="w-full">Date Receive</div>
+
+                      {dataOrder["status"] == 1 ? (
+                        <div className="w-full">
+                          {formatDate(dataOrder["receive_date"])}
+                        </div>
                       ) : (
-                        <>
-                          <th>Amount</th>
-                          <th>Budget Pos</th>
-                          <th>Supplier</th>
-                        </>
+                        <div className="w-full">
+                          <CommonInput
+                            type={"date"}
+                            input={dateReceive}
+                            errorMessage="Required"
+                            error={dateReceiveError}
+                            onInputChange={(val) => {
+                              setDateReceive(val);
+                            }}
+                            onChg={() => {
+                              setDateReceiveError(false);
+                            }}
+                          ></CommonInput>
+                        </div>
                       )}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dataOrderDetail.map((item, index) => {
-                      return (
-                        <tr key={index}>
-                          <td>{index + 1}</td>
-                          <td>{item["description"]}</td>
-                          <td>{item["quantity"]}</td>
-                          <td>{item["unit"]}</td>
-                          <td>{item["stock"]}</td>
-                          <td>{item["id_service"]}</td>
-                          <td>{item["note"]}</td>
-
-                          {dataOrder["status"] == 0 ? (
-                            <td>
-                              <CommonInput
-                                placeholder={"Amount"}
-                                input={listData[index].amount}
-                                error={amountError[index]}
-                                errorMessage="Required"
-                                onInputChange={(val) => {
-                                  const input = [...listData];
-                                  input[index].amount = val;
-                                  setListData(input);
-                                }}
-                                onKeyChange={() => {
-                                  const input = [...amountError];
-                                  input[index] = false;
-                                  setAmountError(input);
-                                }}
-                              ></CommonInput>
-                              <CustomSelect
-                                optionData={groupBudget}
-                                placeholder={"Select budget"}
-                                error={budgetError[index]}
-                                errorMessage="Required"
-                                mode={1}
-                                onSelected={(option) => {
-                                  const input = [...listData];
-                                  input[index].budget = option.value;
-                                  setListData(input);
-
-                                  const input1 = [...budgetError];
-                                  input1[index] = false;
-                                  setBudgetError(input1);
-                                }}
-                              />
-                              <CommonInput
-                                placeholder={"Enter seller name"}
-                                error={sellerError[index]}
-                                errorMessage="Required"
-                                onInputChange={(val) => {
-                                  const input = [...listData];
-                                  input[index].seller = val;
-                                  setListData(input);
-                                }}
-                                onKeyChange={() => {
-                                  const input = [...sellerError];
-                                  input[index] = false;
-                                  setSellerError(input);
-                                }}
-                              ></CommonInput>
-                            </td>
-                          ) : (
-                            <>
-                              <td>{item["amount"]}</td>
-                              <td>{item["budget_pos"]}</td>
-                              <td>{item["seller"]}</td>
-                            </>
-                          )}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              {dataOrder["status"] == 0 ? (
-                <>
-                  <hr className="my-5"></hr>
-                  <div className="flex justify-end">
-                    <CommonButtonColor
-                      label={"Delete"}
-                      color1={"bg-red"}
-                      color2={"bg-meta-1"}
-                      onload={loaderDelete}
-                      disabled={loaderDelete}
-                      onClick={delete_order}
-                    ></CommonButtonColor>
-                    <div className="mr-3"></div>
-                    <CommonButton
-                      label={"Receive"}
-                      onClick={() => {
-                        receive_parts();
-                      }}
-                      onload={onSubmit}
-                      disabled={onsubmit}
-                    ></CommonButton>
+                    </div>
                   </div>
-                </>
-              ) : (
-                <></>
-              )}
-            </PageCard>
+                </div>
+              </PageCard>
+              <div className="mb-3" />
+              <PageCard>
+                <div className="h-[calc(100vh-395px)] w-full overflow-y-auto">
+                  <table className="w-full">
+                    <thead className=" bg-black">
+                      <tr>
+                        <th>No</th>
+                        <th>Description</th>
+                        <th>Quantity</th>
+                        <th>Unit</th>
+                        <th>Type</th>
+                        <th>ID Service</th>
+                        <th>Note</th>
+                        {dataOrder["status"] == 0 ? (
+                          <th>Input Data</th>
+                        ) : (
+                          <>
+                            <th>Amount</th>
+                            <th>Budget Pos</th>
+                            <th>Supplier</th>
+                          </>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dataOrderDetail.map((item, index) => {
+                        return (
+                          <tr key={index}>
+                            <td className="text-center align-top">
+                              {index + 1}
+                            </td>
+                            <td className="align-top">{item["description"]}</td>
+                            <td className="text-center align-top">
+                              {item["quantity"]}
+                            </td>
+                            <td className="text-center align-top">
+                              {item["unit"]}
+                            </td>
+                            <td className="text-center align-top">
+                              {item["stock"]}
+                            </td>
+                            <td className="text-center align-top">
+                              {item["id_service"] == null
+                                ? "-"
+                                : item["id_service"]}
+                            </td>
+                            <td className="align-top">{item["note"]}</td>
+
+                            {dataOrder["status"] == 0 ? (
+                              <td>
+                                <CurrencyInput
+                                  placeholder={"Amount"}
+                                  input={listData[index].amount}
+                                  error={amountError[index]}
+                                  errorMessage="Required"
+                                  onInputChange={(val) => {
+                                    const input = [...listData];
+                                    input[index].amount = val;
+                                    setListData(input);
+                                  }}
+                                  onKeyChange={() => {
+                                    const input = [...amountError];
+                                    input[index] = false;
+                                    setAmountError(input);
+                                  }}
+                                >
+                                  Rp.
+                                </CurrencyInput>
+                                <CustomSelect
+                                  optionData={groupBudget}
+                                  placeholder={"Select budget"}
+                                  error={budgetError[index]}
+                                  errorMessage="Required"
+                                  mode={1}
+                                  onSelected={(option) => {
+                                    const input = [...listData];
+                                    input[index].budget = option.value;
+                                    setListData(input);
+
+                                    const input1 = [...budgetError];
+                                    input1[index] = false;
+                                    setBudgetError(input1);
+                                  }}
+                                />
+                                <CommonInput
+                                  placeholder={"Enter seller name"}
+                                  error={sellerError[index]}
+                                  errorMessage="Required"
+                                  onInputChange={(val) => {
+                                    const input = [...listData];
+                                    input[index].seller = val;
+                                    setListData(input);
+                                  }}
+                                  onKeyChange={() => {
+                                    const input = [...sellerError];
+                                    input[index] = false;
+                                    setSellerError(input);
+                                  }}
+                                ></CommonInput>
+                              </td>
+                            ) : (
+                              <>
+                                <td>{item["amount"]}</td>
+                                <td>{item["budget_pos"]}</td>
+                                <td>{item["seller"]}</td>
+                              </>
+                            )}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                {dataOrder["status"] == 0 ? (
+                  <>
+                    <hr className="my-5"></hr>
+                    <div className="flex justify-end">
+                      <CommonButtonColor
+                        label={"Delete"}
+                        color1={"bg-red"}
+                        color2={"bg-meta-1"}
+                        onload={loaderDelete}
+                        disabled={loaderDelete}
+                        onClick={delete_order}
+                      ></CommonButtonColor>
+                      <div className="mr-3"></div>
+                      <CommonButton
+                        label={"Receive"}
+                        onClick={() => {
+                          receive_parts();
+                        }}
+                        onload={onSubmit}
+                        disabled={onsubmit}
+                      ></CommonButton>
+                    </div>
+                  </>
+                ) : (
+                  <></>
+                )}
+              </PageCard>
+            </div>
           </DefaultLayout>
         </div>
       )}

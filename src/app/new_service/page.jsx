@@ -20,6 +20,7 @@ import { FaPlus } from "react-icons/fa";
 import { GoPlus } from "react-icons/go";
 import { NotifySuccess } from "@/utils/notify";
 import { IoIosAddCircle } from "react-icons/io";
+import { TiDelete } from "react-icons/ti";
 
 export default function PageTransaction() {
   const router = useRouter();
@@ -53,6 +54,7 @@ export default function PageTransaction() {
       quantity: "",
       date: "",
       remark: "",
+      idRequest: "",
     });
     setInputData(item);
     setInputItemError((prev) => [...prev, false]);
@@ -82,6 +84,7 @@ export default function PageTransaction() {
 
   useEffect(() => {
     fetch_data();
+    add_item();
   }, []);
 
   useEffect(() => {
@@ -106,7 +109,7 @@ export default function PageTransaction() {
       ) : (
         <div className="min-h-screen  bg-boxdark-2">
           <DefaultLayout>
-            <div className="flex min-h-[calc(100vh-115px)] flex-col">
+            <div className="flex min-h-[calc(100vh-115px)]  w-[calc(100vw-335px)] flex-col">
               <div className="mb-3 flex items-center justify-start">
                 <div
                   className="text-lg text-white"
@@ -140,168 +143,181 @@ export default function PageTransaction() {
                   </div>
                 </div>
                 <div className="mb-10"></div>
-                <table className="w-full overflow-x-auto">
-                  <thead>
-                    <tr className="text-white">
-                      <th className="w-1/3">Jenis Material</th>
-                      <th>Satuan</th>
-                      <th>Jumlah</th>
-                      <th>Tgl. Dibutuhkan</th>
-                      <th className="w-1/4">Ket.</th>
-                      <th className="w-1/4">ID Request</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {inputData.map((item, index) => {
-                      return (
-                        <tr key={index}>
-                          <td className="align-top">
-                            <CommonInput
-                              input={item.item}
-                              onInputChange={(val) => {
-                                setInputData((prev) =>
-                                  prev.map((data) =>
-                                    data.index == item.index
-                                      ? { ...data, item: val }
-                                      : data,
-                                  ),
-                                );
-                              }}
-                              errorMessage={"Required"}
-                              error={inputItemError[index]}
-                              onKeyChange={() => {
-                                const error = [...inputItemError];
-                                error[index] = false;
-                                setInputItemError(error);
-                              }}
-                            />
-                          </td>
-                          <td className="align-top">
-                            <CommonInput
-                              input={item.unit}
-                              onInputChange={(val) => {
-                                setInputData((prev) =>
-                                  prev.map((data) =>
-                                    data.index == item.index
-                                      ? { ...data, unit: val }
-                                      : data,
-                                  ),
-                                );
-                              }}
-                              errorMessage={"Required"}
-                              error={inputUnitError[index]}
-                              onKeyChange={() => {
-                                const error = [...inputUnitError];
-                                error[index] = false;
-                                setInputUnitError(error);
-                              }}
-                            />
-                          </td>
-                          <td className="align-top">
-                            <CommonInput
-                              input={item.quantity}
-                              type={"number"}
-                              onInputChange={(val) => {
-                                setInputData((prev) =>
-                                  prev.map((data) =>
-                                    data.index == item.index
-                                      ? { ...data, quantity: val }
-                                      : data,
-                                  ),
-                                );
-                              }}
-                              errorMessage={"Required"}
-                              error={inputQuantityError[index]}
-                              onKeyChange={() => {
-                                const error = [...inputQuantityError];
-                                error[index] = false;
-                                setInputQuantityError(error);
-                              }}
-                            />
-                          </td>
-                          <td className="align-top">
-                            <CommonInput
-                              input={item.date}
-                              type={"date"}
-                              onInputChange={(val) => {
-                                setInputData((prev) =>
-                                  prev.map((data) =>
-                                    data.index == item.index
-                                      ? { ...data, date: val }
-                                      : data,
-                                  ),
-                                );
-                              }}
-                              errorMessage={"Required"}
-                              error={inputDateError[index]}
-                              onChg={() => {
-                                const error = [...inputDateError];
-                                error[index] = false;
-                                setInputDateError(error);
-                              }}
-                            />
-                          </td>
-                          <td className="align-top">
-                            <CommonInput
-                              input={item.remark}
-                              onInputChange={(val) => {
-                                setInputData((prev) =>
-                                  prev.map((data) =>
-                                    data.index == item.index
-                                      ? { ...data, remark: val }
-                                      : data,
-                                  ),
-                                );
-                              }}
-                              errorMessage={"Required"}
-                              error={inputRemarkError[index]}
-                              onChg={() => {
-                                const error = [...inputRemarkError];
-                                error[index] = false;
-                                setInputRemarkError(error);
-                              }}
-                            >
-                              <div
-                                className="cursor-default hover:text-black"
-                                onClick={() => {
-                                  setRepairList(true);
+                <div className=" overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="text-white">
+                        <th className="">Jenis Material</th>
+                        <th className="w-[75px]">Satuan</th>
+                        <th className="w-[75px]">Jumlah</th>
+                        <th className="w-[100px]">Tgl. Dibutuhkan</th>
+                        <th className="">Ket.</th>
+                        <th className="w-[175px]">ID Request</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {inputData.map((item, index) => {
+                        return (
+                          <tr key={index}>
+                            <td className="align-top">
+                              <CommonInput
+                                input={item.item}
+                                isDisabled={showRepairList}
+                                onInputChange={(val) => {
+                                  setInputData((prev) =>
+                                    prev.map((data) =>
+                                      data.index == item.index
+                                        ? { ...data, item: val }
+                                        : data,
+                                    ),
+                                  );
                                 }}
-                              >
-                                <IoIosAddCircle />
-                              </div>
-                            </CommonInput>
-                          </td>
-                          <td className="align-top">
-                            <div
-                              onClick={() => {
-                                const foundIndex = inputData.findIndex(
-                                  (value) => value.index == item.index,
-                                );
+                                errorMessage={"Required"}
+                                error={inputItemError[index]}
+                                onKeyChange={() => {
+                                  const error = [...inputItemError];
+                                  error[index] = false;
+                                  setInputItemError(error);
+                                }}
+                              />
+                            </td>
+                            <td className="w-1/8 align-top">
+                              <CommonInput
+                                input={item.unit}
+                                isDisabled={showRepairList}
+                                onInputChange={(val) => {
+                                  setInputData((prev) =>
+                                    prev.map((data) =>
+                                      data.index == item.index
+                                        ? { ...data, unit: val }
+                                        : data,
+                                    ),
+                                  );
+                                }}
+                                errorMessage={"Required"}
+                                error={inputUnitError[index]}
+                                onKeyChange={() => {
+                                  const error = [...inputUnitError];
+                                  error[index] = false;
+                                  setInputUnitError(error);
+                                }}
+                              />
+                            </td>
+                            <td className="align-top">
+                              <CommonInput
+                                input={item.quantity}
+                                type={"number"}
+                                isDisabled={showRepairList}
+                                onInputChange={(val) => {
+                                  setInputData((prev) =>
+                                    prev.map((data) =>
+                                      data.index == item.index
+                                        ? { ...data, quantity: val }
+                                        : data,
+                                    ),
+                                  );
+                                }}
+                                errorMessage={"Required"}
+                                error={inputQuantityError[index]}
+                                onKeyChange={() => {
+                                  const error = [...inputQuantityError];
+                                  error[index] = false;
+                                  setInputQuantityError(error);
+                                }}
+                              />
+                            </td>
+                            <td className="align-top">
+                              <CommonInput
+                                input={item.date}
+                                type={"date"}
+                                isDisabled={showRepairList}
+                                onInputChange={(val) => {
+                                  setInputData((prev) =>
+                                    prev.map((data) =>
+                                      data.index == item.index
+                                        ? { ...data, date: val }
+                                        : data,
+                                    ),
+                                  );
+                                }}
+                                errorMessage={"Required"}
+                                error={inputDateError[index]}
+                                onChg={() => {
+                                  const error = [...inputDateError];
+                                  error[index] = false;
+                                  setInputDateError(error);
+                                }}
+                              />
+                            </td>
+                            <td className="align-top">
+                              <CommonInput
+                                input={item.remark}
+                                isDisabled={showRepairList}
+                                onInputChange={(val) => {
+                                  setInputData((prev) =>
+                                    prev.map((data) =>
+                                      data.index == item.index
+                                        ? { ...data, remark: val }
+                                        : data,
+                                    ),
+                                  );
+                                }}
+                                errorMessage={"Required"}
+                                error={inputRemarkError[index]}
+                                onChg={() => {
+                                  const error = [...inputRemarkError];
+                                  error[index] = false;
+                                  setInputRemarkError(error);
+                                }}
+                              ></CommonInput>
+                            </td>
 
-                                const list = [...inputData];
-                                list.splice(foundIndex, 1);
-                                setInputData(list);
-                              }}
-                            >
-                              <AiOutlineDelete />
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                            <td>
+                              <CommonInput
+                                input={item.idRequest}
+                                isDisabled={true}
+                              >
+                                <div
+                                  className="cursor-default hover:text-black"
+                                  onClick={() => {
+                                    setRepairList(true);
+                                    localStorage.setItem(
+                                      "requestForService",
+                                      item.index,
+                                    );
+                                  }}
+                                >
+                                  <IoIosAddCircle />
+                                </div>
+                              </CommonInput>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
 
                 {showRepairList ? (
                   <div className="border p-2">
-                    <div></div>
-                    <div>
-                      <CommonInput
-                        input={keywordRequest}
-                        onInputChange={(val) => {
-                          setKeywordRequest(val);
+                    <div className="flex justify-end">
+                      <TiDelete
+                        className="mb-2 h-6 w-6"
+                        onClick={() => {
+                          setRepairList(false);
                         }}
-                      ></CommonInput>
+                      />
+                    </div>
+                    <div className="flex   justify-end">
+                      <div className="w-1/2">
+                        <CommonInput
+                          placeholder={"Search request"}
+                          input={keywordRequest}
+                          onInputChange={(val) => {
+                            setKeywordRequest(val);
+                          }}
+                        ></CommonInput>
+                      </div>
                     </div>
                     {keywordRequest.length > 3 ? (
                       <div className="mt-2 h-30 overflow-y-auto bg-white">
@@ -313,8 +329,24 @@ export default function PageTransaction() {
                                   key={index}
                                   className={`cursor-default hover:bg-secondary hover:text-white ${index % 2 === 0 ? "bg-gray" : "bg-white"}`}
                                   onClick={() => {
-                                    setInputIdService(item["ID_Request"]);
+                                    console.log("wkwkwk");
+                                    console.log(item["ID_Request"]);
+                                    setRepairList(false);
                                     setKeywordRequest("");
+                                    const id =
+                                      localStorage.getItem("requestForService");
+                                    setInputData((prev) =>
+                                      prev.map((data) =>
+                                        data.index == id
+                                          ? {
+                                              ...data,
+                                              idRequest: item["ID_Request"],
+                                            }
+                                          : data,
+                                      ),
+                                    );
+                                    //setInputIdService(item["ID_Request"]);
+                                    // setKeywordRequest("");
                                   }}
                                 >
                                   <td>{item["ID_Request"]}</td>
@@ -462,7 +494,7 @@ export default function PageTransaction() {
                           if (response.status == 200) {
                             const result = response.data["response"];
                             NotifySuccess(result);
-                            //router.back();
+                            router.back();
                           }
                           console.log(inputData);
                         }

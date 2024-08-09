@@ -106,6 +106,7 @@ const menuGroups = [
           { label: "List", route: "/parts" },
           { label: "Transaction", route: "/partstransaction" },
           { label: "Order", route: "/partsorder" },
+          { label: "Service", route: "/partsservice" },
         ],
       },
 
