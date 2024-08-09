@@ -603,7 +603,7 @@ export default function PartsIn() {
                           <td>{index + 1}</td>
                           <td>{item.description}</td>
                           <td>{item.quantity}</td>
-                          <td>pcs</td>
+                          <td>{item.unit}</td>
                           <td>{item.id_service}</td>
                           <td>{item.stock}</td>
                           <td>{item.note}</td>

@@ -140,7 +140,7 @@ export default function PageTransaction() {
                   </div>
                 </div>
                 <div className="mb-10"></div>
-                <table className="w-full">
+                <table className="w-full overflow-x-auto">
                   <thead>
                     <tr className="text-white">
                       <th className="w-1/3">Jenis Material</th>
@@ -148,6 +148,7 @@ export default function PageTransaction() {
                       <th>Jumlah</th>
                       <th>Tgl. Dibutuhkan</th>
                       <th className="w-1/4">Ket.</th>
+                      <th className="w-1/4">ID Request</th>
                     </tr>
                   </thead>
                   <tbody>

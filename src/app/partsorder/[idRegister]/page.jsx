@@ -195,7 +195,7 @@ export default function PartOrderDetail({ params }) {
       {loader ? (
         <PageLoader />
       ) : (
-        <div className="  bg-boxdark-2">
+        <div className="min-h-screen  bg-boxdark-2">
           <DefaultLayout>
             <div className="mb-3 flex items-center justify-start">
               <div className="text-lg text-white">Order Detail</div>
