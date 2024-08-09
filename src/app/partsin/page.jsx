@@ -396,6 +396,7 @@ export default function PartsIn() {
                       <div className="w-full ">Quantity</div>
                       <div className="w-full ">
                         <CommonInput
+                          type={"number"}
                           input={nonStockQuantity}
                           onInputChange={(val) => {
                             setNonStockQuantity(val);
