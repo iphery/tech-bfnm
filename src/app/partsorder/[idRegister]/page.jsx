@@ -22,8 +22,8 @@ export default function PartOrderDetail({ params }) {
   const groupBudget = [
     { label: "ME01", value: "ME01", title: "Pelumasan" },
     { label: "ME02", value: "ME02", title: "Servis Kendaraan" },
-    { label: "ME03", value: "ME03", title: "Spare Part Kendaraan" },
-    { label: "ME04", value: "ME04", title: "Servis Mesin Produksi" },
+    { label: "ME03", value: "ME03", title: "Servis Mesin Produksi" },
+    { label: "ME04", value: "ME04", title: "Spare Part Kendaraan" },
     { label: "ME05", value: "ME05", title: "Spare Part Mesin Produksi" },
   ];
 
