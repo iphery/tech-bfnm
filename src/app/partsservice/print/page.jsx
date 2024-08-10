@@ -33,22 +33,24 @@ export default function Page() {
       ) : (
         <div>
           <div className="flex justify-end">
-            <div className="border p-1">F.LOG.007</div>
+            <div className="border p-1">F.LOG.007/0</div>
           </div>
-          <div className="flex justify-center">Surat Permintaan Service</div>
-          <div className="flex justify-end">
-            <div>Tanggal :</div>
-            <div>{formatDate(dataService["date_issued"])}</div>
+          <div className="flex justify-center">
+            <div className="border-b">DAFTAR PERMINTAAN SERVICE</div>
+          </div>
+          <div className="mb-2 flex justify-end">
+            <div>Tgl :</div>
+            <div className="ml-2">{formatDate(dataService["date_issued"])}</div>
           </div>
           <table className="w-full">
             <thead>
               <tr>
                 <th className="border">No</th>
-                <th className="border">Deskripsi</th>
+                <th className="border">Jenis Material</th>
                 <th className="border">Satuan</th>
                 <th className="border">Jumlah</th>
-                <th className="border">Tanggal diperlukan</th>
-                <th className="border">Keterangan</th>
+                <th className="border">Tg. Dibutuhkan</th>
+                <th className="border">Ket.</th>
               </tr>
             </thead>
             <tbody>
@@ -71,24 +73,28 @@ export default function Page() {
 
           <div className="mb-40"></div>
           <div className="px-10">
-            <table className="w-full border">
-              <tbody>
-                <tr>
-                  <td className="text-center">
-                    <div>Mengetahi</div>
-                  </td>
-                  <td className="text-center">
-                    <div>Pembelian</div>
-                  </td>
-                  <td className="text-center">
-                    <div>Mengetahi</div>
-                  </td>
-                  <td className="text-center">
-                    <div>Dibuat oleh</div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <div className="flex justify-evenly">
+              <div>
+                <div className="mb-15">Menyetujui,</div>
+                <div className=" border-b"></div>
+                <div className="text-center">Direksi</div>
+              </div>
+              <div>
+                <div className="mb-15">Penanggung Jawab,</div>
+                <div className=" border-b"></div>
+                <div className="text-center">Bagian Pembelian</div>
+              </div>
+              <div>
+                <div className="mb-15">Menyetujui,</div>
+                <div className=" border-b"></div>
+                <div></div>
+              </div>
+              <div>
+                <div className="mb-15">Menyetujui,</div>
+                <div className=" border-b"></div>
+                <div></div>
+              </div>
+            </div>
           </div>
         </div>
       )}
