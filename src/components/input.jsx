@@ -14,6 +14,7 @@ export const CommonInput = ({
   reference,
   isDisabled,
   onChg,
+  isAutoFocus,
 }) => {
   return (
     <div className="relative">
@@ -23,6 +24,7 @@ export const CommonInput = ({
         ref={reference}
         placeholder={placeholder}
         disabled={isDisabled}
+        autoFocus={isAutoFocus}
         onInput={(event) => {
           const value = event.target.value;
 

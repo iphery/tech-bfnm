@@ -99,3 +99,14 @@ export const formatDateLocal = (dateTimeString) => {
     return `${day}-${month}-${year}`;
   }
 };
+
+export const getDateTime = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1; // getMonth() returns 0-11
+  const day = now.getDate();
+  const hours = now.getHours();
+  const minutes = now.getMinutes();
+  const seconds = now.getSeconds();
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+};

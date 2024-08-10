@@ -139,7 +139,7 @@ export default function PageTransaction() {
                             </td>
                             <td className="p-2 text-center align-top">
                               <div
-                                className={`rounded-lg text-sm ${item["type"] == "in" ? "bg-green" : "bg-red"} text-white`}
+                                className={`rounded-lg text-sm ${item["type"] == "in" ? "bg-success" : "bg-red"} text-white`}
                               >
                                 {item["type"].toUpperCase()}
                               </div>
