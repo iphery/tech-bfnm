@@ -16,7 +16,7 @@ import { useEffect, useState } from "react";
 import { CiEdit } from "react-icons/ci";
 import { useMediaQuery } from "react-responsive";
 
-export default function DetailOpname({ params, interval = 5000 }) {
+export default function DetailOpname({ params }) {
   const [loader, setLoader] = useState(true);
   const [isClient, setIsClient] = useState(false);
   const router = useRouter();
@@ -40,6 +40,7 @@ export default function DetailOpname({ params, interval = 5000 }) {
   const [savingActual, setSavingActual] = useState(false);
 
   const fetch_data = async () => {
+    console.log(1);
     const apiUrl = `${API_URL}/opnamedetail`;
     const response = await axios.post(apiUrl, {
       idRegister: params.idRegister,
@@ -52,7 +53,7 @@ export default function DetailOpname({ params, interval = 5000 }) {
       console.log(array[0]["result"]);
 
       const result = JSON.parse(array[0]["result"]);
-      console.log(result);
+      //console.log(result);
       setOpnameData(result);
 
       //console.log(array["description"]);
@@ -67,10 +68,14 @@ export default function DetailOpname({ params, interval = 5000 }) {
 
   useEffect(() => {
     fetch_data();
-    const timer = setInterval(fetch_data, interval);
 
-    return () => clearInterval(timer);
-  }, [interval]);
+    function pollDOM() {
+      fetch_data();
+    }
+    const interval = setInterval(pollDOM, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     setIsClient(true);
