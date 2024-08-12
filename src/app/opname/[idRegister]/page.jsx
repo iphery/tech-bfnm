@@ -8,7 +8,13 @@ import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import { PageLoader } from "@/components/loader";
 import { CustomModal } from "@/components/modal";
 import { API_URL } from "@/utils/constant";
-import { getDateTime } from "@/utils/dateformat";
+import {
+  formatDate,
+  formatDateLocal,
+  formatDateTime,
+  getDateTime,
+  shortDate,
+} from "@/utils/dateformat";
 import { NotifyError, NotifySuccess } from "@/utils/notify";
 import axios from "axios";
 import { useRouter } from "next/navigation";
@@ -39,6 +45,8 @@ export default function DetailOpname({ params }) {
   const [inputActualError, setInputActualError] = useState(false);
   const [savingActual, setSavingActual] = useState(false);
 
+  const [info, setInfo] = useState({});
+
   const fetch_data = async () => {
     console.log(1);
     const apiUrl = `${API_URL}/opnamedetail`;
@@ -49,14 +57,16 @@ export default function DetailOpname({ params }) {
     if (response.status == 200) {
       const array = response.data["response"];
 
-      // setDetailData(array);
-      console.log(array[0]["result"]);
-
       const result = JSON.parse(array[0]["result"]);
-      //console.log(result);
-      setOpnameData(result);
+      setInfo({
+        name: array[0]["Name"],
+        id_report: array[0]["id_report"],
+        startDate: array[0]["start_date"],
+        endDate: array[0]["end_date"],
+        created: array[0]["created_at"],
+      });
 
-      //console.log(array["description"]);
+      setOpnameData(result);
     }
     setLoader(false);
   };
@@ -69,10 +79,10 @@ export default function DetailOpname({ params }) {
   useEffect(() => {
     fetch_data();
 
-    function pollDOM() {
+    function refresh() {
       fetch_data();
     }
-    const interval = setInterval(pollDOM, 5000);
+    const interval = setInterval(refresh, 10000);
 
     return () => clearInterval(interval);
   }, []);
@@ -105,29 +115,38 @@ export default function DetailOpname({ params }) {
                           console.log(detailData);
                         }}
                       >
-                        Part Detail
+                        Stock Opname Detail
                       </div>
                     </div>
                     <PageCard>
-                      <div className="flex flex-row">
+                      <div className="flex w-1/2 flex-row">
                         <div className="w-full">
-                          <div className="flex justify-evenly py-1">
-                            <div className="w-full">Description</div>
-                            <div className="w-full">dfdf</div>
+                          <div className="mb-1 flex justify-evenly">
+                            <div className="w-full">ID Report</div>
+                            <div className="w-full">{info.id_report}</div>
+                          </div>
+                          <div className="mb-1 flex justify-evenly">
+                            <div className="w-full">Periode</div>
+                            <div className="w-full">
+                              {`${shortDate(info.startDate)} ~ ${shortDate(info.endDate)}`}
+                            </div>
+                          </div>
+                          <div className="mb-1 flex justify-evenly">
+                            <div className="w-full">Created by</div>
+                            <div className="w-full">{info.name}</div>
+                          </div>
+                          <div className="mb-1 flex justify-evenly">
+                            <div className="w-full">Created at</div>
+                            <div className="w-full">
+                              {formatDateTime(info.created)}
+                            </div>
                           </div>
                         </div>
-                        <div className="px-5"></div>
-
-                        <div className="w-full"></div>
-                      </div>
-                      <div className="mt-5 flex items-center justify-end">
-                        aaa
                       </div>
                     </PageCard>
                     <div className="mb-5"></div>
                     <PageCard>
-                      <div className="mb-5"></div>
-                      <div className="h-[calc(100vh-325px)] overflow-y-auto">
+                      <div className="h-[calc(100vh-340px)] overflow-y-auto">
                         <table className="w-full">
                           <thead className="sticky top-0 bg-black">
                             <tr>
@@ -139,24 +158,29 @@ export default function DetailOpname({ params }) {
                               <th className="">Balance</th>
                               <th className="w-1/4">Actual</th>
                               <th className="">Diff</th>
+                              <th className="">Checked</th>
                             </tr>
                           </thead>
                           <tbody>
                             {opnameData.map((item, index) => {
                               return (
                                 <tr key={index}>
-                                  <td>{item["description"]}</td>
-                                  <td>{item["vendor_code"]}</td>
-                                  <td className="text-center">
+                                  <td className="p-1">{item["description"]}</td>
+                                  <td className="p-1">{item["vendor_code"]}</td>
+                                  <td className="p-1 text-center">
                                     {item["initial"]}
                                   </td>
-                                  <td className="text-center">{item["in"]}</td>
-                                  <td className="text-center">{item["out"]}</td>
-                                  <td className="text-center">
+                                  <td className="p-1 text-center">
+                                    {item["in"]}
+                                  </td>
+                                  <td className="p-1 text-center">
+                                    {item["out"]}
+                                  </td>
+                                  <td className="p-1 text-center">
                                     {item["balance"]}
                                   </td>
 
-                                  <td className="">
+                                  <td className="p-1">
                                     <div className="flex justify-center">
                                       <div className="mr-2">
                                         {item["actual"]}
@@ -172,7 +196,12 @@ export default function DetailOpname({ params }) {
                                       </div>
                                     </div>
                                   </td>
-                                  <td>{item["diff"]}</td>
+                                  <td className="p-1 text-center">
+                                    {item["diff"]}
+                                  </td>
+                                  <td className="w-[150px] p-1 text-center">
+                                    {item["checked_by"]}
+                                  </td>
                                 </tr>
                               );
                             })}
@@ -204,13 +233,18 @@ export default function DetailOpname({ params }) {
                     if (event.key == "Enter") {
                       //disini save
                       setSavingActual(true);
+                      const user = localStorage.getItem("info");
+                      const parseUser = JSON.parse(user);
                       const lists = [...opnameData];
                       lists.map((item, index) => {
                         if (item["id_part"] == selectedPart) {
                           item["actual"] = inputActual;
                           item["diff"] = item["balance"] - inputActual;
                           item["checked_at"] = getDateTime();
-                          item["checked_by"] = "abc";
+                          item["checked_by"] = parseUser[0]["Name"];
+                          item["checked_id"] = parseUser[0]["Uid"];
+
+                          return;
                         }
                       });
 

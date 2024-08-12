@@ -33,6 +33,8 @@ import { PageLoader } from "./loader";
 import { CommonButton, CommonButtonFull } from "./button";
 import { NotifyError, NotifySuccess } from "@/utils/notify";
 import { RepairStatus } from "@/utils/repairstatus";
+import { CiEdit } from "react-icons/ci";
+import { FaCheckSquare } from "react-icons/fa";
 
 export default function DetailAssetMobile({ idAsset }) {
   //params.idAsset
@@ -62,6 +64,9 @@ export default function DetailAssetMobile({ idAsset }) {
   const [caseLoaderPart, setCaseLoaderPart] = useState(false);
   const [caseLoaderChecked, setCaseLoaderChecked] = useState(false);
   const [caseLoaderAccepted, setCaseLoaderAccepted] = useState(false);
+  const [pmList, setpmList] = useState([]);
+  const [pmTempList, setpmTempList] = useState([]);
+  const [pmEditMode, setpmEditMode] = useState(false);
 
   const [caseSolution, setCaseSolution] = useState("");
   const [showSolution, setShowSolution] = useState("");
@@ -69,6 +74,11 @@ export default function DetailAssetMobile({ idAsset }) {
 
   const [requestId, setRequestId] = useState("");
   const [updatedStep, setUpdatedStep] = useState("");
+  const [onloadPM, setOnloadPM] = useState(false);
+
+  const [responseTime, setResponseTime] = useState("");
+  const [repairTime, setRepairTime] = useState("");
+  const [onloadRequestService, setOnloadRequestService] = useState(false);
 
   const [test] = useState([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
 
@@ -115,11 +125,20 @@ export default function DetailAssetMobile({ idAsset }) {
       const array = response.data["response"][0];
       const parts = response.data["parts"];
       const galleries = response.data["galleries"];
+      const respTime = response.data["response_time"];
+      const reprTime = response.data["repair_time"];
       setSelectedCase(array);
       setPartList(parts);
       setGalleryList(galleries);
       //console.log(array);
-      console.log("refresh dta servic");
+      const pmparsed = JSON.parse(array["new_checklist"]);
+      console.log(pmparsed);
+      console.log(respTime);
+      console.log(reprTime);
+      setpmList(pmparsed);
+      setpmTempList(pmparsed);
+      setResponseTime(respTime);
+      setRepairTime(reprTime);
     }
   };
 
@@ -277,6 +296,18 @@ export default function DetailAssetMobile({ idAsset }) {
               <HiLocationMarker />
               <div className="ml-2">{dataAsset.Location}</div>
             </div>
+
+            <div className="flex justify-end p-2">
+              <CommonButton
+                onload={onloadRequestService}
+                disabled={onloadRequestService}
+                onClick={() => {
+                  console.log;
+                }}
+                label={"Request Service"}
+              ></CommonButton>
+            </div>
+
             <div className="mt-2 bg-form-strokedark">
               <div className="p-2 text-white">Riwayat Perbaikan</div>
             </div>
@@ -303,7 +334,7 @@ export default function DetailAssetMobile({ idAsset }) {
 
                 {filteredDataService.map((item, index) => {
                   const cardStatus = RepairStatus(item["Step"]);
-
+                  const checklist = item["new_checklist"];
                   return (
                     <div
                       onClick={() => {
@@ -507,22 +538,19 @@ export default function DetailAssetMobile({ idAsset }) {
 
                 <div className="p-2 text-white">Progress</div>
                 <div className="p-2">
-                  <div className="bg-form-strokedark p-2">
+                  <div className="rounded-lg border p-1">
                     <ProgressCard
                       title={"Issued"}
                       name={selectedCase.Requestor}
                       dateString={formatDateTime(selectedCase.Time_Request)}
+                      isActive={true}
                     />
                     <ProgressCard
                       title={"Response"}
                       name={selectedCase.Technician}
                       dateString={formatDateTime(selectedCase.Time_Response)}
+                      isActive={parseInt(selectedCase.Step) >= 2 ? true : false}
                     />
-
-                    <div className="flex flex-row justify-between">
-                      <div>Spare Part / Service</div>
-                      <div>{formatDateTime(selectedCase.Time_POS)}</div>
-                    </div>
 
                     <ProgressCard
                       title={"Completed"}
@@ -530,26 +558,37 @@ export default function DetailAssetMobile({ idAsset }) {
                       dateString={formatDateTime(
                         selectedCase.Time_Repair_Complete,
                       )}
+                      isActive={parseInt(selectedCase.Step) >= 5 ? true : false}
                     />
                     <ProgressCard
                       title={"Checked"}
                       name={selectedCase.Tech_SPV_Name}
                       dateString={formatDateTime(selectedCase.Tech_SPV)}
+                      isActive={parseInt(selectedCase.Step) >= 6 ? true : false}
                     />
 
                     <ProgressCard
                       title={"Accepted"}
                       name={selectedCase.Approver_Name}
                       dateString={formatDateTime(selectedCase.Prod_SPV)}
+                      isActive={parseInt(selectedCase.Step) >= 7 ? true : false}
                     />
                   </div>
                 </div>
-                <div>Summary</div>
-                <div className="p-2">
-                  <div className="bg-form-strokedark p-1">
-                    <ProgressSummary title={"Response Time"} hour={1} />
-                    <ProgressSummary title={"Spare Part (jika ada)"} hour={1} />
-                    <ProgressSummary title={"Repair Time"} hour={1} />
+                <div className="p-2 text-white">Summary</div>
+                <div className="p-2 ">
+                  <div className="rounded-lg border p-1">
+                    <ProgressSummary
+                      title={"Response Time"}
+                      hour={responseTime}
+                      isActive={parseInt(selectedCase.Step) >= 2 ? true : false}
+                    />
+
+                    <ProgressSummary
+                      title={"Repair Time"}
+                      hour={repairTime}
+                      isActive={parseInt(selectedCase.Step) >= 5 ? true : false}
+                    />
                   </div>
                 </div>
                 {partList.length > 0 ? (
@@ -568,6 +607,156 @@ export default function DetailAssetMobile({ idAsset }) {
                       </div>
                     </div>
                   </div>
+                ) : (
+                  <></>
+                )}
+                {pmList.length > 0 ? (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <div className="p-2 text-white">Checklist</div>
+
+                      {pmEditMode ? (
+                        <div className="w-[150px] px-2">
+                          <CommonButtonFull
+                            onClick={async () => {
+                              setOnloadPM(true);
+                              const idRequest =
+                                localStorage.getItem("selected_idRequest");
+                              console.log(pmTempList);
+                              const apiUrl = `${API_URL}/updatepmlist`;
+                              const response = await axios.post(apiUrl, {
+                                idRequest: idRequest,
+                                pmList: JSON.stringify(pmTempList),
+                              });
+
+                              if (response.status == 200) {
+                                fetch_detail_service(idRequest);
+                                setpmEditMode(false);
+                              }
+                              setOnloadPM(false);
+                            }}
+                            label={"Save"}
+                            disabled={onloadPM}
+                            onload={onloadPM}
+                          ></CommonButtonFull>
+                        </div>
+                      ) : (
+                        <div className=" p-1">
+                          <div
+                            onClick={() => {
+                              setpmEditMode(true);
+                            }}
+                            className=" justify center flex h-8 w-8 cursor-default items-center  rounded-full p-2 text-xl text-white hover:bg-white hover:bg-opacity-20"
+                          >
+                            <CiEdit />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-2">
+                      <div className="rounded-lg border p-1 shadow-md">
+                        <table>
+                          {pmEditMode ? (
+                            <tbody>
+                              {pmTempList.map((item, index) => {
+                                return (
+                                  <tr className="" key={index}>
+                                    <td className=" p-2 align-top text-white">
+                                      {item["code"]}
+                                    </td>
+                                    <td className="p-2 text-left align-top text-white">
+                                      <div>{item["description"]}</div>
+
+                                      {item["widget"] == "T" ? (
+                                        <div
+                                          className="mt-2 w-[100px]
+                                        "
+                                        >
+                                          <CommonInput
+                                            input={item["value"]}
+                                            onInputChange={(val) => {
+                                              const updatedPmList =
+                                                pmTempList.map((element) => {
+                                                  if (
+                                                    element.code ===
+                                                    item["code"]
+                                                  ) {
+                                                    return {
+                                                      ...element,
+                                                      value: val,
+                                                    }; // Toggle the checked value
+                                                  }
+                                                  return element;
+                                                });
+
+                                              setpmTempList(updatedPmList);
+                                            }}
+                                          />
+                                        </div>
+                                      ) : (
+                                        <></>
+                                      )}
+                                    </td>
+                                    <td className="flex-1 p-2">
+                                      {item["widget"] == "C" ? (
+                                        <input
+                                          type="checkbox"
+                                          checked={item["checked"]}
+                                          onChange={() => {
+                                            const updatedPmList =
+                                              pmTempList.map((element) => {
+                                                if (
+                                                  element.code === item["code"]
+                                                ) {
+                                                  return {
+                                                    ...element,
+                                                    checked: !element.checked,
+                                                  }; // Toggle the checked value
+                                                }
+                                                return element;
+                                              });
+
+                                            setpmTempList(updatedPmList);
+                                          }}
+                                          className="form-checkbox bg-gray-100 border-gray-300 h-5 w-5 rounded text-blue-600 focus:ring-blue-500"
+                                        />
+                                      ) : (
+                                        <></>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          ) : (
+                            <tbody>
+                              {pmList.map((item, index) => {
+                                return (
+                                  <tr className="" key={index}>
+                                    <td className="p-2 align-top text-white">
+                                      {item["code"]}
+                                    </td>
+                                    <td className="p-2 text-left text-white">
+                                      {item["description"]}
+                                    </td>
+                                    <td className="flex-1 p-2 align-top">
+                                      {item["checked"] ? (
+                                        <FaCheckSquare className="text-success" />
+                                      ) : (
+                                        <div className="align-top text-white">
+                                          {item["value"]}
+                                        </div>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          )}
+                        </table>
+                      </div>
+                    </div>
+                  </>
                 ) : (
                   <></>
                 )}
