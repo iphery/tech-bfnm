@@ -80,6 +80,8 @@ export default function DetailAssetMobile({ idAsset }) {
   const [repairTime, setRepairTime] = useState("");
   const [onloadRequestService, setOnloadRequestService] = useState(false);
 
+  const [loadDetailService, setLoadDetailService] = useState(false);
+
   const [test] = useState([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
 
   const fetch_data = async () => {
@@ -115,6 +117,7 @@ export default function DetailAssetMobile({ idAsset }) {
   };
 
   const fetch_detail_service = async (id) => {
+    setLoadDetailService(true);
     //console.log(id);
     const apiUrl = `${API_URL}/fetchdetailservice`;
     const response = await axios.post(apiUrl, {
@@ -131,15 +134,23 @@ export default function DetailAssetMobile({ idAsset }) {
       setPartList(parts);
       setGalleryList(galleries);
       //console.log(array);
-      const pmparsed = JSON.parse(array["new_checklist"]);
-      console.log(pmparsed);
+      const checkList = array["new_checklist"];
+      setpmList([]);
+      setpmTempList([]);
+      console.log(response);
+      if (checkList != "" && checkList != null) {
+        const pmparsed = JSON.parse(checkList);
+        setpmList(pmparsed);
+        setpmTempList(pmparsed);
+      }
+
       console.log(respTime);
       console.log(reprTime);
-      setpmList(pmparsed);
-      setpmTempList(pmparsed);
+
       setResponseTime(respTime);
       setRepairTime(reprTime);
     }
+    setLoadDetailService(false);
   };
 
   useEffect(() => {
@@ -389,7 +400,7 @@ export default function DetailAssetMobile({ idAsset }) {
                       const nextItem = itemPerPage + 5;
                       setItemPerPage(nextItem);
                     }}
-                    className="mt-5 flex cursor-default justify-center text-white"
+                    className="flex  cursor-default justify-center py-5 text-white"
                   >
                     Load more..
                   </div>
@@ -397,6 +408,10 @@ export default function DetailAssetMobile({ idAsset }) {
                   <></>
                 )}
               </>
+            ) : loadDetailService ? (
+              <div className="mt-10 flex justify-center text-white">
+                Please wait.. fetching data
+              </div>
             ) : (
               <div>
                 <div
@@ -593,7 +608,7 @@ export default function DetailAssetMobile({ idAsset }) {
                 </div>
                 {partList.length > 0 ? (
                   <div>
-                    <div className="ml-2">Spare Part</div>
+                    <div className="ml-2 text-white">Spare Part</div>
                     <div className="p-2">
                       <div className="bg-form-strokedark p-1">
                         {partList.map((item, index) => {
@@ -670,7 +685,7 @@ export default function DetailAssetMobile({ idAsset }) {
                                       {item["widget"] == "T" ? (
                                         <div
                                           className="mt-2 w-[100px]
-                                        "
+                                      "
                                         >
                                           <CommonInput
                                             input={item["value"]}
