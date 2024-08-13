@@ -100,7 +100,7 @@ export default function PartsOut() {
     const data_asset = localStorage.getItem("data_asset");
     const id_service = localStorage.getItem("id_service");
     setIdService(id_service);
-
+    console.log(data_asset);
     if (data_asset !== "") {
       const parseData = JSON.parse(data_asset);
 
@@ -114,6 +114,8 @@ export default function PartsOut() {
         user: parseData.User,
       });
       setCategoryTrans("Service");
+    } else {
+      setCategoryTrans("Umum");
     }
   }, []);
 

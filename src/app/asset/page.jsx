@@ -170,12 +170,12 @@ export default function ListAsset() {
                 <div className="flex flex-row items-center">
                   <div className="w-1/2">
                     <CommonInput
-                      input={keyword}
+                      input={assetKeyword}
                       type={"text"}
                       onInputChange={(val) => {
                         //setKeyword(val);
                         //  fetch_data();
-                        setKeyword(val);
+                        setAssetKeyword(val);
                         setCurrentPage(1);
                       }}
                       onKeyChange={() => {
