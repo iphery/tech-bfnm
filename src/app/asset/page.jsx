@@ -33,6 +33,7 @@ export default function ListAsset() {
     const apiUrl = `${API_URL}/getallasset`;
     const response = await axios.post(apiUrl, {
       type: menu,
+      isAll: isSmallScreen ? 0 : 1,
     });
 
     if (response.status == 200) {
@@ -62,14 +63,7 @@ export default function ListAsset() {
         item["User"].toLowerCase().includes(assetKeyword.toLowerCase());
       return description || manufacture || user;
     });
-    const { data, pageCurrent, start, end } = paginateData(
-      filterData,
 
-      currentPage,
-      10,
-    );
-    // setFilteredList(filterData);
-    //setFirstFilterLoad(false);
     setFilteredAssetList(filterData);
   }, [detailData, assetKeyword]);
 
@@ -196,7 +190,7 @@ export default function ListAsset() {
                 <div className="mb-3"></div>
                 <div className="h-[calc(100vh-235px)] overflow-y-auto">
                   <table className="w-full ">
-                    <thead className="sticky top-0 bg-black">
+                    <thead className="sticky top-0 bg-black text-white">
                       <tr>
                         <th className="w-1/5">ID</th>
                         <th className="w-1/5">Deskripsi</th>
@@ -206,7 +200,7 @@ export default function ListAsset() {
                       </tr>
                     </thead>
                     <tbody className="">
-                      {filteredList.map((item, index) => {
+                      {filteredAssetList.map((item, index) => {
                         const desc =
                           item["Type"] == "K"
                             ? item["No"]
@@ -214,7 +208,7 @@ export default function ListAsset() {
                         return (
                           <tr
                             key={index}
-                            className={`cursor-default   hover:bg-secondary hover:text-white`}
+                            className={`cursor-default text-white   hover:bg-secondary hover:text-black`}
                             onClick={() => {
                               router.push(`asset/${item["ID_Asset"]}`);
                             }}

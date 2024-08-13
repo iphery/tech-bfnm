@@ -20,6 +20,8 @@ import { useProvider } from "@/app/appcontext";
 import { MdAdd, MdAddToPhotos } from "react-icons/md";
 import { CustomModal } from "@/components/modal";
 import { FaBullseye } from "react-icons/fa";
+import { CommonButtonFull } from "@/components/button";
+import { NotifySuccess } from "@/utils/notify";
 
 export default function ListPart() {
   const router = useRouter();
@@ -49,6 +51,16 @@ export default function ListPart() {
     location: "",
     remark: "",
   });
+
+  const [inputNewDataError, setInputNewDataError] = useState({
+    descriptionError: false,
+    codeError: false,
+    unitError: false,
+    locationError: false,
+    remarkError: false,
+  });
+
+  const [onloadNew, setOnloadNew] = useState(false);
 
   const fetch_data = async () => {
     const apiUrl = `${API_URL}/stocklist?page=${currentPage}`;
@@ -251,6 +263,7 @@ export default function ListPart() {
                 setModalNewPart(false);
               }}
             >
+              <div className="mb-2"></div>
               <CommonInput
                 placeholder={"Enter description"}
                 input={inputNewData.description}
@@ -260,22 +273,192 @@ export default function ListPart() {
                     description: val,
                   }));
                 }}
+                error={inputNewDataError.descriptionError}
+                errorMessage={"Required"}
+                onChg={() => {
+                  setInputNewDataError((prevState) => ({
+                    ...prevState,
+                    descriptionError: false,
+                  }));
+                }}
               ></CommonInput>
+              <div className="mb-2"></div>
               <CommonInput
                 placeholder={"Enter detail"}
                 input={inputNewData.vendor_code}
                 onInputChange={(val) => {
-                  setInputNewData;
+                  setInputNewData((prevState) => ({
+                    ...prevState,
+                    vendor_code: val,
+                  }));
+                }}
+                error={inputNewDataError.codeError}
+                errorMessage={"Required"}
+                onChg={() => {
+                  setInputNewDataError((prevState) => ({
+                    ...prevState,
+                    codeError: false,
+                  }));
+                }}
+              ></CommonInput>
+              <div className="mb-2"></div>
+              <CommonInput
+                placeholder={"Enter unit"}
+                input={inputNewData.unit}
+                onInputChange={(val) => {
+                  setInputNewData((prevState) => ({
+                    ...prevState,
+                    unit: val,
+                  }));
+                }}
+                error={inputNewDataError.unitError}
+                errorMessage={"Required"}
+                onChg={() => {
+                  setInputNewDataError((prevState) => ({
+                    ...prevState,
+                    unitError: false,
+                  }));
+                }}
+              ></CommonInput>
+              <div className="mb-2"></div>
+              <CommonInput
+                placeholder={"Enter remark"}
+                input={inputNewData.remark}
+                onInputChange={(val) => {
+                  setInputNewData((prevState) => ({
+                    ...prevState,
+                    remark: val,
+                  }));
+                }}
+                error={inputNewDataError.remarkError}
+                errorMessage={"Required"}
+                onChg={() => {
+                  setInputNewDataError((prevState) => ({
+                    ...prevState,
+                    remarkError: false,
+                  }));
+                }}
+              ></CommonInput>
+              <div className="mb-2"></div>
+
+              <CommonInput
+                placeholder={"Enter location"}
+                input={inputNewData.location}
+                onInputChange={(val) => {
+                  setInputNewData((prevState) => ({
+                    ...prevState,
+                    location: val,
+                  }));
+                }}
+                error={inputNewDataError.locationError}
+                errorMessage={"Required"}
+                onChg={() => {
+                  setInputNewDataError((prevState) => ({
+                    ...prevState,
+                    locationError: false,
+                  }));
                 }}
               ></CommonInput>
 
-              <div
-                onClick={() => {
-                  console.log(inputNewData.description);
+              <div className="mb-5"></div>
+              <CommonButtonFull
+                label={"Create New"}
+                onload={onloadNew}
+                disabled={onloadNew}
+                onClick={async () => {
+                  setOnloadNew(true);
+                  const error = [0, 0, 0, 0, 0];
+                  if (inputNewData.description == "") {
+                    setInputNewDataError((prevState) => ({
+                      ...prevState,
+                      descriptionError: true,
+                    }));
+                    error[0] = 1;
+                  } else {
+                    setInputNewDataError((prevState) => ({
+                      ...prevState,
+                      descriptionError: false,
+                    }));
+                    error[0] = 0;
+                  }
+
+                  if (inputNewData.vendor_code == "") {
+                    setInputNewDataError((prevState) => ({
+                      ...prevState,
+                      codeError: true,
+                    }));
+                    error[1] = 1;
+                  } else {
+                    setInputNewDataError((prevState) => ({
+                      ...prevState,
+                      codeError: false,
+                    }));
+                    error[1] = 0;
+                  }
+
+                  if (inputNewData.unit == "") {
+                    setInputNewDataError((prevState) => ({
+                      ...prevState,
+                      unitError: true,
+                    }));
+                    error[2] = 1;
+                  } else {
+                    setInputNewDataError((prevState) => ({
+                      ...prevState,
+                      unitError: false,
+                    }));
+                    error[2] = 0;
+                  }
+
+                  if (inputNewData.remark == "") {
+                    setInputNewDataError((prevState) => ({
+                      ...prevState,
+                      remarkError: true,
+                    }));
+                    error[3] = 1;
+                  } else {
+                    setInputNewDataError((prevState) => ({
+                      ...prevState,
+                      remarkError: false,
+                    }));
+                    error[3] = 0;
+                  }
+
+                  if (inputNewData.location == "") {
+                    setInputNewDataError((prevState) => ({
+                      ...prevState,
+                      locationError: true,
+                    }));
+                    error[4] = 1;
+                  } else {
+                    setInputNewDataError((prevState) => ({
+                      ...prevState,
+                      locationError: false,
+                    }));
+                    error[4] = 0;
+                  }
+
+                  const sum_error = error.reduce(
+                    (accum, current) => accum + current,
+                    0,
+                  );
+                  if (sum_error == 0) {
+                    console.log(inputNewData);
+
+                    const apiUrl = `${API_URL}/newpart`;
+                    const response = await axios.post(apiUrl, {
+                      data: inputNewData,
+                    });
+
+                    if (response.status == 200) {
+                      const result = response.data["response"];
+                      NotifySuccess(result);
+                      setModalNewPart(false);
+                    }
+                  }
+                  setOnloadNew(false);
                 }}
-              >
-                aaa
-              </div>
+              ></CommonButtonFull>
             </CustomModal>
           </div>
         )}
