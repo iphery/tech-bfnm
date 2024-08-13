@@ -22,6 +22,8 @@ import {
   HiUser,
 } from "react-icons/hi2";
 import {
+  MdAdd,
+  MdChecklist,
   MdMedicalServices,
   MdOutlineClose,
   MdOutlineMiscellaneousServices,
@@ -41,6 +43,7 @@ import { CiEdit } from "react-icons/ci";
 import { FaCheckSquare } from "react-icons/fa";
 import { CustomModal } from "./modal";
 import { RiCalendarScheduleFill } from "react-icons/ri";
+import { TfiSave } from "react-icons/tfi";
 
 export default function DetailAssetMobile({ idAsset }) {
   //params.idAsset
@@ -73,6 +76,8 @@ export default function DetailAssetMobile({ idAsset }) {
   const [pmList, setpmList] = useState([]);
   const [pmTempList, setpmTempList] = useState([]);
   const [pmEditMode, setpmEditMode] = useState(false);
+  const [solutionEditMode, setSolutionEditMode] = useState(false);
+  const [onloadSolution, setOnloadSolution] = useState(false);
 
   const [caseSolution, setCaseSolution] = useState("");
   const [showSolution, setShowSolution] = useState("");
@@ -98,6 +103,8 @@ export default function DetailAssetMobile({ idAsset }) {
   const [inputKM, setInputKM] = useState("");
   const [inputKMError, setInputKMError] = useState(false);
   const [onloadRequestPerawatan, setOnloadRequestPerawatan] = useState(false);
+
+  const [onloadAddChecklist, setOnloadAddChecklist] = useState(false);
 
   const [test] = useState([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
 
@@ -362,6 +369,8 @@ export default function DetailAssetMobile({ idAsset }) {
                   </div>
 
                   <div className="mr-5"></div>
+
+                  <div className="mr-3"></div>
                 </div>
 
                 <div className="mt-2 bg-form-strokedark">
@@ -459,15 +468,58 @@ export default function DetailAssetMobile({ idAsset }) {
                   </div>
                 ) : (
                   <div>
-                    <div
-                      className="flex  items-center justify-end p-2 "
-                      onClick={() => {
-                        setSwitchPage(false);
-                      }}
-                    >
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-white">
+                    <div className="flex  items-center justify-between p-2 ">
+                      <div
+                        onClick={() => {
+                          setSwitchPage(false);
+                        }}
+                        className="flex h-6 w-6 items-center justify-center rounded-full bg-white"
+                      >
                         <MdOutlineClose></MdOutlineClose>
                       </div>
+                      {selectedCase.Maintenance_Type == "PM" ? (
+                        pmList.length > 0 ? (
+                          <></>
+                        ) : (
+                          <div
+                            className="p-1 text-success"
+                            onClick={async () => {
+                              setOnloadAddChecklist(true);
+
+                              const apiUrl = `${API_URL}/addchecklist`;
+                              const response = await axios.post(apiUrl, {
+                                idRequest: selectedCase.ID_Request,
+                                idAsset: selectedCase.ID_Asset,
+                              });
+
+                              if (response.status == 200) {
+                                // console.log(response.data["detail"][0].ID_Asset);
+                                const detail = response.data["response"];
+                                fetch_detail_service(selectedCase.ID_Request);
+                                NotifySuccess(detail);
+                              }
+
+                              setOnloadAddChecklist(false);
+
+                              console.log(selectedCase.ID_Request);
+                              console.log(selectedCase.ID_Asset);
+                            }}
+                          >
+                            {onloadAddChecklist ? (
+                              <div
+                                className={`h-6 w-6 animate-spin rounded-full border-2 border-solid border-success border-t-transparent`}
+                              ></div>
+                            ) : (
+                              <div className="flex items-center justify-start">
+                                <MdAdd />
+                                <div>Checklist</div>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      ) : (
+                        <></>
+                      )}
                     </div>
                     <div className="mb-2 p-2">
                       {(() => {
@@ -489,18 +541,6 @@ export default function DetailAssetMobile({ idAsset }) {
                           case "2":
                             return (
                               <div className="border p-2">
-                                <CommonTextArea
-                                  placeholder="Tuliskan solusi untuk permasalahan di bawah"
-                                  error={caseSolutionError}
-                                  onInputChange={(val) => {
-                                    setCaseSolution(val);
-                                  }}
-                                  onChg={() => {
-                                    setCaseSolutionError(false);
-                                  }}
-                                  errorMessage={"Required"}
-                                ></CommonTextArea>
-
                                 <div className=" flex justify-evenly">
                                   <div className="w-full">
                                     <CommonButtonFull
@@ -536,18 +576,6 @@ export default function DetailAssetMobile({ idAsset }) {
                             return (
                               <div className=" border p-2">
                                 <div>
-                                  <CommonTextArea
-                                    placeholder="Tuliskan solusi untuk permasalahan di bawah"
-                                    error={caseSolutionError}
-                                    onInputChange={(val) => {
-                                      setCaseSolution(val);
-                                    }}
-                                    onChg={() => {
-                                      setCaseSolutionError(false);
-                                    }}
-                                    errorMessage={"Required"}
-                                  ></CommonTextArea>
-                                  <div className="mb-1"></div>
                                   <CommonButtonFull
                                     label={"Selesai"}
                                     onClick={() => {
@@ -583,13 +611,82 @@ export default function DetailAssetMobile({ idAsset }) {
                         {selectedCase.Problem}
                       </div>
                     </div>
-                    {selectedCase.Solution == "" ? (
-                      <></>
+
+                    <div className="flex items-center justify-between">
+                      <div className="p-2 text-white">Tindakan</div>
+                      {solutionEditMode ? (
+                        <div className="p-2">
+                          {onloadSolution ? (
+                            <div
+                              className={`h-6 w-6 animate-spin rounded-full border-2 border-solid border-success border-t-transparent`}
+                            ></div>
+                          ) : (
+                            <div
+                              className=" justify center flex h-8 w-8 cursor-default items-center  rounded-full p-2 text-xl text-white hover:bg-white hover:bg-opacity-20"
+                              onClick={async () => {
+                                setOnloadSolution(true);
+                                if (caseSolution == "") {
+                                  setCaseSolutionError(true);
+                                } else {
+                                  setCaseSolutionError(false);
+                                  const apiUrl = `${API_URL}/updatesolution`;
+                                  const response = await axios.post(apiUrl, {
+                                    idRequest: selectedCase.ID_Request,
+                                    solution: caseSolution,
+                                  });
+
+                                  if (response.status == 200) {
+                                    fetch_detail_service(
+                                      selectedCase.ID_Request,
+                                    );
+                                    setSolutionEditMode(false);
+                                  }
+                                }
+
+                                setOnloadSolution(false);
+                              }}
+                            >
+                              <TfiSave />
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className=" p-1">
+                          <div
+                            onClick={() => {
+                              setCaseSolution(selectedCase.Solution);
+                              setSolutionEditMode(true);
+                            }}
+                            className=" justify center flex h-8 w-8 cursor-default items-center  rounded-full p-2 text-xl text-white hover:bg-white hover:bg-opacity-20"
+                          >
+                            <CiEdit />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {parseInt(selectedCase.Step) >= 2 &&
+                    parseInt(selectedCase.Step) <= 6 &&
+                    solutionEditMode ? (
+                      <div className="p-2">
+                        <CommonTextArea
+                          input={caseSolution}
+                          placeholder="Tuliskan solusi untuk permasalahan di bawah"
+                          error={caseSolutionError}
+                          isDisabled={onloadSolution}
+                          onInputChange={(val) => {
+                            setCaseSolution(val);
+                          }}
+                          onChg={() => {
+                            setCaseSolutionError(false);
+                          }}
+                          errorMessage={"Required"}
+                        ></CommonTextArea>
+                      </div>
                     ) : (
                       <>
-                        <div className="p-2 text-white">Tindakan</div>
                         <div className="p-2">
-                          <div className="bg-form-strokedark p-1 text-white">
+                          <div className="min-h-8 bg-form-strokedark p-1 text-white">
                             {selectedCase.Solution}
                           </div>
                         </div>
@@ -693,6 +790,7 @@ export default function DetailAssetMobile({ idAsset }) {
                     ) : (
                       <></>
                     )}
+
                     {pmList.length > 0 ? (
                       <>
                         <div className="flex items-center justify-between">
@@ -847,6 +945,7 @@ export default function DetailAssetMobile({ idAsset }) {
                     ) : (
                       <></>
                     )}
+
                     {galleryList.length > 0 ? (
                       <div>
                         <div className="ml-2">Gallery</div>
