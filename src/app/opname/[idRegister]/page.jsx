@@ -20,7 +20,9 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { CiEdit } from "react-icons/ci";
+import { IoMdPrint } from "react-icons/io";
 import { useMediaQuery } from "react-responsive";
+import { DataProvider, useProvider } from "@/app/appcontext";
 
 export default function DetailOpname({ params }) {
   const [loader, setLoader] = useState(true);
@@ -44,6 +46,7 @@ export default function DetailOpname({ params }) {
   const [inputActual, setInputActual] = useState("");
   const [inputActualError, setInputActualError] = useState(false);
   const [savingActual, setSavingActual] = useState(false);
+  const { setOpnameIdRegister } = useProvider();
 
   const [info, setInfo] = useState({});
 
@@ -108,7 +111,7 @@ export default function DetailOpname({ params }) {
               <div className="absolute z-0 h-full w-full">
                 <DefaultLayout>
                   <div className="flex min-h-[calc(100vh-115px)] flex-col">
-                    <div className="mb-3 flex items-center justify-start">
+                    <div className="mb-3 flex items-center justify-between">
                       <div
                         className="text-lg text-white"
                         onClick={() => {
@@ -116,6 +119,21 @@ export default function DetailOpname({ params }) {
                         }}
                       >
                         Stock Opname Detail
+                      </div>
+                      <div className="flex flex-row">
+                        <div
+                          className=" flex cursor-default flex-row items-center text-warning"
+                          onClick={() => {
+                            setOpnameIdRegister(params.idRegister); //set di provider
+
+                            router.push(
+                              `/opname/${params.idRegister}/printout`,
+                            );
+                          }}
+                        >
+                          <IoMdPrint />
+                          <div className=" ml-2">Print</div>
+                        </div>
                       </div>
                     </div>
                     <PageCard>

@@ -1,0 +1,26 @@
+@media print {
+
+
+    th, td {
+        font-size:10px;
+        border: 1px solid #ddd;
+    }
+
+    
+
+
+    thead{
+        display:table-header-group;/*repeat table headers on each page*/
+
+    }
+
+    tbody{
+        display:table-row-group;
+    }
+
+    tfoot{
+        display:table-footer-group;/*repeat table footers on each page*/
+    }
+
+}
+

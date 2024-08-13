@@ -11,6 +11,8 @@ export function DataProvider({ children }) {
   const [filteredPartList, setFilteredPartList] = useState([]);
   const [partKeyword, setPartKeyword] = useState("");
 
+  const [opnameIdRegister, setOpnameIdRegister] = useState("");
+
   const updateCache = (key, data) => {
     setCachedData((prev) => ({ ...prev, [key]: data }));
   };
@@ -30,6 +32,8 @@ export function DataProvider({ children }) {
         setFilteredPartList,
         partKeyword,
         setPartKeyword,
+        opnameIdRegister,
+        setOpnameIdRegister,
       }}
     >
       {children}
