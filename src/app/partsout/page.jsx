@@ -87,7 +87,7 @@ export default function PartsOut() {
     if (response.status == 200) {
       const array = response.data["response"];
       const asset = response.data["asset"];
-
+      console.log(asset);
       setDetailData(array);
       setListAsset(asset);
     }
@@ -146,11 +146,20 @@ export default function PartsOut() {
       const arr_description =
         item["description"] &&
         item["description"].toLowerCase().includes(keywordAsset.toLowerCase());
+      const arr_manufacture =
+        item["manufacture"] &&
+        item["manufacture"].toLowerCase().includes(keywordAsset.toLowerCase());
+      const arr_model =
+        item["model"] &&
+        item["model"].toLowerCase().includes(keywordAsset.toLowerCase());
+      const arr_no =
+        item["no"] &&
+        item["no"].toLowerCase().includes(keywordAsset.toLowerCase());
       /*
       const arr_vendor_code =
         item["vendor_code"] &&
         item["vendor_code"].toLowerCase().includes(keywordAsset.toLowerCase());*/
-      return arr_description;
+      return arr_description || arr_manufacture || arr_model || arr_no;
     });
 
     if (filterDataAsset.length == 0) {
@@ -445,7 +454,7 @@ export default function PartsOut() {
                                   <td className="w-1/5">{item["id_asset"]}</td>
                                   <td className="w-1/5">
                                     {item["type"] == "K"
-                                      ? item["description"] + item["no"]
+                                      ? item["no"]
                                       : item["description"]}
                                   </td>
                                   <td className="w-1/5">
