@@ -25,7 +25,7 @@ export const CustomModal = ({
       onClick={handleClose}
     >
       <div
-        className={`w-full ${isSmallWidth == "sm" ? "sm:w-1/3" : isSmallWidth == "md" ? "sm:w-2/3" : "sm:w-2/3"}`}
+        className={`w-full ${isSmallWidth == "sm" ? "sm:w-1/3" : isSmallWidth == "md" ? "sm:w-2/3" : "sm:w-2/3"} px-5`}
       >
         <div className="flex justify-end p-1">
           <div

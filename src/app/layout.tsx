@@ -3,6 +3,7 @@ import "flatpickr/dist/flatpickr.min.css";
 import "@/css/satoshi.css";
 import "@/css/style.css";
 import "react-toastify/dist/ReactToastify.css";
+import { DataProvider } from "@/app/appcontext";
 
 import { Metadata } from "next";
 import { ReactNode } from "react";
@@ -21,12 +22,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body suppressHydrationWarning={true}>
-        <ToastContainer />
-        <div className="dark:bg-boxdark-2 dark:text-bodydark">{children}</div>
-      </body>
-    </html>
+    <DataProvider>
+      <html lang="en">
+        <body suppressHydrationWarning={true}>
+          <ToastContainer />
+          <div className="dark:bg-boxdark-2 dark:text-bodydark">{children}</div>
+        </body>
+      </html>
+    </DataProvider>
   );
 }
 

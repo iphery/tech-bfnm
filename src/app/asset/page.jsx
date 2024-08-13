@@ -1,6 +1,5 @@
 "use client";
 import React, { useContext, useEffect, useState } from "react";
-import { AppContext } from "../appcontext";
 import axios from "axios";
 import { useMediaQuery } from "react-responsive";
 import { API_URL, IMAGE_ASSET } from "@/utils/constant";
@@ -12,6 +11,7 @@ import { HiOutlineSearch } from "react-icons/hi";
 import { useRouter } from "next/navigation";
 import { PageCard, PageCardLimited } from "@/components/card";
 import paginateData from "@/utils/pagination";
+import { DataProvider, useProvider } from "@/app/appcontext";
 
 export default function ListAsset() {
   const router = useRouter();
@@ -24,18 +24,23 @@ export default function ListAsset() {
   const [keywordError, setKeywordError] = useState(false);
   const [filteredList, setFilteredList] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const { filteredAssetList, setFilteredAssetList } = useProvider();
+  const { assetKeyword, setAssetKeyword } = useProvider();
 
   const fetch_data = async () => {
     const menu = localStorage.getItem("menu");
 
     const apiUrl = `${API_URL}/getallasset`;
-    const response = await axios.post(apiUrl, {});
+    const response = await axios.post(apiUrl, {
+      type: menu,
+    });
 
     if (response.status == 200) {
       const array = response.data["response"];
       console.log(array);
       setDetailData(array);
-      setFilteredList(array);
+      // setFilteredList(array);
+      setFilteredAssetList(array);
       setCountData(array.length);
     }
   };
@@ -45,30 +50,28 @@ export default function ListAsset() {
   }, []);
 
   useEffect(() => {
-    //if (!loading) {
     const filterData = detailData.filter((item) => {
       const description =
         item["Description"] &&
-        item["Description"].toLowerCase().includes(keyword.toLowerCase());
+        item["Description"].toLowerCase().includes(assetKeyword.toLowerCase());
       const manufacture =
         item["Manufacture"] &&
-        item["Manufacture"].toLowerCase().includes(keyword.toLowerCase());
+        item["Manufacture"].toLowerCase().includes(assetKeyword.toLowerCase());
       const user =
         item["User"] &&
-        item["User"].toLowerCase().includes(keyword.toLowerCase());
+        item["User"].toLowerCase().includes(assetKeyword.toLowerCase());
       return description || manufacture || user;
     });
-    console.log(filterData);
     const { data, pageCurrent, start, end } = paginateData(
       filterData,
-      //keyword,
+
       currentPage,
       10,
     );
-    setFilteredList(filterData);
-
-    //}
-  }, [detailData, keyword, currentPage]);
+    // setFilteredList(filterData);
+    //setFirstFilterLoad(false);
+    setFilteredAssetList(filterData);
+  }, [detailData, assetKeyword]);
 
   useEffect(() => {
     setIsClient(true);
@@ -83,13 +86,14 @@ export default function ListAsset() {
         <>
           <div className="min-h-screen  justify-center bg-boxdark-2">
             <Appbar></Appbar>
+
             <div className="p-2">
               <CommonInput
-                input={keyword}
+                input={assetKeyword}
                 type={"text"}
                 onInputChange={(val) => {
-                  setKeyword(val);
-                  search_data();
+                  setAssetKeyword(val);
+                  //  search_data();
                 }}
                 onKeyChange={() => {
                   setKeywordError(false);
@@ -102,9 +106,17 @@ export default function ListAsset() {
 
             <div className="p-2">
               <div className="">
-                {filteredList.map((item, index) => {
+                {filteredAssetList.map((item, index) => {
+                  const manufacture =
+                    item["Manufacture"] == null
+                      ? ""
+                      : " " + item["Manufacture"];
+                  const model =
+                    item["Model"] == null ? "" : " " + item["Model"];
                   const title =
-                    item["Type"] == "K" ? "mobil" : item["Description"];
+                    item["Type"] == "K"
+                      ? item["Model"]
+                      : item["Description"] + manufacture + model;
                   const image = `${IMAGE_ASSET}/${item["Image"]}`;
                   const idAsset = item["ID_Asset"];
 
@@ -116,8 +128,8 @@ export default function ListAsset() {
                       }}
                       className="cursor-default hover:bg-form-strokedark"
                     >
-                      <div className="flex flex-row py-3">
-                        <div>
+                      <div className="py-1">
+                        {/*<div>
                           {image == "" || image == null ? (
                             <div className="h-20 w-20 rounded-lg"></div>
                           ) : (
@@ -126,11 +138,23 @@ export default function ListAsset() {
                               src={image}
                             />
                           )}
-                        </div>
-                        <div className="ml-5 flex flex-col">
+                        </div>*/}
+
+                        <div className="flex  flex-col rounded-lg border p-1 text-white">
                           <div>{item["ID_Asset"]}</div>
-                          <div>{title}</div>
+                          {item["Type"] == "K" ? (
+                            <div className="flex flex-row items-center">
+                              <div>{item["Model"]}</div>
+                              <div className="ml-4 flex items-center rounded-md bg-white p-1 text-black">
+                                {item["No"]}
+                              </div>
+                            </div>
+                          ) : (
+                            <div>{title}</div>
+                          )}
+
                           <div>{item["User"]}</div>
+                          <div>{item["Class"]}</div>
                         </div>
                       </div>
                     </div>

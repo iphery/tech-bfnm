@@ -7,7 +7,6 @@ import { API_URL } from "@/utils/constant";
 import axios from "axios";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/app/firebase-config";
-import { AppContext } from "@/app/appcontext";
 
 const SignIn = () => {
   const [inputEmail, setInputEmail] = useState("");
@@ -20,8 +19,6 @@ const SignIn = () => {
 
   const [onloadLogin, setOnloadLogin] = useState(false);
   const [disabledLogin, setDisabledLogin] = useState(false);
-
-  const { setAccountInfo, setLanguage } = useContext(AppContext);
 
   const fetch_data = async (uid) => {
     console.log("sini");

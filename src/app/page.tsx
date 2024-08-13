@@ -13,7 +13,6 @@ import { useMediaQuery } from "react-responsive";
 import { auth } from "@/app/firebase-config";
 import { signOut } from "firebase/auth";
 
-import { AppContext } from "./appcontext";
 import { API_URL, ICON, IMAGE_ASSET, OLD_API_URL } from "@/utils/constant";
 import axios from "axios";
 import { Menu } from "@/components/menu";
@@ -25,8 +24,6 @@ export default function Home() {
   const isSmallScreen = useMediaQuery({ query: "(max-width: 640px)" });
   const router = useRouter();
   const [openScanner, setOpenScanner] = useState(false);
-
-  const { accountInfo, setMenu } = useContext(AppContext);
 
   const sign_out = async () => {
     await signOut(auth);
@@ -134,7 +131,10 @@ export default function Home() {
               <div className="grid grid-cols-4 gap-4">
                 <div
                   onClick={() => {
-                    localStorage.setItem("menu", "K");
+                    const arr = ["K"];
+                    const stringArr = JSON.stringify(arr);
+                    localStorage.setItem("menu", stringArr);
+
                     router.push("/asset");
                   }}
                 >
@@ -142,17 +142,45 @@ export default function Home() {
                 </div>
                 <div
                   onClick={() => {
-                    localStorage.setItem("menu", "MP");
+                    const arr = ["MP"];
+                    const stringArr = JSON.stringify(arr);
+                    localStorage.setItem("menu", stringArr);
                     router.push("/asset");
                   }}
                 >
-                  {" "}
                   <Menu url={"mesin.png"}>Mesin</Menu>
                 </div>
+                <div
+                  onClick={() => {
+                    const arr = ["AC"];
+                    const stringArr = JSON.stringify(arr);
+                    localStorage.setItem("menu", stringArr);
+                    router.push("/asset");
+                  }}
+                >
+                  <Menu url={"ac.png"}>AC</Menu>
+                </div>
+                <div
+                  onClick={() => {
+                    const arr = ["AC"];
+                    const stringArr = JSON.stringify(arr);
+                    localStorage.setItem("menu", stringArr);
+                    router.push("/asset");
+                  }}
+                >
+                  <Menu url={"pc.png"}>Komputer</Menu>
+                </div>
+                <div
+                  onClick={() => {
+                    const arr = ["AP", "HY"];
+                    const stringArr = JSON.stringify(arr);
+                    localStorage.setItem("menu", stringArr);
+                    router.push("/asset");
+                  }}
+                >
+                  <Menu url={"apar.png"}>Fire Safety</Menu>
+                </div>
 
-                <Menu url={"ac.png"}>AC</Menu>
-                <Menu url={"pc.png"}>Komputer</Menu>
-                <Menu url={"apar.png"}>Fire Safety</Menu>
                 <Menu url={"genset.png"}>Power</Menu>
                 <Menu url={"lainnya.png"}>Utility</Menu>
                 <Menu url={"other_menu.png"}>Lainnya</Menu>
