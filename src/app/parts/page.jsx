@@ -16,6 +16,10 @@ import paginateData from "@/utils/pagination";
 import { BsCartPlus } from "react-icons/bs";
 import { PageLoader } from "@/components/loader";
 import { PageCardLimited } from "@/components/card";
+import { useProvider } from "@/app/appcontext";
+import { MdAdd, MdAddToPhotos } from "react-icons/md";
+import { CustomModal } from "@/components/modal";
+import { FaBullseye } from "react-icons/fa";
 
 export default function ListPart() {
   const router = useRouter();
@@ -30,9 +34,22 @@ export default function ListPart() {
   const [filteredList, setFilteredList] = useState([]);
   const [loader, setLoader] = useState(true);
 
+  const { filteredPartList, setFilteredPartList } = useProvider();
+  const { partKeyword, setPartKeyword } = useProvider();
+
   //const [lastPage, setLastPage] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [modalNewPart, setModalNewPart] = useState(false);
+
+  const [inputNewData, setInputNewData] = useState({
+    description: "",
+    vendor_code: "",
+    unit: "",
+    location: "",
+    remark: "",
+  });
+
   const fetch_data = async () => {
     const apiUrl = `${API_URL}/stocklist?page=${currentPage}`;
     const response = await axios.post(apiUrl, { keyword: keyword });
@@ -84,7 +101,7 @@ export default function ListPart() {
   useEffect(() => {
     //if (!loading) {
     const filterData = detailData.filter((item) =>
-      item["description"].toLowerCase().includes(keyword.toLowerCase()),
+      item["description"].toLowerCase().includes(partKeyword.toLowerCase()),
     );
     const { data, pageCurrent, start, end } = paginateData(
       filterData,
@@ -92,10 +109,11 @@ export default function ListPart() {
       currentPage,
       15,
     );
-    setFilteredList(filterData);
+
+    setFilteredPartList(filterData);
 
     //}
-  }, [detailData, keyword, currentPage]);
+  }, [detailData, partKeyword, currentPage]);
 
   useEffect(() => {
     setIsClient(true);
@@ -113,105 +131,153 @@ export default function ListPart() {
             <div>in progerss</div>
           </>
         ) : (
-          <DefaultLayout>
-            <div className="flex min-h-[calc(100vh-115px)] flex-col">
-              <div className="mb-3 flex items-center justify-center">
-                <div className="text-lg text-white">Inventory</div>
+          <div className="relative">
+            <div className="absolute z-0 h-full w-full">
+              <DefaultLayout>
+                <div className="flex min-h-[calc(100vh-115px)] flex-col">
+                  <div className="mb-3 flex items-center justify-center">
+                    <div className="text-lg text-white">Inventory</div>
 
-                <div className="w-full">
-                  <div className="flex justify-end">
-                    <div
-                      className="flex cursor-default items-center justify-center px-5  hover:text-white"
-                      onClick={() => {
-                        router.push("/partsout");
-                      }}
-                    >
-                      <BsCartPlus />
-                      <div className="ml-1">Stock Out</div>
+                    <div className="w-full">
+                      <div className="flex justify-end text-warning">
+                        <div className="flex flex-row">
+                          <div
+                            className="flex cursor-default items-center justify-center px-5  hover:text-white"
+                            onClick={() => {
+                              setModalNewPart(true);
+                            }}
+                          >
+                            <MdAddToPhotos />
+                            <div className="ml-1 ">New Part</div>
+                          </div>
+                          <div
+                            className="flex cursor-default items-center justify-center px-5  hover:text-white"
+                            onClick={() => {
+                              router.push("/partsout");
+                            }}
+                          >
+                            <BsCartPlus />
+                            <div className="ml-1 ">Stock Out</div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-              <PageCardLimited>
-                <div className="p-5">
-                  <div className="flex flex-row items-center">
-                    <div className="w-1/2">
-                      <CommonInput
-                        input={keyword}
-                        type={"text"}
-                        onInputChange={(val) => {
-                          //setKeyword(val);
-                          //  fetch_data();
-                          setKeyword(val);
-                          setCurrentPage(1);
-                        }}
-                        onKeyChange={() => {
-                          setKeywordError(false);
-                        }}
-                        placeholder={"Search"}
-                      >
-                        <HiOutlineSearch />
-                      </CommonInput>
+                  <PageCardLimited>
+                    <div className="p-5">
+                      <div className="flex flex-row items-center">
+                        <div className="w-1/2">
+                          <CommonInput
+                            input={partKeyword}
+                            type={"text"}
+                            onInputChange={(val) => {
+                              //setKeyword(val);
+                              //  fetch_data();
+                              setPartKeyword(val);
+                              setCurrentPage(1);
+                            }}
+                            onKeyChange={() => {
+                              setKeywordError(false);
+                            }}
+                            placeholder={"Search"}
+                          >
+                            <HiOutlineSearch />
+                          </CommonInput>
+                        </div>
+                      </div>
+
+                      <div className="mb-5"></div>
+
+                      <div className="h-[calc(100vh-280px)] overflow-y-auto">
+                        <table className="w-full">
+                          <thead>
+                            <tr className="sticky top-0 bg-black text-white">
+                              <th>Deskripsi</th>
+                              <th>Part No</th>
+                              <th>Remark</th>
+                              <th>Quantity</th>
+                              <th>Unit</th>
+
+                              <th>Lokasi Simpan</th>
+                            </tr>
+                          </thead>
+                          <tbody className=" ">
+                            {!loading ? (
+                              filteredPartList.map((item, index) => {
+                                return (
+                                  <tr
+                                    key={index}
+                                    className={`cursor-default text-white    hover:bg-secondary hover:text-black`}
+                                    onClick={() => {
+                                      router.push(`/parts/${item["id_part"]}`);
+                                    }}
+                                  >
+                                    <td className="p-2 align-top">
+                                      {item["description"]}
+                                    </td>
+                                    <td className=" p-2 align-top">
+                                      {item["vendor_code"]}
+                                    </td>
+                                    <td className="p-2 align-top">
+                                      {item["remark"]}
+                                    </td>
+                                    <td className="p-2 align-top">
+                                      {item["available_quantity"]}
+                                    </td>
+                                    <td className="p-2 align-top">
+                                      {item["unit"]}
+                                    </td>
+                                    <td className="p-2 align-top">
+                                      {item["location"]}
+                                    </td>
+                                  </tr>
+                                );
+                              })
+                            ) : (
+                              <></>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="mb-5"></div>
-
-                  <div className="h-[calc(100vh-280px)] overflow-y-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="sticky top-0 bg-black">
-                          <th>Deskripsi</th>
-                          <th>Part No</th>
-                          <th>Remark</th>
-                          <th>Quantity</th>
-                          <th>Unit</th>
-
-                          <th>Lokasi Simpan</th>
-                        </tr>
-                      </thead>
-                      <tbody className=" ">
-                        {!loading ? (
-                          filteredList.map((item, index) => {
-                            return (
-                              <tr
-                                key={index}
-                                className={`cursor-default   hover:bg-secondary hover:text-white`}
-                                onClick={() => {
-                                  router.push(`/parts/${item["id_part"]}`);
-                                }}
-                              >
-                                <td className="p-2 align-top">
-                                  {item["description"]}
-                                </td>
-                                <td className=" p-2 align-top">
-                                  {item["vendor_code"]}
-                                </td>
-                                <td className="p-2 align-top">
-                                  {item["remark"]}
-                                </td>
-                                <td className="p-2 align-top">
-                                  {item["available_quantity"]}
-                                </td>
-                                <td className="p-2 align-top">
-                                  {item["unit"]}
-                                </td>
-                                <td className="p-2 align-top">
-                                  {item["location"]}
-                                </td>
-                              </tr>
-                            );
-                          })
-                        ) : (
-                          <></>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                  </PageCardLimited>
                 </div>
-              </PageCardLimited>
+              </DefaultLayout>
             </div>
-          </DefaultLayout>
+            <CustomModal
+              isVisible={modalNewPart}
+              isSmallWidth="sm"
+              onClose={() => {
+                setModalNewPart(false);
+              }}
+            >
+              <CommonInput
+                placeholder={"Enter description"}
+                input={inputNewData.description}
+                onInputChange={(val) => {
+                  setInputNewData((prevState) => ({
+                    ...prevState,
+                    description: val,
+                  }));
+                }}
+              ></CommonInput>
+              <CommonInput
+                placeholder={"Enter detail"}
+                input={inputNewData.vendor_code}
+                onInputChange={(val) => {
+                  setInputNewData;
+                }}
+              ></CommonInput>
+
+              <div
+                onClick={() => {
+                  console.log(inputNewData.description);
+                }}
+              >
+                aaa
+              </div>
+            </CustomModal>
+          </div>
         )}
       </div>
     </UserAuth>

@@ -100,16 +100,18 @@ export default function PartsIn() {
     const filterData = detailData.filter((item) =>
       item["description"].toLowerCase().includes(keyword.toLowerCase()),
     );
+    /*
     const { data, pageCurrent, start, end } = paginateData(
       filterData,
       //keyword,
       currentPage,
       10,
     );
-    setFilteredList(data);
+    */
+    setFilteredList(filterData);
 
     //}
-  }, [detailData, keyword, currentPage]);
+  }, [detailData, keyword]);
 
   useEffect(() => {
     const filterRequest = pendingService.filter((item) =>

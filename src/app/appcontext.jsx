@@ -8,6 +8,9 @@ export function DataProvider({ children }) {
   const [filteredAssetList, setFilteredAssetList] = useState([]);
   const [assetKeyword, setAssetKeyword] = useState("");
 
+  const [filteredPartList, setFilteredPartList] = useState([]);
+  const [partKeyword, setPartKeyword] = useState("");
+
   const updateCache = (key, data) => {
     setCachedData((prev) => ({ ...prev, [key]: data }));
   };
@@ -23,6 +26,10 @@ export function DataProvider({ children }) {
         setFilteredAssetList,
         assetKeyword,
         setAssetKeyword,
+        filteredPartList,
+        setFilteredPartList,
+        partKeyword,
+        setPartKeyword,
       }}
     >
       {children}
