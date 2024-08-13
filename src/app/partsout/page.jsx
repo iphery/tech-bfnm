@@ -101,7 +101,7 @@ export default function PartsOut() {
     const id_service = localStorage.getItem("id_service");
     setIdService(id_service);
     console.log(data_asset);
-    if (data_asset !== "") {
+    if (data_asset !== "" && data != null) {
       const parseData = JSON.parse(data_asset);
 
       setDataAsset({
