@@ -13,11 +13,16 @@ const CameraPage = () => {
     console.log(image);
   };
 
+  const videoConstraints = {
+    facingMode: { exact: "environment" },
+  };
+
   return (
     <div className="relative h-screen w-screen">
       <Webcam
         audio={false}
         ref={webcamRef}
+        videoConstraints={videoConstraints}
         screenshotFormat="image/jpeg"
         className="absolute left-0 top-0 w-full "
       />
