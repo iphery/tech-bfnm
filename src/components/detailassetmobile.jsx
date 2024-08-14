@@ -372,7 +372,7 @@ export default function DetailAssetMobile({ idAsset }) {
                   <div className="flex justify-end">
                     {openService == 1 ? (
                       <></>
-                    ) : (
+                    ) : parseInt(userLevel) == 4 ? (
                       <div
                         className="rounded-full bg-white  p-1  text-danger"
                         onClick={() => {
@@ -381,11 +381,13 @@ export default function DetailAssetMobile({ idAsset }) {
                       >
                         <MdMedicalServices className="h-6 w-6" />
                       </div>
+                    ) : (
+                      <></>
                     )}
                     <div className="mr-5"></div>
                     {openMaintenance == 1 ? (
                       <></>
-                    ) : (
+                    ) : parseInt(userLevel) <= 2 ? (
                       <div
                         className="rounded-full bg-white p-1 text-warning"
                         onClick={async () => {
@@ -408,6 +410,8 @@ export default function DetailAssetMobile({ idAsset }) {
                           <RiCalendarScheduleFill className="h-6 w-6" />
                         )}
                       </div>
+                    ) : (
+                      <></>
                     )}
 
                     <div className="mr-5"></div>
@@ -584,6 +588,8 @@ export default function DetailAssetMobile({ idAsset }) {
                                     if (response.status == 200) {
                                       const message = response.data["message"];
                                       NotifySuccess(message);
+                                      fetch_data();
+                                      fetch_data_service();
                                       setSwitchPage(false);
                                     }
 
