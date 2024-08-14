@@ -110,6 +110,7 @@ export default function DetailAssetMobile({ idAsset }) {
   const [openService, setOpenService] = useState(0);
   const [openMaintenance, setOpenMaintenance] = useState(0);
   const [switchDelete, setSwitchDelete] = useState(false);
+  const [onloadDelete, setOnloadDelete] = useState(false);
 
   const [test] = useState([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
 
@@ -565,18 +566,44 @@ export default function DetailAssetMobile({ idAsset }) {
                       {selectedCase.Step == "1" ? (
                         <div>
                           {switchDelete ? (
-                            <div className="flex cursor-default items-center justify-start">
-                              <div className="text-white">Are you sure ?</div>
-                              <div className="mx-2 text-danger">Yes</div>
-                              <div
-                                onClick={() => {
-                                  setSwitchDelete(false);
-                                }}
-                                className="mx-2 text-success"
-                              >
-                                Cancel
+                            onloadDelete ? (
+                              <div className="text-white">Please wait...</div>
+                            ) : (
+                              <div className="flex cursor-default items-center justify-start">
+                                <div className="text-white">Are you sure ?</div>
+                                <div
+                                  onClick={async () => {
+                                    setOnloadDelete(true);
+
+                                    const apiUrl = `${API_URL}/deleterequest`;
+                                    const response = await axios.post(apiUrl, {
+                                      idRequest: selectedCase.ID_Request,
+                                      idAsset: selectedCase.ID_Asset,
+                                    });
+
+                                    if (response.status == 200) {
+                                      const message = response.data["message"];
+                                      NotifySuccess(message);
+                                      setSwitchPage(false);
+                                    }
+
+                                    setOnloadDelete(false);
+                                    setSwitchDelete(false);
+                                  }}
+                                  className="mx-2 text-danger"
+                                >
+                                  Yes
+                                </div>
+                                <div
+                                  onClick={() => {
+                                    setSwitchDelete(false);
+                                  }}
+                                  className="mx-2 text-success"
+                                >
+                                  Cancel
+                                </div>
                               </div>
-                            </div>
+                            )
                           ) : (
                             <div
                               className="flex cursor-default items-center justify-start text-red"
