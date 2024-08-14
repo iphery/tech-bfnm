@@ -42,7 +42,7 @@ import { RepairStatus } from "@/utils/repairstatus";
 import { CiEdit } from "react-icons/ci";
 import { FaCheckSquare } from "react-icons/fa";
 import { CustomModal } from "./modal";
-import { RiCalendarScheduleFill } from "react-icons/ri";
+import { RiCalendarScheduleFill, RiDeleteBin2Line } from "react-icons/ri";
 import { TfiSave } from "react-icons/tfi";
 
 export default function DetailAssetMobile({ idAsset }) {
@@ -107,6 +107,9 @@ export default function DetailAssetMobile({ idAsset }) {
   const [onloadRequestPerawatan, setOnloadRequestPerawatan] = useState(false);
 
   const [onloadAddChecklist, setOnloadAddChecklist] = useState(false);
+  const [openService, setOpenService] = useState(0);
+  const [openMaintenance, setOpenMaintenance] = useState(0);
+  const [switchDelete, setSwitchDelete] = useState(false);
 
   const [test] = useState([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
 
@@ -119,8 +122,12 @@ export default function DetailAssetMobile({ idAsset }) {
     if (response.status == 200) {
       // console.log(response.data["detail"][0].ID_Asset);
       const detail = response.data["detail"][0];
+      const open_service = response.data["open_service"];
+      const open_maintenance = response.data["open_maintenance"];
       console.log(detail);
       setDataAsset(detail);
+      setOpenService(open_service);
+      setOpenMaintenance(open_maintenance);
 
       const user = localStorage.getItem("info");
       const parseUser = JSON.parse(user);
@@ -347,47 +354,62 @@ export default function DetailAssetMobile({ idAsset }) {
                   <HiLocationMarker />
                   <div className="ml-2">{dataAsset.Location}</div>
                 </div>
+                <div className="flex flex-row items-center px-2 py-1">
+                  <MdOutlineMiscellaneousServices />
+                  <div className="ml-2">
+                    {dataAsset.Available == 1 && dataAsset.Reserve == 1
+                      ? "Reserved for service"
+                      : dataAsset.Available == 0 && dataAsset.Reserve == 1
+                        ? "On Maintenance"
+                        : "Ready"}
+                  </div>
+                </div>
 
                 {switchPage ? (
                   <></>
                 ) : (
                   <div className="flex justify-end">
-                    <div
-                      className="rounded-full bg-white  p-1  text-danger"
-                      onClick={() => {
-                        setModalPerbaikan(true);
-                      }}
-                    >
-                      <MdMedicalServices className="h-6 w-6" />
-                    </div>
+                    {openService == 1 ? (
+                      <></>
+                    ) : (
+                      <div
+                        className="rounded-full bg-white  p-1  text-danger"
+                        onClick={() => {
+                          setModalPerbaikan(true);
+                        }}
+                      >
+                        <MdMedicalServices className="h-6 w-6" />
+                      </div>
+                    )}
                     <div className="mr-5"></div>
-
-                    <div
-                      className="rounded-full bg-white p-1 text-warning"
-                      onClick={async () => {
-                        if (!onloadRequestPerawatan) {
-                          if (dataAsset.Type == "K") {
-                            //untuk mobil
-                            setModalPerawatan(true);
-                          } else {
-                            setOnloadRequestPerawatan(true);
-                            //kirim ke server
+                    {openMaintenance == 1 ? (
+                      <></>
+                    ) : (
+                      <div
+                        className="rounded-full bg-white p-1 text-warning"
+                        onClick={async () => {
+                          if (!onloadRequestPerawatan) {
+                            if (dataAsset.Type == "K") {
+                              //untuk mobil
+                              setModalPerawatan(true);
+                            } else {
+                              setOnloadRequestPerawatan(true);
+                              //kirim ke server
+                            }
                           }
-                        }
-                      }}
-                    >
-                      {onloadRequestPerawatan ? (
-                        <div
-                          className={`h-6 w-6 animate-spin rounded-full border-2 border-solid border-warning border-t-transparent`}
-                        ></div>
-                      ) : (
-                        <RiCalendarScheduleFill className="h-6 w-6" />
-                      )}
-                    </div>
+                        }}
+                      >
+                        {onloadRequestPerawatan ? (
+                          <div
+                            className={`h-6 w-6 animate-spin rounded-full border-2 border-solid border-warning border-t-transparent`}
+                          ></div>
+                        ) : (
+                          <RiCalendarScheduleFill className="h-6 w-6" />
+                        )}
+                      </div>
+                    )}
 
                     <div className="mr-5"></div>
-
-                    <div className="mr-3"></div>
                   </div>
                 )}
 
@@ -537,6 +559,36 @@ export default function DetailAssetMobile({ idAsset }) {
                             )}
                           </div>
                         )
+                      ) : (
+                        <></>
+                      )}
+                      {selectedCase.Step == "1" ? (
+                        <div>
+                          {switchDelete ? (
+                            <div className="flex cursor-default items-center justify-start">
+                              <div className="text-white">Are you sure ?</div>
+                              <div className="mx-2 text-danger">Yes</div>
+                              <div
+                                onClick={() => {
+                                  setSwitchDelete(false);
+                                }}
+                                className="mx-2 text-success"
+                              >
+                                Cancel
+                              </div>
+                            </div>
+                          ) : (
+                            <div
+                              className="flex cursor-default items-center justify-start text-red"
+                              onClick={() => {
+                                setSwitchDelete(true);
+                              }}
+                            >
+                              <RiDeleteBin2Line />
+                              <div className="ml-2">Delete</div>
+                            </div>
+                          )}
+                        </div>
                       ) : (
                         <></>
                       )}
@@ -1070,7 +1122,6 @@ export default function DetailAssetMobile({ idAsset }) {
             errorMessage={"Required"}
             onInputChange={(val) => {
               setInputRequestPerbaikan(val);
-              console.log(val);
             }}
             onChg={() => {
               setInputRequestPerbaikanError(false);
@@ -1082,18 +1133,17 @@ export default function DetailAssetMobile({ idAsset }) {
             disabled={onloadRequestPerbaikan}
             onload={onloadRequestPerbaikan}
             onClick={async () => {
-              console.log(inputRequestPerbaikan);
               setOnloadRequestPerbaikan(true);
               if (inputRequestPerbaikan == "") {
                 setInputRequestPerbaikanError(true);
               } else {
                 setInputRequestPerbaikanError(false);
-                console.log(idAsset);
-                console.log(inputRequestPerbaikan);
 
                 const apiUrl = `${API_URL}/createservice`;
                 const response = await axios.post(apiUrl, {
                   idAsset: idAsset,
+                  problem: inputRequestPerbaikan,
+                  uid: uid,
                 });
 
                 if (response.status == 200) {

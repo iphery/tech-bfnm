@@ -515,7 +515,10 @@ export default function PartsOut() {
                             console.log(tempAvailableQuantity);
                             console.log(tempQuantity);
 
-                            if (tempQuantity > tempAvailableQuantity) {
+                            if (
+                              parseInt(tempQuantity) >
+                              parseInt(tempAvailableQuantity)
+                            ) {
                               AlertMessage("Stock tidak cukup");
                             } else {
                               //cek jika exist
