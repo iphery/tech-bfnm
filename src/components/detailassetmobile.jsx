@@ -27,6 +27,8 @@ import {
   MdMedicalServices,
   MdOutlineClose,
   MdOutlineMiscellaneousServices,
+  MdOutlinePhotoCamera,
+  MdOutlinePhotoCameraFront,
 } from "react-icons/md";
 import { useMediaQuery } from "react-responsive";
 import { formatDateTime } from "@/utils/dateformat";
@@ -326,13 +328,10 @@ export default function DetailAssetMobile({ idAsset }) {
                       </div>
                       <div className="mb-2"></div>
                       <div className="m-2 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-lg">
-                        <HiCamera className="h-6 w-6"></HiCamera>
+                        <MdOutlinePhotoCameraFront className="h-6 w-6" />
                       </div>
                       <div className="m-2 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-lg">
-                        <HiCamera className="h-6 w-6"></HiCamera>
-                      </div>
-                      <div className="m-2 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-lg">
-                        <HiCamera className="h-6 w-6"></HiCamera>
+                        <MdOutlinePhotoCamera className="h-6 w-6" />
                       </div>
                     </div>
                   </div>
@@ -436,9 +435,9 @@ export default function DetailAssetMobile({ idAsset }) {
 
                             if (response.status == 200) {
                               // console.log(response.data["detail"][0].ID_Asset);
-                              const detail = response.data["response"];
+                              const message = response.data["message"];
                               fetch_data();
-                              NotifySuccess(detail);
+                              NotifySuccess(message);
                             }
 
                             setResetAsset(false);
