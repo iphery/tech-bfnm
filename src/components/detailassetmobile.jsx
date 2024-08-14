@@ -209,8 +209,10 @@ export default function DetailAssetMobile({ idAsset }) {
 
   useEffect(() => {
     const idRequest = localStorage.getItem("selected_idRequest");
+
     if (updatedStep != "") {
       do_action(updatedStep, idRequest);
+      setUpdatedStep("");
     }
   }, [updatedStep]);
 
@@ -228,8 +230,12 @@ export default function DetailAssetMobile({ idAsset }) {
     if (response.status == 200) {
       // console.log(response.data["detail"][0].ID_Asset);
       const detail = response.data["response"];
-      console.log(detail);
-      NotifySuccess(detail);
+      const error = response.data["error"];
+      if (error == 1) {
+        NotifyError(detail);
+      } else {
+        NotifySuccess(detail);
+      }
     }
     fetch_detail_service(id_request);
 
@@ -334,44 +340,48 @@ export default function DetailAssetMobile({ idAsset }) {
                   <div className="ml-2">{dataAsset.Location}</div>
                 </div>
 
-                <div className="flex justify-end">
-                  <div
-                    className="rounded-full bg-white  p-1  text-danger"
-                    onClick={() => {
-                      setModalPerbaikan(true);
-                    }}
-                  >
-                    <MdMedicalServices className="h-6 w-6" />
-                  </div>
-                  <div className="mr-5"></div>
+                {switchPage ? (
+                  <></>
+                ) : (
+                  <div className="flex justify-end">
+                    <div
+                      className="rounded-full bg-white  p-1  text-danger"
+                      onClick={() => {
+                        setModalPerbaikan(true);
+                      }}
+                    >
+                      <MdMedicalServices className="h-6 w-6" />
+                    </div>
+                    <div className="mr-5"></div>
 
-                  <div
-                    className="rounded-full bg-white p-1 text-warning"
-                    onClick={async () => {
-                      if (!onloadRequestPerawatan) {
-                        if (dataAsset.Type == "K") {
-                          //untuk mobil
-                          setModalPerawatan(true);
-                        } else {
-                          setOnloadRequestPerawatan(true);
-                          //kirim ke server
+                    <div
+                      className="rounded-full bg-white p-1 text-warning"
+                      onClick={async () => {
+                        if (!onloadRequestPerawatan) {
+                          if (dataAsset.Type == "K") {
+                            //untuk mobil
+                            setModalPerawatan(true);
+                          } else {
+                            setOnloadRequestPerawatan(true);
+                            //kirim ke server
+                          }
                         }
-                      }
-                    }}
-                  >
-                    {onloadRequestPerawatan ? (
-                      <div
-                        className={`h-6 w-6 animate-spin rounded-full border-2 border-solid border-warning border-t-transparent`}
-                      ></div>
-                    ) : (
-                      <RiCalendarScheduleFill className="h-6 w-6" />
-                    )}
+                      }}
+                    >
+                      {onloadRequestPerawatan ? (
+                        <div
+                          className={`h-6 w-6 animate-spin rounded-full border-2 border-solid border-warning border-t-transparent`}
+                        ></div>
+                      ) : (
+                        <RiCalendarScheduleFill className="h-6 w-6" />
+                      )}
+                    </div>
+
+                    <div className="mr-5"></div>
+
+                    <div className="mr-3"></div>
                   </div>
-
-                  <div className="mr-5"></div>
-
-                  <div className="mr-3"></div>
-                </div>
+                )}
 
                 <div className="mt-2 bg-form-strokedark">
                   <div className="p-2 text-white">Riwayat Perbaikan</div>
@@ -477,7 +487,9 @@ export default function DetailAssetMobile({ idAsset }) {
                       >
                         <MdOutlineClose></MdOutlineClose>
                       </div>
-                      {selectedCase.Maintenance_Type == "PM" ? (
+                      {selectedCase.Maintenance_Type == "PM" &&
+                      (parseInt(selectedCase.Step) < 2 ||
+                        parseInt(selectedCase.Step) >= 6) ? (
                         pmList.length > 0 ? (
                           <></>
                         ) : (
@@ -558,12 +570,10 @@ export default function DetailAssetMobile({ idAsset }) {
                                     <CommonButtonFull
                                       label={"Selesai"}
                                       onClick={() => {
-                                        if (caseSolution == "") {
-                                          setCaseSolutionError(true);
-                                        } else {
-                                          setCaseLoaderCompleted(true);
-                                          setUpdatedStep("completed");
-                                        }
+                                        console.log("ini dia");
+
+                                        setCaseLoaderCompleted(true);
+                                        setUpdatedStep("completed");
                                       }}
                                       disabled={caseLoaderCompleted}
                                       onload={caseLoaderCompleted}
@@ -579,12 +589,8 @@ export default function DetailAssetMobile({ idAsset }) {
                                   <CommonButtonFull
                                     label={"Selesai"}
                                     onClick={() => {
-                                      if (caseSolution == "") {
-                                        setCaseSolutionError(true);
-                                      } else {
-                                        setCaseLoaderCompleted(true);
-                                        setUpdatedStep("completed");
-                                      }
+                                      setCaseLoaderCompleted(true);
+                                      setUpdatedStep("completed");
                                     }}
                                     disabled={caseLoaderCompleted}
                                     onload={caseLoaderCompleted}
@@ -592,6 +598,41 @@ export default function DetailAssetMobile({ idAsset }) {
                                 </div>
                               </div>
                             );
+
+                          case "5":
+                            return (
+                              <div className=" border p-2">
+                                <div>
+                                  <CommonButtonFull
+                                    label={"Checked"}
+                                    onClick={() => {
+                                      setCaseLoaderCompleted(true);
+                                      setUpdatedStep("checked");
+                                    }}
+                                    disabled={caseLoaderCompleted}
+                                    onload={caseLoaderCompleted}
+                                  />
+                                </div>
+                              </div>
+                            );
+
+                          case "6":
+                            return (
+                              <div className=" border p-2">
+                                <div>
+                                  <CommonButtonFull
+                                    label={"Accepted"}
+                                    onClick={() => {
+                                      setCaseLoaderCompleted(true);
+                                      setUpdatedStep("accepted");
+                                    }}
+                                    disabled={caseLoaderCompleted}
+                                    onload={caseLoaderCompleted}
+                                  />
+                                </div>
+                              </div>
+                            );
+
                           default:
                             return <></>;
                         }
@@ -614,7 +655,10 @@ export default function DetailAssetMobile({ idAsset }) {
 
                     <div className="flex items-center justify-between">
                       <div className="p-2 text-white">Tindakan</div>
-                      {solutionEditMode ? (
+                      {parseInt(selectedCase.Step) < 2 ||
+                      parseInt(selectedCase.Step) >= 6 ? (
+                        <></>
+                      ) : solutionEditMode ? (
                         <div className="p-2">
                           {onloadSolution ? (
                             <div
@@ -796,30 +840,41 @@ export default function DetailAssetMobile({ idAsset }) {
                         <div className="flex items-center justify-between">
                           <div className="p-2 text-white">Checklist</div>
 
-                          {pmEditMode ? (
-                            <div className="w-[150px] px-2">
-                              <CommonButtonFull
-                                onClick={async () => {
-                                  setOnloadPM(true);
-                                  const idRequest =
-                                    localStorage.getItem("selected_idRequest");
-                                  console.log(pmTempList);
-                                  const apiUrl = `${API_URL}/updatepmlist`;
-                                  const response = await axios.post(apiUrl, {
-                                    idRequest: idRequest,
-                                    pmList: JSON.stringify(pmTempList),
-                                  });
+                          {parseInt(selectedCase.Step) < 2 ||
+                          parseInt(selectedCase.Step) >= 6 ? (
+                            <></>
+                          ) : pmEditMode ? (
+                            <div className="p-2">
+                              {onloadPM ? (
+                                <div
+                                  className={`h-6 w-6 animate-spin rounded-full border-2 border-solid border-success border-t-transparent`}
+                                ></div>
+                              ) : (
+                                <div
+                                  className=" justify center flex h-8 w-8 cursor-default items-center  rounded-full p-2 text-xl text-white hover:bg-white hover:bg-opacity-20"
+                                  onClick={async () => {
+                                    setOnloadPM(true);
+                                    const idRequest =
+                                      localStorage.getItem(
+                                        "selected_idRequest",
+                                      );
+                                    console.log(pmTempList);
+                                    const apiUrl = `${API_URL}/updatepmlist`;
+                                    const response = await axios.post(apiUrl, {
+                                      idRequest: idRequest,
+                                      pmList: JSON.stringify(pmTempList),
+                                    });
 
-                                  if (response.status == 200) {
-                                    fetch_detail_service(idRequest);
-                                    setpmEditMode(false);
-                                  }
-                                  setOnloadPM(false);
-                                }}
-                                label={"Save"}
-                                disabled={onloadPM}
-                                onload={onloadPM}
-                              ></CommonButtonFull>
+                                    if (response.status == 200) {
+                                      fetch_detail_service(idRequest);
+                                      setpmEditMode(false);
+                                    }
+                                    setOnloadPM(false);
+                                  }}
+                                >
+                                  <TfiSave />
+                                </div>
+                              )}
                             </div>
                           ) : (
                             <div className=" p-1">
