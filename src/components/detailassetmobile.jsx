@@ -42,7 +42,7 @@ import { CommonButton, CommonButtonFull } from "./button";
 import { NotifyError, NotifySuccess } from "@/utils/notify";
 import { RepairStatus } from "@/utils/repairstatus";
 import { CiEdit } from "react-icons/ci";
-import { FaCheckSquare } from "react-icons/fa";
+import { FaCalendarAlt, FaCheckSquare } from "react-icons/fa";
 import { CustomModal } from "./modal";
 import {
   RiCalendarScheduleFill,
@@ -52,6 +52,8 @@ import {
 import { TfiSave } from "react-icons/tfi";
 import { LuRefreshCw } from "react-icons/lu";
 import { DataProvider, useProvider } from "@/app/appcontext";
+import { BsFillFuelPumpFill } from "react-icons/bs";
+import { BiVerticalCenter } from "react-icons/bi";
 
 export default function DetailAssetMobile({ idAsset }) {
   //params.idAsset
@@ -122,6 +124,9 @@ export default function DetailAssetMobile({ idAsset }) {
   const [resetAsset, setResetAsset] = useState(false);
   const { cameraResult, setCameraResult } = useProvider();
   const { globalIdAsset, setGlobalIdAsset } = useProvider();
+  const [lastSeen, setLastSeen] = useState("");
+  const [ratio, setRatio] = useState("");
+  const [nextService, setNextService] = useState("");
 
   const [test] = useState([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
 
@@ -140,6 +145,9 @@ export default function DetailAssetMobile({ idAsset }) {
       setDataAsset(detail);
       setOpenService(open_service);
       setOpenMaintenance(open_maintenance);
+      setLastSeen(response.data["last_seen"]);
+      setRatio(response.data["ratio"]);
+      setNextService(response.data["next_service"]);
 
       const user = localStorage.getItem("info");
       const parseUser = JSON.parse(user);
@@ -384,6 +392,20 @@ export default function DetailAssetMobile({ idAsset }) {
                         ? "On Maintenance"
                         : "Ready"}
                   </div>
+                </div>
+                {dataAsset.Type == "K" && dataAsset.Based == "KM" ? (
+                  <div>
+                    <div className="flex flex-row items-center px-2 py-1">
+                      <BsFillFuelPumpFill />
+                      <div className="ml-2">{`${lastSeen} (${ratio})`}</div>
+                    </div>
+                  </div>
+                ) : (
+                  <></>
+                )}
+                <div className="flex flex-row items-center px-2 py-1">
+                  <FaCalendarAlt />
+                  <div className="ml-2">{nextService}</div>
                 </div>
 
                 {switchPage ? (
@@ -1277,15 +1299,34 @@ export default function DetailAssetMobile({ idAsset }) {
           <div className="mb-2"></div>
           <CommonButtonFull
             label={"Kirim"}
-            disabled={onloadRequestPerbaikan}
-            onload={onloadRequestPerbaikan}
+            disabled={onloadRequestPerawatan}
+            onload={onloadRequestPerawatan}
             onClick={async () => {
               setOnloadRequestPerawatan(true);
               if (inputKM == "") {
                 setInputKMError(true);
               } else {
                 setInputKMError(false);
+                const apiUrl = `${API_URL}/createvehiclemaintenance`;
+                const response = await axios.post(apiUrl, {
+                  idAsset: idAsset,
+                  km: inputKM,
+                  uid: uid,
+                });
 
+                if (response.status == 200) {
+                  // console.log(response.data["detail"][0].ID_Asset);
+                  const result = response.data;
+                  if (result["error"] == 1) {
+                    NotifyError(result["message"]);
+                  } else {
+                    setModalPerawatan(false);
+                    setInputKM("");
+                    NotifySuccess(result["message"]);
+                    fetch_data();
+                    fetch_data_service();
+                  }
+                }
                 //kirim ke server
               }
               setOnloadRequestPerawatan(false);
