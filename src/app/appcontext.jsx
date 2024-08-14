@@ -13,6 +13,9 @@ export function DataProvider({ children }) {
 
   const [opnameIdRegister, setOpnameIdRegister] = useState("");
 
+  const [cameraResult, setCameraResult] = useState("");
+  const [globalIdAsset, setGlobalIdAsset] = useState("");
+
   const updateCache = (key, data) => {
     setCachedData((prev) => ({ ...prev, [key]: data }));
   };
@@ -34,6 +37,10 @@ export function DataProvider({ children }) {
         setPartKeyword,
         opnameIdRegister,
         setOpnameIdRegister,
+        cameraResult,
+        setCameraResult,
+        globalIdAsset,
+        setGlobalIdAsset,
       }}
     >
       {children}

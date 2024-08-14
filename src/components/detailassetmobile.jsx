@@ -51,6 +51,7 @@ import {
 } from "react-icons/ri";
 import { TfiSave } from "react-icons/tfi";
 import { LuRefreshCw } from "react-icons/lu";
+import { DataProvider, useProvider } from "@/app/appcontext";
 
 export default function DetailAssetMobile({ idAsset }) {
   //params.idAsset
@@ -119,6 +120,8 @@ export default function DetailAssetMobile({ idAsset }) {
   const [switchDelete, setSwitchDelete] = useState(false);
   const [onloadDelete, setOnloadDelete] = useState(false);
   const [resetAsset, setResetAsset] = useState(false);
+  const { cameraResult, setCameraResult } = useProvider();
+  const { globalIdAsset, setGlobalIdAsset } = useProvider();
 
   const [test] = useState([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
 
@@ -327,10 +330,22 @@ export default function DetailAssetMobile({ idAsset }) {
                         )}
                       </div>
                       <div className="mb-2"></div>
-                      <div className="m-2 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-lg">
+                      <div
+                        onClick={() => {
+                          setCameraResult("asset_user");
+                          setGlobalIdAsset(dataAsset.ID_Asset);
+                          router.push("/camera");
+                        }}
+                        className="m-2 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-lg"
+                      >
                         <MdOutlinePhotoCameraFront className="h-6 w-6" />
                       </div>
-                      <div className="m-2 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-lg">
+                      <div
+                        onClick={() => {
+                          console.log(cameraResult);
+                        }}
+                        className="m-2 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-lg"
+                      >
                         <MdOutlinePhotoCamera className="h-6 w-6" />
                       </div>
                     </div>
