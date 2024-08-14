@@ -42,8 +42,13 @@ import { RepairStatus } from "@/utils/repairstatus";
 import { CiEdit } from "react-icons/ci";
 import { FaCheckSquare } from "react-icons/fa";
 import { CustomModal } from "./modal";
-import { RiCalendarScheduleFill, RiDeleteBin2Line } from "react-icons/ri";
+import {
+  RiCalendarScheduleFill,
+  RiDeleteBin2Line,
+  RiRefreshFill,
+} from "react-icons/ri";
 import { TfiSave } from "react-icons/tfi";
+import { LuRefreshCw } from "react-icons/lu";
 
 export default function DetailAssetMobile({ idAsset }) {
   //params.idAsset
@@ -111,6 +116,7 @@ export default function DetailAssetMobile({ idAsset }) {
   const [openMaintenance, setOpenMaintenance] = useState(0);
   const [switchDelete, setSwitchDelete] = useState(false);
   const [onloadDelete, setOnloadDelete] = useState(false);
+  const [resetAsset, setResetAsset] = useState(false);
 
   const [test] = useState([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
 
@@ -415,6 +421,42 @@ export default function DetailAssetMobile({ idAsset }) {
                     )}
 
                     <div className="mr-5"></div>
+
+                    {parseInt(userLevel) == 0 ? (
+                      <div className="flex flex-row">
+                        <div
+                          className="rounded-full bg-white p-1 text-warning"
+                          onClick={async () => {
+                            setResetAsset(true);
+
+                            const apiUrl = `${API_URL}/resetasset`;
+                            const response = await axios.post(apiUrl, {
+                              idAsset: selectedCase.ID_Asset,
+                            });
+
+                            if (response.status == 200) {
+                              // console.log(response.data["detail"][0].ID_Asset);
+                              const detail = response.data["response"];
+                              fetch_data();
+                              NotifySuccess(detail);
+                            }
+
+                            setResetAsset(false);
+                          }}
+                        >
+                          {resetAsset ? (
+                            <div
+                              className={`h-6 w-6 animate-spin rounded-full border-2 border-solid border-success border-t-transparent`}
+                            ></div>
+                          ) : (
+                            <LuRefreshCw className="h-6 w-6 text-success" />
+                          )}
+                        </div>
+                        <div className="mr-5"></div>
+                      </div>
+                    ) : (
+                      <></>
+                    )}
                   </div>
                 )}
 
