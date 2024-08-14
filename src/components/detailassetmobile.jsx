@@ -488,8 +488,8 @@ export default function DetailAssetMobile({ idAsset }) {
                         <MdOutlineClose></MdOutlineClose>
                       </div>
                       {selectedCase.Maintenance_Type == "PM" &&
-                      (parseInt(selectedCase.Step) < 2 ||
-                        parseInt(selectedCase.Step) >= 6) ? (
+                      parseInt(selectedCase.Step) >= 2 &&
+                      parseInt(selectedCase.Step) <= 6 ? (
                         pmList.length > 0 ? (
                           <></>
                         ) : (
@@ -1050,6 +1050,7 @@ export default function DetailAssetMobile({ idAsset }) {
             errorMessage={"Required"}
             onInputChange={(val) => {
               setInputRequestPerbaikan(val);
+              console.log(val);
             }}
             onChg={() => {
               setInputRequestPerbaikanError(false);
@@ -1061,11 +1062,32 @@ export default function DetailAssetMobile({ idAsset }) {
             disabled={onloadRequestPerbaikan}
             onload={onloadRequestPerbaikan}
             onClick={async () => {
+              console.log(inputRequestPerbaikan);
               setOnloadRequestPerbaikan(true);
               if (inputRequestPerbaikan == "") {
                 setInputRequestPerbaikanError(true);
               } else {
                 setInputRequestPerbaikanError(false);
+                console.log(idAsset);
+                console.log(inputRequestPerbaikan);
+
+                const apiUrl = `${API_URL}/createservice`;
+                const response = await axios.post(apiUrl, {
+                  idAsset: idAsset,
+                });
+
+                if (response.status == 200) {
+                  // console.log(response.data["detail"][0].ID_Asset);
+                  const result = response.data;
+                  if (result["error"] == 1) {
+                    NotifyError(result["message"]);
+                  } else {
+                    setModalPerbaikan(false);
+                    setInputRequestPerbaikan("");
+                    NotifySuccess(result["message"]);
+                    fetch_data_service();
+                  }
+                }
               }
               setOnloadRequestPerbaikan(false);
             }}
