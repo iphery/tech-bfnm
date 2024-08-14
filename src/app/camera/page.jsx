@@ -15,6 +15,8 @@ const CameraPage = () => {
   const { globalIdAsset, setGlobalIdAsset } = useProvider();
   const [showCamera, setShowCamera] = useState(false);
   const router = useRouter();
+  const [onloadImage, setOnloadImage] = useState(false);
+  const [cameraReady, setCameraReady] = useState(false);
 
   const capture = () => {
     const image = webcamRef.current.getScreenshot();
@@ -27,19 +29,26 @@ const CameraPage = () => {
   };
 
   return (
-    <div>
+    <div className="min-h-screen bg-boxdark-2">
       {!showCamera ? (
         <div>
           <Webcam
             audio={false}
             ref={webcamRef}
             // videoConstraints={videoConstraints}
+            onUserMedia={() => {
+              setCameraReady(true);
+            }}
             screenshotFormat="image/jpeg"
             className=" left-0 top-0 w-full "
           />
-          <div className="mt-5  flex justify-center">
-            <CommonButton onClick={capture} label={"Capture"} />
-          </div>
+          {cameraReady ? (
+            <div className="mt-5  flex justify-center">
+              <CommonButton onClick={capture} label={"Capture"} />
+            </div>
+          ) : (
+            <></>
+          )}
         </div>
       ) : (
         <div className=" left-0 top-0 w-full">
@@ -49,14 +58,21 @@ const CameraPage = () => {
             className="max-h-full max-w-full"
           />
           <div className="mt-5  flex justify-center">
+            {!onloadImage ? (
+              <CommonButton
+                onClick={() => {
+                  setShowCamera(false);
+                  setImageSrc(null);
+                }}
+                label={"Ulangi"}
+              />
+            ) : (
+              <></>
+            )}
+
             <CommonButton
-              onClick={() => {
-                setShowCamera(false);
-                setImageSrc(null);
-              }}
-              label={"Ulangi"}
-            />
-            <CommonButton
+              disabled={onloadImage}
+              onload={onloadImage}
               onClick={async () => {
                 if (cameraResult == "asset_user") {
                   const apiUrl = `${API_URL}/savinguserimage`;
