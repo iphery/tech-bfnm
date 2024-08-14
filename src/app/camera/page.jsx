@@ -59,13 +59,16 @@ const CameraPage = () => {
           />
           <div className="mt-5  flex justify-center">
             {!onloadImage ? (
-              <CommonButton
-                onClick={() => {
-                  setShowCamera(false);
-                  setImageSrc(null);
-                }}
-                label={"Ulangi"}
-              />
+              <div className="mr-2">
+                <CommonButton
+                  onClick={() => {
+                    setShowCamera(false);
+                    setImageSrc(null);
+                    setCameraReady(false);
+                  }}
+                  label={"Ulangi"}
+                />
+              </div>
             ) : (
               <></>
             )}
@@ -74,6 +77,7 @@ const CameraPage = () => {
               disabled={onloadImage}
               onload={onloadImage}
               onClick={async () => {
+                setOnloadImage(true);
                 if (cameraResult == "asset_user") {
                   const apiUrl = `${API_URL}/savinguserimage`;
                   const response = await axios.post(apiUrl, {
@@ -88,6 +92,7 @@ const CameraPage = () => {
                     router.back();
                   }
                 }
+                setOnloadImage(false);
               }}
               label={"Simpan"}
             />
