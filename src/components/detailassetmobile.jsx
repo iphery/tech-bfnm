@@ -1182,6 +1182,7 @@ export default function DetailAssetMobile({ idAsset }) {
                     setModalPerbaikan(false);
                     setInputRequestPerbaikan("");
                     NotifySuccess(result["message"]);
+                    fetch_data();
                     fetch_data_service();
                   }
                 }
