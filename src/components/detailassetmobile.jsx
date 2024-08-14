@@ -78,6 +78,8 @@ export default function DetailAssetMobile({ idAsset }) {
   const [pmEditMode, setpmEditMode] = useState(false);
   const [solutionEditMode, setSolutionEditMode] = useState(false);
   const [onloadSolution, setOnloadSolution] = useState(false);
+  const [uid, setUid] = useState("");
+  const [userLevel, setUserLevel] = useState("");
 
   const [caseSolution, setCaseSolution] = useState("");
   const [showSolution, setShowSolution] = useState("");
@@ -119,6 +121,12 @@ export default function DetailAssetMobile({ idAsset }) {
       const detail = response.data["detail"][0];
       console.log(detail);
       setDataAsset(detail);
+
+      const user = localStorage.getItem("info");
+      const parseUser = JSON.parse(user);
+      console.log(parseUser);
+      setUid(parseUser[0]["Uid"]);
+      setUserLevel(parseUser[0]["Level"]);
     }
     setFirstLoading(false);
     setSecondLoading(true);
@@ -551,7 +559,8 @@ export default function DetailAssetMobile({ idAsset }) {
                               </div>
                             );
                           case "2":
-                            return (
+                            //hanya teknisi yg scan
+                            return uid == selectedCase.ID_Tech ? (
                               <div className="border p-2">
                                 <div className=" flex justify-evenly">
                                   <div className="w-full">
@@ -581,9 +590,12 @@ export default function DetailAssetMobile({ idAsset }) {
                                   </div>
                                 </div>
                               </div>
+                            ) : (
+                              <></>
                             );
-                          case "3":
-                            return (
+                          case "4":
+                            //hanya teknisi yg scan
+                            return uid == selectedCase.ID_Tech ? (
                               <div className=" border p-2">
                                 <div>
                                   <CommonButtonFull
@@ -597,10 +609,12 @@ export default function DetailAssetMobile({ idAsset }) {
                                   />
                                 </div>
                               </div>
+                            ) : (
+                              <></>
                             );
 
                           case "5":
-                            return (
+                            return parseInt(userLevel) <= 1 ? (
                               <div className=" border p-2">
                                 <div>
                                   <CommonButtonFull
@@ -614,10 +628,14 @@ export default function DetailAssetMobile({ idAsset }) {
                                   />
                                 </div>
                               </div>
+                            ) : (
+                              <></>
                             );
 
                           case "6":
-                            return (
+                            return selectedCase.Maintenance_Type == "PM" ? (
+                              <>INI PM</>
+                            ) : uid == selectedCase.ID_Requestor ? (
                               <div className=" border p-2">
                                 <div>
                                   <CommonButtonFull
@@ -631,6 +649,8 @@ export default function DetailAssetMobile({ idAsset }) {
                                   />
                                 </div>
                               </div>
+                            ) : (
+                              <></>
                             );
 
                           default:
