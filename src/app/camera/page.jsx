@@ -19,7 +19,7 @@ const CameraPage = () => {
         audio={false}
         ref={webcamRef}
         screenshotFormat="image/jpeg"
-        className="absolute left-0 top-0 h-full w-full object-fill"
+        className="absolute left-0 top-0 w-full "
       />
       <button
         onClick={capture}
