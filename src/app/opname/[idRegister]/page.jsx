@@ -23,6 +23,8 @@ import { CiEdit } from "react-icons/ci";
 import { IoMdPrint } from "react-icons/io";
 import { useMediaQuery } from "react-responsive";
 import { DataProvider, useProvider } from "@/app/appcontext";
+import { ImCheckboxChecked } from "react-icons/im";
+import { TiInputChecked } from "react-icons/ti";
 
 export default function DetailOpname({ params }) {
   const [loader, setLoader] = useState(true);
@@ -47,6 +49,7 @@ export default function DetailOpname({ params }) {
   const [inputActualError, setInputActualError] = useState(false);
   const [savingActual, setSavingActual] = useState(false);
   const { setOpnameIdRegister } = useProvider();
+  const [onloadChecked, setOnloadChecked] = useState(false);
 
   const [info, setInfo] = useState({});
 
@@ -110,7 +113,7 @@ export default function DetailOpname({ params }) {
             <div className="relative">
               <div className="absolute z-0 h-full w-full">
                 <DefaultLayout>
-                  <div className="flex min-h-[calc(100vh-115px)] flex-col">
+                  <div className="flex min-h-[calc(100vh-115px)] flex-col text-white">
                     <div className="mb-3 flex items-center justify-between">
                       <div
                         className="text-lg text-white"
@@ -134,6 +137,22 @@ export default function DetailOpname({ params }) {
                           <IoMdPrint />
                           <div className=" ml-2">Print</div>
                         </div>
+                        {onloadChecked ? (
+                          <div
+                            className={`ml-5 h-6 w-6 animate-spin rounded-full border-2 border-solid border-warning border-t-transparent`}
+                          ></div>
+                        ) : (
+                          <div
+                            onClick={() => {
+                              setOnloadChecked(true);
+                              console.log(params.idRegister);
+                            }}
+                            className="ml-5 flex cursor-default flex-row items-center text-warning"
+                          >
+                            <TiInputChecked className="h-5 w-5" />
+                            <div className="ml-1">Checked</div>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <PageCard>
