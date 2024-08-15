@@ -262,9 +262,9 @@ export default function Home() {
 
             <div className="p-5">
               <div className="">
-                <div className=" mb-5 flex flex-row justify-between">
+                <div className=" mb-5 flex flex-row ">
                   <div>Maintenance</div>
-                  <div>{`Lihat semua (${maintenanceMachine.length})`} </div>
+                  {<div>{`Lihat semua (${maintenanceMachine.length})`} </div>}
                 </div>
                 <div className=" flex space-x-4 overflow-x-auto">
                   {maintenanceMachine.map((item, index) => {
