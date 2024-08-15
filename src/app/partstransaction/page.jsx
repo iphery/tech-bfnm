@@ -76,7 +76,7 @@ export default function PageTransaction() {
       ) : (
         <div className="min-h-screen  bg-boxdark-2">
           <DefaultLayout>
-            <div className="flex min-h-[calc(100vh-115px)] flex-col text-white">
+            <div className="flex min-h-[calc(100vh-115px)] flex-col text-info">
               <div className="mb-3 flex items-center justify-start">
                 <div className="text-lg text-white">Transaction</div>
               </div>

@@ -38,10 +38,10 @@ const DropdownUser = () => {
         href="#"
       >
         <span className="hidden text-right lg:block">
-          <span className="block text-sm font-medium text-black dark:text-white">
+          <span className="block text-sm font-medium text-info dark:text-white">
             {userName}
           </span>
-          <span className="block text-xs">{userDivisi}</span>
+          <span className="block text-xs text-info">{userDivisi}</span>
         </span>
 
         <span className="relative h-12 w-12 overflow-hidden rounded-full">
