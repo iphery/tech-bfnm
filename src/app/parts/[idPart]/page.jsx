@@ -136,7 +136,7 @@ export default function DetailPart({ params }) {
                 </div>
               </div>
               <PageCard>
-                <div className="flex flex-row">
+                <div className="flex flex-row text-white">
                   <div className="w-full">
                     <div className="flex justify-evenly py-1">
                       <div className="w-full">Description</div>
@@ -206,7 +206,7 @@ export default function DetailPart({ params }) {
               </PageCard>
               <div className="mb-5"></div>
               <PageCard>
-                <div className="flex flex-row">
+                <div className="flex flex-row text-white">
                   <div>
                     <div className="mb-2 text-sm text-white">From</div>
                     <CommonInput

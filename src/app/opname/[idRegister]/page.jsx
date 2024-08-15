@@ -52,6 +52,9 @@ export default function DetailOpname({ params }) {
   const [onloadChecked, setOnloadChecked] = useState(false);
 
   const [info, setInfo] = useState({});
+  const [uid, setUid] = useState("");
+  const [userLevel, setUserLevel] = useState("");
+  const [userName, setUserName] = useState("");
 
   const fetch_data = async () => {
     console.log(1);
@@ -73,6 +76,13 @@ export default function DetailOpname({ params }) {
       });
 
       setOpnameData(result);
+
+      const user = localStorage.getItem("info");
+      const parseUser = JSON.parse(user);
+      console.log(parseUser);
+      setUid(parseUser[0]["Uid"]);
+      setUserLevel(parseUser[0]["Level"]);
+      setUserName(parseUser[0]["Name"]);
     }
     setLoader(false);
   };
@@ -143,9 +153,36 @@ export default function DetailOpname({ params }) {
                           ></div>
                         ) : (
                           <div
-                            onClick={() => {
+                            onClick={async () => {
                               setOnloadChecked(true);
                               console.log(params.idRegister);
+                              const lists = [...opnameData];
+                              lists.map((item, index) => {
+                                if (item["checked_by"] == "") {
+                                  //if (item["checked_by"] == "") {
+                                  item["actual"] = item["balance"];
+                                  item["diff"] = 0;
+                                  item["checked_at"] = getDateTime();
+                                  item["checked_by"] = userName;
+                                  item["checked_id"] = uid;
+                                  //  }
+
+                                  return;
+                                }
+                              });
+
+                              const apiUrl = `${API_URL}/opnamecheckedall`;
+                              const response = await axios.post(apiUrl, {
+                                idRegister: params.idRegister,
+                                uid: uid,
+                                data: JSON.stringify(lists),
+                              });
+
+                              if (response.status == 200) {
+                                NotifySuccess(response.data["response"]);
+                              }
+
+                              setOnloadChecked(false);
                             }}
                             className="ml-5 flex cursor-default flex-row items-center text-warning"
                           >
