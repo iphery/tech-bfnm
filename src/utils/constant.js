@@ -13,3 +13,6 @@ export const IMAGE_GALLERY =
   "http://mita.balifoam.com/mobile/flutter/image_case";
 
 export const ICON = "https://mita.balifoam.com/mobile/flutter/image_group";
+
+export const IMAGE_PROFILE =
+  "http://mita.balifoam.com/mobile/flutter/image_profile";

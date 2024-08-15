@@ -54,7 +54,7 @@ const SignIn = () => {
   return (
     <>
       <div className="flex min-h-screen items-center justify-center bg-boxdark-2 p-10">
-        <div className="flex w-full rounded-sm border border-strokedark bg-boxdark shadow-default sm:w-1/2">
+        <div className="flex w-full rounded-sm border border-strokedark bg-boxdark shadow-default sm:w-1/3">
           <div className="w-full p-4 sm:p-12.5 ">
             <h2 className="mb-9 text-2xl font-bold text-black  text-white sm:text-title-xl2">
               Login

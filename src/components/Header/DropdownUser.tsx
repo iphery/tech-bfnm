@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import ClickOutside from "@/components/ClickOutside";
-import { IMAGE_USER } from "@/utils/constant";
+import { IMAGE_PROFILE, IMAGE_USER } from "@/utils/constant";
 import { auth } from "@/app/firebase-config";
 import { signOut } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -53,7 +53,7 @@ const DropdownUser = () => {
             src={
               imageUrl == null
                 ? "/images/user/user-01.png"
-                : `${IMAGE_USER}/${imageUrl}`
+                : `${IMAGE_PROFILE}/${imageUrl}`
             }
             /*
             style={{
