@@ -18,6 +18,8 @@ import axios from "axios";
 import { Menu } from "@/components/menu";
 import UserAuth from "@/components/auth";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
+import { DiVim } from "react-icons/di";
+import { AiTwotonePicture } from "react-icons/ai";
 
 export default function Home() {
   const [isClient, setIsClient] = useState(false);
@@ -219,12 +221,18 @@ export default function Home() {
                         key={index}
                       >
                         <div>
-                          <img
-                            className="h-40 w-[175px] rounded-t-lg object-cover"
-                            src={image}
-                          />
+                          {item["Image"] == null ? (
+                            <div className="border-strokedard flex h-30 w-[140px] items-center justify-center rounded-t-lg border">
+                              <AiTwotonePicture className="h-8 w-8" />
+                            </div>
+                          ) : (
+                            <img
+                              className="h-30 w-[140px] rounded-t-lg object-cover"
+                              src={image}
+                            />
+                          )}
                         </div>
-                        <div className="col  w-[175px] rounded-b-lg bg-white p-2">
+                        <div className="col  w-[140px] rounded-b-lg bg-white p-2">
                           <div className=" overflow-hidden truncate whitespace-nowrap text-sm">
                             {title}
                           </div>
@@ -273,10 +281,16 @@ export default function Home() {
                         key={index}
                       >
                         <div>
-                          <img
-                            className="h-30 w-[140px] rounded-t-lg object-cover"
-                            src={image}
-                          />
+                          {item["Image"] == null ? (
+                            <div className="border-strokedard flex h-30 w-[140px] items-center justify-center rounded-t-lg border">
+                              <AiTwotonePicture className="h-8 w-8" />
+                            </div>
+                          ) : (
+                            <img
+                              className="h-30 w-[140px] rounded-t-lg object-cover"
+                              src={image}
+                            />
+                          )}
                         </div>
                         <div className="col  w-[140px] rounded-b-lg bg-white p-2">
                           <div className=" overflow-hidden truncate whitespace-nowrap text-sm">
