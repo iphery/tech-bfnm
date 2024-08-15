@@ -75,7 +75,7 @@ export default function PartOrder() {
           </>
         ) : (
           <DefaultLayout>
-            <div className="min-h-[calc(100vh-115px)] ">
+            <div className="min-h-[calc(100vh-115px)] text-white">
               <div className="mb-3 flex items-center justify-center">
                 <div className="text-lg text-white">Order</div>
 

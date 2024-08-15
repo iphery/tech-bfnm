@@ -196,451 +196,459 @@ export default function PartsIn() {
           </>
         ) : (
           <DefaultLayout>
-            <div className="mb-3 flex items-center justify-start">
-              <div className="text-lg text-white">Stock In</div>
-            </div>
-            <PageCard>
-              <div className=" w-1/2">
-                <div className="w-full">
-                  <div className="mb-2 flex flex-row">
-                    <div className="w-full">Date</div>
-                    <div className="w-full">
-                      <CommonInput
-                        type={"date"}
-                        input={inputDate}
-                        onInputChange={(val) => {
-                          setInputDate(val);
-                        }}
-                        errorMessage={"Required"}
-                        error={inputDateError}
-                        onChg={() => {
-                          setInputDateError(false);
-                        }}
-                      ></CommonInput>
-                    </div>
-                  </div>
-                </div>
-                <div className="w-full">
-                  <div className="flex flex-row">
-                    <div className="w-full">No DPM</div>
-                    <div className="w-full">
-                      <CommonInput
-                        type={"text"}
-                        input={inputDPM}
-                        onInputChange={(val) => {
-                          setInputDPM(val);
-                        }}
-                        errorMessage={"Required"}
-                        error={inputDPMError}
-                        onKeyChange={() => {
-                          setInputDPMError(false);
-                        }}
-                      ></CommonInput>
-                    </div>
-                  </div>
-                </div>
+            <div className="text-white">
+              <div className="mb-3 flex items-center justify-start">
+                <div className="text-lg text-white">Stock In</div>
               </div>
-            </PageCard>
-
-            <div className="p-3"></div>
-
-            <PageCard>
-              <div className="mb-3 text-red">Stock Only </div>
-              <div className="flex flex-row justify-evenly">
-                <div className="w-full">
-                  <CommonInput
-                    input={keyword}
-                    type={"text"}
-                    reference={focusKeyword}
-                    onInputChange={(val) => {
-                      //setKeyword(val);
-                      //  fetch_data();
-                      setKeyword(val);
-                      setCurrentPage(1);
-                    }}
-                    placeholder={"Search"}
-                  >
-                    <HiOutlineSearch />
-                  </CommonInput>
-                </div>
-                <div className="ml-3"></div>
-                <div className="w-full">
-                  <CommonInput input={tempItem} isDisabled={true}></CommonInput>
-                </div>
-                <div className="ml-3"></div>
-                <div className="w-2/3">
-                  <CommonInput
-                    input={tempQuantity}
-                    type="number"
-                    reference={focusTempQuantity}
-                    placeholder="Enter to insert"
-                    onInputChange={(val) => {
-                      setTempQuantity(val);
-                    }}
-                    onKeyChange={(event) => {
-                      if (event.key == "Enter") {
-                        //cek jika exist
-                        const newList = [...listOrder];
-                        const findIndex = newList.findIndex(
-                          (value) => value.id_part == tempIdPart,
-                        );
-
-                        if (findIndex != -1) {
-                          const qty =
-                            parseInt(newList[findIndex].quantity) +
-                            parseInt(tempQuantity);
-
-                          newList[findIndex].quantity = qty;
-
-                          //exist
-                        } else {
-                          //not exist
-                          const order = {
-                            id_part: tempIdPart,
-                            description: tempItem,
-                            quantity: tempQuantity,
-                            unit: tempUnit,
-                            stock: "Stock",
-                            id_service: "",
-                            note: "",
-                          };
-                          newList.push(order);
-                          setEmptyListAlert(false);
-                        }
-
-                        //setListOrder();
-                        setListOrder(newList);
-                        setTempItem("");
-                        setTempQuantity("");
-                        setTempUnit("");
-                        focusKeyword.current.focus();
-                        console.log(listOrder);
-                      }
-                    }}
-                  />
-                </div>
-                <div className="ml-3"></div>
-                <div className="w-1/2">
-                  <CommonInput input={tempUnit} isDisabled={true}></CommonInput>
-                </div>
-              </div>
-              <div>
-                {keyword.length >= 3 ? (
-                  searchNotFound ? (
-                    <div>ga ketemu</div>
-                  ) : (
-                    <div className="mt-2">
-                      <div className="h-40 overflow-y-auto bg-white">
-                        <table className="w-full">
-                          <tbody>
-                            {filteredList.map((item, index) => {
-                              return (
-                                <tr
-                                  className={`cursor-default hover:bg-secondary hover:text-white ${index % 2 === 0 ? "bg-gray" : "bg-white"}`}
-                                  key={index}
-                                  onClick={() => {
-                                    console.log(item.description);
-                                    setTempIdPart(item.id_part);
-                                    setTempItem(item.description);
-                                    setTempAvailableQuantity(
-                                      item.available_quantity,
-                                    );
-                                    setTempUnit(item.unit);
-                                    setKeyword("");
-                                    if (focusTempQuantity.current) {
-                                      focusTempQuantity.current.focus();
-                                    }
-                                  }}
-                                >
-                                  <td>{item["description"]}</td>
-                                  <td>{item["vendor_code"]}</td>
-                                  <td>{item["remark"]}</td>
-                                  <td>{item["available_quantity"]}</td>
-                                  <td>{item["unit"]}</td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
+              <PageCard>
+                <div className=" w-1/2">
+                  <div className="w-full">
+                    <div className="mb-2 flex flex-row">
+                      <div className="w-full">Date</div>
+                      <div className="w-full">
+                        <CommonInput
+                          type={"date"}
+                          input={inputDate}
+                          onInputChange={(val) => {
+                            setInputDate(val);
+                          }}
+                          errorMessage={"Required"}
+                          error={inputDateError}
+                          onChg={() => {
+                            setInputDateError(false);
+                          }}
+                        ></CommonInput>
                       </div>
                     </div>
-                  )
-                ) : (
-                  <></>
-                )}
-              </div>
-            </PageCard>
+                  </div>
+                  <div className="w-full">
+                    <div className="flex flex-row">
+                      <div className="w-full">No DPM</div>
+                      <div className="w-full">
+                        <CommonInput
+                          type={"text"}
+                          input={inputDPM}
+                          onInputChange={(val) => {
+                            setInputDPM(val);
+                          }}
+                          errorMessage={"Required"}
+                          error={inputDPMError}
+                          onKeyChange={() => {
+                            setInputDPMError(false);
+                          }}
+                        ></CommonInput>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </PageCard>
 
-            <div className="p-3"></div>
-            <PageCard>
-              <div className="">
-                <div className="mb-3 text-success">Non Stock </div>
+              <div className="p-3"></div>
 
+              <PageCard>
+                <div className="mb-3 text-red">Stock Only </div>
                 <div className="flex flex-row justify-evenly">
                   <div className="w-full">
-                    <div className="mb-2  flex flex-row justify-evenly">
-                      <div className="w-full ">Deskripsi</div>
-                      <div className="w-full ">
-                        <CommonInput
-                          input={nonStockDescription}
-                          onInputChange={(val) => {
-                            setNonStockDescription(val);
-                          }}
-                          errorMessage={"Required"}
-                          error={nonStockDescriptionError}
-                          onKeyChange={() => {
-                            setNonStockDescriptionError(false);
-                          }}
-                        ></CommonInput>
-                      </div>
-                    </div>
-                    <div className="mb-2  flex flex-row justify-evenly">
-                      <div className="w-full ">Quantity</div>
-                      <div className="w-full ">
-                        <CommonInput
-                          type={"number"}
-                          input={nonStockQuantity}
-                          onInputChange={(val) => {
-                            setNonStockQuantity(val);
-                          }}
-                          errorMessage="Required"
-                          error={nonStockQuantityError}
-                          onKeyChange={() => {
-                            setNonStockQuantityError(false);
-                          }}
-                        ></CommonInput>
-                      </div>
-                    </div>
-
-                    <div className="mb-2  flex flex-row justify-evenly">
-                      <div className="w-full ">Unit</div>
-                      <div className="w-full ">
-                        <CommonInput
-                          input={inputUnit}
-                          onInputChange={(val) => {
-                            setInputUnit(val);
-                          }}
-                          errorMessage="Required"
-                          error={inputUnitError}
-                          onKeyChange={() => {
-                            setInputUnitError(false);
-                          }}
-                        ></CommonInput>
-                      </div>
-                    </div>
-
-                    <div className="flex  flex-row justify-evenly">
-                      <div className="w-full ">
-                        <CommonInput
-                          input={keywordRequest}
-                          onInputChange={(val) => {
-                            setKeywordRequest(val);
-                          }}
-                        >
-                          <HiOutlineSearch />
-                        </CommonInput>
-                      </div>
-                    </div>
+                    <CommonInput
+                      input={keyword}
+                      type={"text"}
+                      reference={focusKeyword}
+                      onInputChange={(val) => {
+                        //setKeyword(val);
+                        //  fetch_data();
+                        setKeyword(val);
+                        setCurrentPage(1);
+                      }}
+                      placeholder={"Search"}
+                    >
+                      <HiOutlineSearch />
+                    </CommonInput>
                   </div>
-                  <div className="px-3" />
+                  <div className="ml-3"></div>
                   <div className="w-full">
-                    <div className="mb-2  flex flex-row justify-evenly">
-                      <div className="w-full ">ID Service</div>
-                      <div className="w-full ">
-                        <CommonInput
-                          input={inputIdService}
-                          isDisabled={true}
-                        ></CommonInput>
-                      </div>
-                    </div>
-                    <div className="flex  flex-row justify-evenly">
-                      <div className="w-full ">Note</div>
-                      <div className="w-full ">
-                        <CommonInput
-                          input={inputNote}
-                          onInputChange={(val) => {
-                            setInputNote(val);
-                          }}
-                          errorMessage={"Required"}
-                          error={inputNoteError}
-                          onKeyChange={() => {
-                            setInputNoteError(false);
-                          }}
-                        ></CommonInput>
-                      </div>
-                    </div>
+                    <CommonInput
+                      input={tempItem}
+                      isDisabled={true}
+                    ></CommonInput>
+                  </div>
+                  <div className="ml-3"></div>
+                  <div className="w-2/3">
+                    <CommonInput
+                      input={tempQuantity}
+                      type="number"
+                      reference={focusTempQuantity}
+                      placeholder="Enter to insert"
+                      onInputChange={(val) => {
+                        setTempQuantity(val);
+                      }}
+                      onKeyChange={(event) => {
+                        if (event.key == "Enter") {
+                          //cek jika exist
+                          const newList = [...listOrder];
+                          const findIndex = newList.findIndex(
+                            (value) => value.id_part == tempIdPart,
+                          );
+
+                          if (findIndex != -1) {
+                            const qty =
+                              parseInt(newList[findIndex].quantity) +
+                              parseInt(tempQuantity);
+
+                            newList[findIndex].quantity = qty;
+
+                            //exist
+                          } else {
+                            //not exist
+                            const order = {
+                              id_part: tempIdPart,
+                              description: tempItem,
+                              quantity: tempQuantity,
+                              unit: tempUnit,
+                              stock: "Stock",
+                              id_service: "",
+                              note: "",
+                            };
+                            newList.push(order);
+                            setEmptyListAlert(false);
+                          }
+
+                          //setListOrder();
+                          setListOrder(newList);
+                          setTempItem("");
+                          setTempQuantity("");
+                          setTempUnit("");
+                          focusKeyword.current.focus();
+                          console.log(listOrder);
+                        }
+                      }}
+                    />
+                  </div>
+                  <div className="ml-3"></div>
+                  <div className="w-1/2">
+                    <CommonInput
+                      input={tempUnit}
+                      isDisabled={true}
+                    ></CommonInput>
                   </div>
                 </div>
+                <div>
+                  {keyword.length >= 3 ? (
+                    searchNotFound ? (
+                      <div>ga ketemu</div>
+                    ) : (
+                      <div className="mt-2">
+                        <div className="h-40 overflow-y-auto bg-white">
+                          <table className="w-full">
+                            <tbody>
+                              {filteredList.map((item, index) => {
+                                return (
+                                  <tr
+                                    className={`cursor-default hover:bg-secondary hover:text-white ${index % 2 === 0 ? "bg-gray" : "bg-white"}`}
+                                    key={index}
+                                    onClick={() => {
+                                      console.log(item.description);
+                                      setTempIdPart(item.id_part);
+                                      setTempItem(item.description);
+                                      setTempAvailableQuantity(
+                                        item.available_quantity,
+                                      );
+                                      setTempUnit(item.unit);
+                                      setKeyword("");
+                                      if (focusTempQuantity.current) {
+                                        focusTempQuantity.current.focus();
+                                      }
+                                    }}
+                                  >
+                                    <td>{item["description"]}</td>
+                                    <td>{item["vendor_code"]}</td>
+                                    <td>{item["remark"]}</td>
+                                    <td>{item["available_quantity"]}</td>
+                                    <td>{item["unit"]}</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )
+                  ) : (
+                    <></>
+                  )}
+                </div>
+              </PageCard>
 
-                {keywordRequest.length > 3 ? (
-                  <div className="mt-2 h-30 overflow-y-auto bg-white">
-                    <table className="w-full">
-                      <tbody>
-                        {filterRequest.map((item, index) => {
-                          return (
-                            <tr
-                              key={index}
-                              className={`cursor-default hover:bg-secondary hover:text-white ${index % 2 === 0 ? "bg-gray" : "bg-white"}`}
-                              onClick={() => {
-                                setInputIdService(item["ID_Request"]);
-                                setKeywordRequest("");
-                              }}
-                            >
-                              <td>{item["ID_Request"]}</td>
-                              <td>{item["ID_Asset"]}</td>
-                              <td>{item["Description"]}</td>
-                              <td>{item["Manufacture"]}</td>
-                              <td>{item["Model"]}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+              <div className="p-3"></div>
+              <PageCard>
+                <div className="">
+                  <div className="mb-3 text-success">Non Stock </div>
+
+                  <div className="flex flex-row justify-evenly">
+                    <div className="w-full">
+                      <div className="mb-2  flex flex-row justify-evenly">
+                        <div className="w-full ">Deskripsi</div>
+                        <div className="w-full ">
+                          <CommonInput
+                            input={nonStockDescription}
+                            onInputChange={(val) => {
+                              setNonStockDescription(val);
+                            }}
+                            errorMessage={"Required"}
+                            error={nonStockDescriptionError}
+                            onKeyChange={() => {
+                              setNonStockDescriptionError(false);
+                            }}
+                          ></CommonInput>
+                        </div>
+                      </div>
+                      <div className="mb-2  flex flex-row justify-evenly">
+                        <div className="w-full ">Quantity</div>
+                        <div className="w-full ">
+                          <CommonInput
+                            type={"number"}
+                            input={nonStockQuantity}
+                            onInputChange={(val) => {
+                              setNonStockQuantity(val);
+                            }}
+                            errorMessage="Required"
+                            error={nonStockQuantityError}
+                            onKeyChange={() => {
+                              setNonStockQuantityError(false);
+                            }}
+                          ></CommonInput>
+                        </div>
+                      </div>
+
+                      <div className="mb-2  flex flex-row justify-evenly">
+                        <div className="w-full ">Unit</div>
+                        <div className="w-full ">
+                          <CommonInput
+                            input={inputUnit}
+                            onInputChange={(val) => {
+                              setInputUnit(val);
+                            }}
+                            errorMessage="Required"
+                            error={inputUnitError}
+                            onKeyChange={() => {
+                              setInputUnitError(false);
+                            }}
+                          ></CommonInput>
+                        </div>
+                      </div>
+
+                      <div className="flex  flex-row justify-evenly">
+                        <div className="w-full ">
+                          <CommonInput
+                            input={keywordRequest}
+                            onInputChange={(val) => {
+                              setKeywordRequest(val);
+                            }}
+                          >
+                            <HiOutlineSearch />
+                          </CommonInput>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="px-3" />
+                    <div className="w-full">
+                      <div className="mb-2  flex flex-row justify-evenly">
+                        <div className="w-full ">ID Service</div>
+                        <div className="w-full ">
+                          <CommonInput
+                            input={inputIdService}
+                            isDisabled={true}
+                          ></CommonInput>
+                        </div>
+                      </div>
+                      <div className="flex  flex-row justify-evenly">
+                        <div className="w-full ">Note</div>
+                        <div className="w-full ">
+                          <CommonInput
+                            input={inputNote}
+                            onInputChange={(val) => {
+                              setInputNote(val);
+                            }}
+                            errorMessage={"Required"}
+                            error={inputNoteError}
+                            onKeyChange={() => {
+                              setInputNoteError(false);
+                            }}
+                          ></CommonInput>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {keywordRequest.length > 3 ? (
+                    <div className="mt-2 h-30 overflow-y-auto bg-white">
+                      <table className="w-full">
+                        <tbody>
+                          {filterRequest.map((item, index) => {
+                            return (
+                              <tr
+                                key={index}
+                                className={`cursor-default hover:bg-secondary hover:text-white ${index % 2 === 0 ? "bg-gray" : "bg-white"}`}
+                                onClick={() => {
+                                  setInputIdService(item["ID_Request"]);
+                                  setKeywordRequest("");
+                                }}
+                              >
+                                <td>{item["ID_Request"]}</td>
+                                <td>{item["ID_Asset"]}</td>
+                                <td>{item["Description"]}</td>
+                                <td>{item["Manufacture"]}</td>
+                                <td>{item["Model"]}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <></>
+                  )}
+
+                  <div className="mt-2 flex justify-end">
+                    <CommonButton
+                      label="Insert"
+                      onClick={() => {
+                        //validasi
+                        const error = [0, 0, 0, 0];
+                        if (nonStockDescription == "") {
+                          setNonStockDescriptionError(true);
+                          error[0] = 1;
+                        } else {
+                          setNonStockDescriptionError(false);
+                          error[0] = 0;
+                        }
+
+                        if (nonStockQuantity == "") {
+                          setNonStockQuantityError(true);
+                          error[1] = 1;
+                        } else {
+                          setNonStockQuantityError(false);
+                          error[1] = 0;
+                        }
+
+                        if (inputNote == "") {
+                          setInputUnitError(true);
+                          error[2] = 1;
+                        } else {
+                          setInputUnitError(false);
+                          error[2] = 0;
+                        }
+
+                        if (inputNote == "") {
+                          setInputNoteError(true);
+                          error[2] = 1;
+                        } else {
+                          setInputNoteError(false);
+                          error[2] = 0;
+                        }
+
+                        const errorSum = error.reduce(
+                          (accum, current) => accum + current,
+                          0,
+                        );
+                        if (errorSum == 0) {
+                          const newList = [...listOrder];
+                          const order = {
+                            id_part: listOrder.length,
+                            description: nonStockDescription,
+                            quantity: nonStockQuantity,
+                            unit: inputUnit,
+                            stock: "Non Stock",
+                            id_service: inputIdService,
+                            note: inputNote,
+                          };
+                          newList.push(order);
+                          setListOrder(newList);
+                          setEmptyListAlert(false);
+
+                          //kosongkan data
+                          setNonStockDescription("");
+                          setNonStockQuantity("");
+                          setNonStockIdService("");
+                          setInputIdService("");
+                          setInputNote("");
+                        }
+                      }}
+                    ></CommonButton>
+                  </div>
+                </div>
+              </PageCard>
+
+              <div className="p-3"></div>
+              <PageCard>
+                {emptyListAlert ? (
+                  <div className="mb-5 flex flex-row items-center rounded-lg border p-2">
+                    <GoAlert className="text-warning"></GoAlert>
+
+                    <div className="ml-2 text-warning">
+                      List ini tidak boleh kosong
+                    </div>
                   </div>
                 ) : (
                   <></>
                 )}
+                <div className="min-h-40">
+                  <table className="w-full">
+                    <thead className="bg-black">
+                      <tr>
+                        <th>No</th>
+                        <th>Item</th>
+                        <th>Quantity</th>
+                        <th>Unit</th>
+                        <th>ID Service</th>
+                        <th>Stock</th>
+                        <th>Note</th>
 
-                <div className="mt-2 flex justify-end">
+                        <th>Opsi</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {listOrder.map((item, index) => {
+                        return (
+                          <tr key={index}>
+                            <td>{index + 1}</td>
+                            <td>{item.description}</td>
+                            <td>{item.quantity}</td>
+                            <td>{item.unit}</td>
+                            <td>{item.id_service}</td>
+                            <td>{item.stock}</td>
+                            <td>{item.note}</td>
+                            <td>
+                              <div
+                                onClick={() => {
+                                  const foundIndex = listOrder.findIndex(
+                                    (value) => value.id_part == item.id_part,
+                                  );
+
+                                  const list = [...listOrder];
+                                  list.splice(foundIndex, 1);
+                                  setListOrder(list);
+                                }}
+                              >
+                                delete
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="mb-3"></div>
+                <div className="flex justify-end">
                   <CommonButton
-                    label="Insert"
-                    onClick={() => {
-                      //validasi
-                      const error = [0, 0, 0, 0];
-                      if (nonStockDescription == "") {
-                        setNonStockDescriptionError(true);
-                        error[0] = 1;
-                      } else {
-                        setNonStockDescriptionError(false);
-                        error[0] = 0;
-                      }
-
-                      if (nonStockQuantity == "") {
-                        setNonStockQuantityError(true);
-                        error[1] = 1;
-                      } else {
-                        setNonStockQuantityError(false);
-                        error[1] = 0;
-                      }
-
-                      if (inputNote == "") {
-                        setInputUnitError(true);
-                        error[2] = 1;
-                      } else {
-                        setInputUnitError(false);
-                        error[2] = 0;
-                      }
-
-                      if (inputNote == "") {
-                        setInputNoteError(true);
-                        error[2] = 1;
-                      } else {
-                        setInputNoteError(false);
-                        error[2] = 0;
-                      }
-
-                      const errorSum = error.reduce(
-                        (accum, current) => accum + current,
-                        0,
-                      );
-                      if (errorSum == 0) {
-                        const newList = [...listOrder];
-                        const order = {
-                          id_part: listOrder.length,
-                          description: nonStockDescription,
-                          quantity: nonStockQuantity,
-                          unit: inputUnit,
-                          stock: "Non Stock",
-                          id_service: inputIdService,
-                          note: inputNote,
-                        };
-                        newList.push(order);
-                        setListOrder(newList);
-                        setEmptyListAlert(false);
-
-                        //kosongkan data
-                        setNonStockDescription("");
-                        setNonStockQuantity("");
-                        setNonStockIdService("");
-                        setInputIdService("");
-                        setInputNote("");
-                      }
-                    }}
-                  ></CommonButton>
+                    label={"Save"}
+                    onClick={save_item}
+                    onload={loadingSubmit}
+                    disabled={loadingSubmit}
+                  />
                 </div>
-              </div>
-            </PageCard>
-
-            <div className="p-3"></div>
-            <PageCard>
-              {emptyListAlert ? (
-                <div className="mb-5 flex flex-row items-center rounded-lg border p-2">
-                  <GoAlert className="text-warning"></GoAlert>
-
-                  <div className="ml-2 text-warning">
-                    List ini tidak boleh kosong
-                  </div>
-                </div>
-              ) : (
-                <></>
-              )}
-              <div className="min-h-40">
-                <table className="w-full">
-                  <thead className="bg-black">
-                    <tr>
-                      <th>No</th>
-                      <th>Item</th>
-                      <th>Quantity</th>
-                      <th>Unit</th>
-                      <th>ID Service</th>
-                      <th>Stock</th>
-                      <th>Note</th>
-
-                      <th>Opsi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {listOrder.map((item, index) => {
-                      return (
-                        <tr key={index}>
-                          <td>{index + 1}</td>
-                          <td>{item.description}</td>
-                          <td>{item.quantity}</td>
-                          <td>{item.unit}</td>
-                          <td>{item.id_service}</td>
-                          <td>{item.stock}</td>
-                          <td>{item.note}</td>
-                          <td>
-                            <div
-                              onClick={() => {
-                                const foundIndex = listOrder.findIndex(
-                                  (value) => value.id_part == item.id_part,
-                                );
-
-                                const list = [...listOrder];
-                                list.splice(foundIndex, 1);
-                                setListOrder(list);
-                              }}
-                            >
-                              delete
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              <div className="mb-3"></div>
-              <div className="flex justify-end">
-                <CommonButton
-                  label={"Save"}
-                  onClick={save_item}
-                  onload={loadingSubmit}
-                  disabled={loadingSubmit}
-                />
-              </div>
-            </PageCard>
+              </PageCard>
+            </div>
           </DefaultLayout>
         )}
       </div>

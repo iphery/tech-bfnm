@@ -263,7 +263,7 @@ export default function PartsOut() {
             {loader ? (
               <div className="flex items-center justify-center"></div>
             ) : (
-              <>
+              <div className="text-white">
                 <div className="mb-3 flex items-center justify-start">
                   <div className="text-lg text-white">Stock Out</div>
                 </div>
@@ -707,7 +707,7 @@ export default function PartsOut() {
                     />
                   </div>
                 </PageCard>
-              </>
+              </div>
             )}
           </DefaultLayout>
         )}
