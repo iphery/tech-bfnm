@@ -103,7 +103,7 @@ export default function PageTransaction() {
                   </div>
                 </div>
                 <div className="mb-3"></div>
-                <div className="h-[calc(100vh-235px)] overflow-y-auto">
+                <div className="h-[calc(100vh-235px)] w-[calc(100vw-430px)] overflow-x-auto overflow-y-auto">
                   <table className="w-full ">
                     <thead className="sticky top-0 bg-black">
                       <tr>
@@ -116,6 +116,7 @@ export default function PageTransaction() {
                         <th className="w-1/5">From/To</th>
                         <th className="w-1/5">Asset</th>
                         <th className="w-1/5">Request</th>
+                        <th className="w-1/5">Created At</th>
                       </tr>
                     </thead>
                     <tbody className="">
@@ -155,6 +156,9 @@ export default function PageTransaction() {
                               {item["id_asset"]}
                             </td>
                             <td className="p-2 align-top">{item["id_for"]}</td>
+                            <td className="p-2 align-top">
+                              {item["created_at"]}
+                            </td>
                           </tr>
                         );
                       })}
