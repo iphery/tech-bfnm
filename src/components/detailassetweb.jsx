@@ -147,6 +147,17 @@ export default function DetailAssetWeb({ idAsset }) {
     setFilteredStock(filterData);
   }, [keywordStock]);
 
+  const [userLevel, setUserLevel] = useState("");
+
+  useEffect(() => {
+    const user = localStorage.getItem("info");
+    if (user != null) {
+      const parseUser = JSON.parse(user);
+      const userlevel = parseUser[0]["Level"];
+      setUserLevel(userlevel);
+    }
+  }, []);
+
   return (
     <UserAuth>
       {loader ? (
@@ -156,7 +167,7 @@ export default function DetailAssetWeb({ idAsset }) {
           <div className="absolute z-0 h-full w-full">
             <div className="min-h-screen  bg-boxdark-2">
               <DefaultLayout>
-                <div className="flex min-h-[calc(100vh-115px)] flex-col">
+                <div className="flex min-h-[calc(100vh-115px)] flex-col text-info">
                   <div className="mb-3 flex items-center justify-start">
                     <div className="text-lg text-white">Asset Detail</div>
                   </div>
@@ -245,7 +256,7 @@ export default function DetailAssetWeb({ idAsset }) {
                                     cardColor = "bg-warning";
                                     break;
                                   case "4":
-                                    status = "Continue repairing";
+                                    status = "Repairing";
                                     cardColor = "bg-warning";
                                     break;
                                   case "5":
@@ -275,38 +286,42 @@ export default function DetailAssetWeb({ idAsset }) {
                                     <td index={index}>{item["Problem"]}</td>
                                     <td>
                                       <div
-                                        className={`flex items-center justify-center rounded-md ${cardColor} text-sm text-white`}
+                                        className={`flex items-center justify-center rounded-md p-1 ${cardColor} text-sm text-white`}
                                       >
                                         {status}
                                       </div>
                                     </td>
-                                    <td className=" text-center" index={index}>
-                                      <div className="flex justify-center">
-                                        {parseInt(item["Step"]) >= 3 &&
-                                        parseInt(item["Step"]) <= 5 ? (
-                                          <div
-                                            onClick={() => {
-                                              //setModalStocks(true);
-                                              const assetInfo =
-                                                JSON.stringify(dataAsset);
-                                              localStorage.setItem(
-                                                "data_asset",
-                                                assetInfo,
-                                              );
-                                              localStorage.setItem(
-                                                "id_service",
-                                                item["ID_Request"],
-                                              );
-                                              router.push("/partsout");
-                                            }}
-                                            className="flex h-6 w-6 cursor-default items-center justify-center rounded-full  p-2 hover:bg-black"
-                                          >
-                                            <FaPlus />
-                                          </div>
-                                        ) : (
-                                          <></>
-                                        )}
-                                      </div>
+                                    <td className="text-center" index={index}>
+                                      {parseInt(userLevel) <= 2 ? (
+                                        <div className="">
+                                          {parseInt(item["Step"]) >= 3 &&
+                                          parseInt(item["Step"]) <= 5 ? (
+                                            <div
+                                              onClick={() => {
+                                                //setModalStocks(true);
+                                                const assetInfo =
+                                                  JSON.stringify(dataAsset);
+                                                localStorage.setItem(
+                                                  "data_asset",
+                                                  assetInfo,
+                                                );
+                                                localStorage.setItem(
+                                                  "id_service",
+                                                  item["ID_Request"],
+                                                );
+                                                router.push("/partsout");
+                                              }}
+                                              className="flex h-6 w-6 cursor-default items-center justify-center rounded-full  p-2 hover:bg-black"
+                                            >
+                                              <FaPlus />
+                                            </div>
+                                          ) : (
+                                            <></>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <></>
+                                      )}
                                     </td>
                                   </tr>
                                 );

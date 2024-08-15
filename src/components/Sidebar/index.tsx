@@ -16,6 +16,7 @@ interface SidebarProps {
 const menuGroups = [
   {
     name: "MENU",
+
     menuItems: [
       {
         icon: (
@@ -47,6 +48,7 @@ const menuGroups = [
         ),
         label: "Dashboard",
         route: "#",
+        consumer: "public",
         //children: [{ label: "eCommerce", route: "/" }],
       },
       {
@@ -67,6 +69,7 @@ const menuGroups = [
         ),
         label: "Asset",
         route: "/asset",
+        consumer: "public",
       },
       {
         icon: (
@@ -102,6 +105,7 @@ const menuGroups = [
         ),
         label: "Inventory",
         route: "#",
+        consumer: "private",
         children: [
           { label: "List", route: "/parts" },
           { label: "Transaction", route: "/partstransaction" },
@@ -373,6 +377,16 @@ const menuGroups = [
 const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   const pathname = usePathname();
   const [pageName, setPageName] = useLocalStorage("selectedMenu", "dashboard");
+  const [userLevel, setUserLevel] = useState("");
+
+  useEffect(() => {
+    const user = localStorage.getItem("info")!;
+    if (user != null) {
+      const parseUser = JSON.parse(user);
+      const userlevel = parseUser[0]["Level"];
+      setUserLevel(userlevel);
+    }
+  }, []);
 
   return (
     <ClickOutside onClick={() => setSidebarOpen(false)}>
@@ -428,14 +442,27 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                 </h3>
 
                 <ul className="mb-6 flex flex-col gap-1.5">
-                  {group.menuItems.map((menuItem, menuIndex) => (
-                    <SidebarItem
-                      key={menuIndex}
-                      item={menuItem}
-                      pageName={pageName}
-                      setPageName={setPageName}
-                    />
-                  ))}
+                  {parseInt(userLevel) <= 2
+                    ? group.menuItems.map((menuItem, menuIndex) => (
+                        <SidebarItem
+                          key={menuIndex}
+                          item={menuItem}
+                          pageName={pageName}
+                          setPageName={setPageName}
+                        />
+                      ))
+                    : group.menuItems.map((menuItem, menuIndex) =>
+                        menuItem.consumer == "public" ? (
+                          <SidebarItem
+                            key={menuIndex}
+                            item={menuItem}
+                            pageName={pageName}
+                            setPageName={setPageName}
+                          />
+                        ) : (
+                          <></>
+                        ),
+                      )}
                 </ul>
               </div>
             ))}
