@@ -25,6 +25,7 @@ import { useMediaQuery } from "react-responsive";
 import { DataProvider, useProvider } from "@/app/appcontext";
 import { ImCheckboxChecked } from "react-icons/im";
 import { TiInputChecked } from "react-icons/ti";
+import { HiOutlineSearch } from "react-icons/hi";
 
 export default function DetailOpname({ params }) {
   const [loader, setLoader] = useState(true);
@@ -55,6 +56,8 @@ export default function DetailOpname({ params }) {
   const [uid, setUid] = useState("");
   const [userLevel, setUserLevel] = useState("");
   const [userName, setUserName] = useState("");
+  const [keyword, setKeyword] = useState("");
+  const [filteredList, setFilteredList] = useState([]);
 
   const fetch_data = async () => {
     console.log(1);
@@ -67,6 +70,7 @@ export default function DetailOpname({ params }) {
       const array = response.data["response"];
 
       const result = JSON.parse(array[0]["result"]);
+
       setInfo({
         name: array[0]["Name"],
         id_report: array[0]["id_report"],
@@ -76,6 +80,7 @@ export default function DetailOpname({ params }) {
       });
 
       setOpnameData(result);
+      setFilteredList(result);
 
       const user = localStorage.getItem("info");
       const parseUser = JSON.parse(user);
@@ -102,6 +107,25 @@ export default function DetailOpname({ params }) {
 
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    //if (!loading) {
+    const filterData = opnameData.filter((item) => {
+      const description =
+        item["description"] &&
+        item["description"].toLowerCase().includes(keyword.toLowerCase());
+
+      const manufacture =
+        item["vendor_code"] &&
+        item["vendor_code"].toLowerCase().includes(keyword.toLowerCase());
+
+      return description || manufacture;
+    });
+
+    setFilteredList(filterData);
+
+    //}
+  }, [detailData, keyword]);
 
   useEffect(() => {
     setIsClient(true);
@@ -135,7 +159,7 @@ export default function DetailOpname({ params }) {
                       </div>
                       <div className="flex flex-row">
                         <div
-                          className=" flex cursor-default flex-row items-center text-warning"
+                          className="mr-5 flex cursor-default flex-row items-center text-warning"
                           onClick={() => {
                             setOpnameIdRegister(params.idRegister); //set di provider
 
@@ -147,6 +171,20 @@ export default function DetailOpname({ params }) {
                           <IoMdPrint />
                           <div className=" ml-2">Print</div>
                         </div>
+                        <div
+                          className=" flex cursor-default flex-row items-center text-warning"
+                          onClick={() => {
+                            setOpnameIdRegister(params.idRegister); //set di provider
+
+                            router.push(
+                              `/opname/${params.idRegister}/printform`,
+                            );
+                          }}
+                        >
+                          <IoMdPrint />
+                          <div className=" ml-2">Form</div>
+                        </div>
+
                         {onloadChecked ? (
                           <div
                             className={`ml-5 h-6 w-6 animate-spin rounded-full border-2 border-solid border-warning border-t-transparent`}
@@ -220,7 +258,22 @@ export default function DetailOpname({ params }) {
                     </PageCard>
                     <div className="mb-5"></div>
                     <PageCard>
-                      <div className="h-[calc(100vh-340px)] overflow-y-auto">
+                      <div className="flex flex-row items-center">
+                        <div className="w-1/2">
+                          <CommonInput
+                            input={keyword}
+                            type={"text"}
+                            onInputChange={(val) => {
+                              setKeyword(val);
+                            }}
+                            placeholder={"Search"}
+                          >
+                            <HiOutlineSearch />
+                          </CommonInput>
+                        </div>
+                      </div>
+                      <div className="mb-3"></div>
+                      <div className="h-[calc(100vh-385px)] overflow-y-auto">
                         <table className="w-full">
                           <thead className="sticky top-0 bg-black">
                             <tr>
@@ -236,7 +289,7 @@ export default function DetailOpname({ params }) {
                             </tr>
                           </thead>
                           <tbody>
-                            {opnameData.map((item, index) => {
+                            {filteredList.map((item, index) => {
                               return (
                                 <tr key={index}>
                                   <td className="p-1">{item["description"]}</td>
