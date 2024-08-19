@@ -118,6 +118,8 @@ export default function PartsIn() {
       item["ID_Request"].toLowerCase().includes(keywordRequest.toLowerCase()),
     );
 
+    console.log(filterRequest);
+
     /*
     if (filterDataAsset.length == 0) {
       setSearchAssetNotFound(true);
@@ -487,7 +489,7 @@ export default function PartsIn() {
                             return (
                               <tr
                                 key={index}
-                                className={`cursor-default hover:bg-secondary hover:text-white ${index % 2 === 0 ? "bg-gray" : "bg-white"}`}
+                                className={`cursor-default text-black hover:bg-secondary hover:text-white ${index % 2 === 0 ? "bg-gray" : "bg-white"}`}
                                 onClick={() => {
                                   setInputIdService(item["ID_Request"]);
                                   setKeywordRequest("");
