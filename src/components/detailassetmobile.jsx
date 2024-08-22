@@ -214,6 +214,8 @@ export default function DetailAssetMobile({ idAsset }) {
 
   useEffect(() => {
     fetch_data();
+    console.log("wkwkw");
+    console.log(idAsset);
   }, [keyword]);
 
   useEffect(() => {

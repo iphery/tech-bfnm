@@ -27,7 +27,9 @@
     "react-responsive": "^10.0.0",
     "react-select": "^5.8.0",
     "react-toastify": "^10.0.5",
-    "react-webcam": "^7.2.0"
+    "react-webcam": "^7.2.0",
+    "socket.io-client": "^4.7.5",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@types/node": "^20",

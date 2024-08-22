@@ -31,6 +31,7 @@ export default function DetailAsset({ params }) {
 
   const isSmallScreen = useMediaQuery({ query: "(max-width: 640px)" });
   useEffect(() => {
+    console.log(params.idAsset);
     setIsClient(true);
   }, []);
 
