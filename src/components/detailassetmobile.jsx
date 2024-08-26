@@ -444,7 +444,7 @@ export default function DetailAssetMobile({ idAsset }) {
                               setModalPerawatan(true);
                             } else {
                               setOnloadRequestPerawatan(true);
-                              //kirim ke server
+                              //kirim ke server//
                             }
                           }
                         }}
