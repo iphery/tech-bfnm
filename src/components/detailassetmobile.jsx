@@ -431,7 +431,10 @@ export default function DetailAssetMobile({ idAsset }) {
                     <div className="mr-5"></div>
                     {openMaintenance == 1 ? (
                       <></>
-                    ) : parseInt(userLevel) <= 2 ? (
+                    ) : parseInt(userLevel) <= 2 ||
+                      (dataAsset.Type == "K" &&
+                        dataAsset.Based == "KM" &&
+                        parseInt(userLevel) == 4) ? (
                       <div
                         className="rounded-full bg-white p-1 text-warning"
                         onClick={async () => {
