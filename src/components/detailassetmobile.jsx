@@ -472,7 +472,7 @@ export default function DetailAssetMobile({ idAsset }) {
 
                             const apiUrl = `${API_URL}/resetasset`;
                             const response = await axios.post(apiUrl, {
-                              idAsset: selectedCase.ID_Asset,
+                              idAsset: dataAsset.ID_Asset,
                             });
 
                             if (response.status == 200) {
