@@ -124,6 +124,7 @@ export default function DetailAssetMobile({ idAsset }) {
   const [resetAsset, setResetAsset] = useState(false);
   const { cameraResult, setCameraResult } = useProvider();
   const { globalIdAsset, setGlobalIdAsset } = useProvider();
+
   const [lastSeen, setLastSeen] = useState("");
   const [ratio, setRatio] = useState("");
   const [nextService, setNextService] = useState("");

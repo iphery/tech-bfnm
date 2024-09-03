@@ -20,6 +20,7 @@ import UserAuth from "@/components/auth";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import { DiVim } from "react-icons/di";
 import { AiTwotonePicture } from "react-icons/ai";
+import { ListOutstanding } from "@/components/oustanding";
 
 export default function Home() {
   const [isClient, setIsClient] = useState(false);
@@ -205,7 +206,9 @@ export default function Home() {
                 ) : (
                   <div></div>
                 )}
+                <ListOutstanding />
 
+                {/*
                 <div className=" flex space-x-4 overflow-x-auto">
                   {servisMachine.map((item, index) => {
                     const title =
@@ -257,6 +260,7 @@ export default function Home() {
                     );
                   })}
                 </div>
+                */}
               </div>
             </div>
 

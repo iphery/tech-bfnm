@@ -15,6 +15,9 @@ export function DataProvider({ children }) {
 
   const [cameraResult, setCameraResult] = useState("");
   const [globalIdAsset, setGlobalIdAsset] = useState("");
+  const [dataOutstanding, setDataOutstanding] = useState([]);
+  const [dataMaintenance, setDataMaintenance] = useState([]);
+  const [dashboardFetching, setDashboardFetching] = useState(true);
 
   const updateCache = (key, data) => {
     setCachedData((prev) => ({ ...prev, [key]: data }));
@@ -41,6 +44,12 @@ export function DataProvider({ children }) {
         setCameraResult,
         globalIdAsset,
         setGlobalIdAsset,
+        dataOutstanding,
+        setDataOutstanding,
+        dataMaintenance,
+        setDataMaintenance,
+        dashboardFetching,
+        setDashboardFetching,
       }}
     >
       {children}
