@@ -7,7 +7,7 @@ import { DataProvider } from "@/app/appcontext";
 
 import { Metadata } from "next";
 import { ReactNode } from "react";
-//import { ToastContainer } from "react-toastify";
+import { ToastContainer } from "react-toastify";
 //import Main from "./main";
 
 export const metadata: Metadata = {
@@ -25,6 +25,7 @@ export default function RootLayout({
     <DataProvider>
       <html lang="en">
         <body suppressHydrationWarning={true}>
+          <ToastContainer />
           <div className="dark:bg-boxdark-2 dark:text-bodydark">{children}</div>
         </body>
       </html>
