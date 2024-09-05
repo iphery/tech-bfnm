@@ -144,3 +144,18 @@ export const shortDate = (dateTimeString) => {
     return `${day}/${month}/${year}`;
   }
 };
+
+export const formatTime = (dateTimeString) => {
+  if (dateTimeString == "0000-00-00 00:00:00") {
+    return "";
+  } else {
+    // Parse the date-time string
+    const date = new Date(dateTimeString);
+
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+
+    // Format the date-time string
+    return `${hours}:${minutes}`;
+  }
+};

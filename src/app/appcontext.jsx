@@ -19,6 +19,20 @@ export function DataProvider({ children }) {
   const [dataMaintenance, setDataMaintenance] = useState([]);
   const [dashboardFetching, setDashboardFetching] = useState(true);
 
+  const [scannerResult, setScannerResult] = useState("");
+
+  //list outstanding
+  const [outIssued, setOutIssued] = useState([]);
+  const [outProgress, setOutProgress] = useState([]);
+  const [outCompleted, setOutCompleted] = useState([]);
+  const [outLoading, setOutLoading] = useState(true);
+
+  //list maintenance
+  const [mainIssued, setMainIssued] = useState([]);
+  const [mainProgress, setMainProgress] = useState([]);
+  const [mainCompleted, setMainCompleted] = useState([]);
+  const [mainLoading, setMainLoading] = useState(true);
+
   const updateCache = (key, data) => {
     setCachedData((prev) => ({ ...prev, [key]: data }));
   };
@@ -50,6 +64,24 @@ export function DataProvider({ children }) {
         setDataMaintenance,
         dashboardFetching,
         setDashboardFetching,
+        scannerResult,
+        setScannerResult,
+        outIssued,
+        setOutIssued,
+        outProgress,
+        setOutProgress,
+        outCompleted,
+        setOutCompleted,
+        outLoading,
+        setOutLoading,
+        mainIssued,
+        setMainIssued,
+        mainProgress,
+        setMainProgress,
+        mainCompleted,
+        setMainCompleted,
+        mainLoading,
+        setMainLoading,
       }}
     >
       {children}

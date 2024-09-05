@@ -20,13 +20,15 @@ import UserAuth from "@/components/auth";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import { DiVim } from "react-icons/di";
 import { AiTwotonePicture } from "react-icons/ai";
-import { ListOutstanding } from "@/components/oustanding";
+import { DataProvider, useProvider } from "@/app/appcontext";
+import { formatTime, shortDate } from "@/utils/dateformat";
 
 export default function Home() {
   const [isClient, setIsClient] = useState(false);
   const isSmallScreen = useMediaQuery({ query: "(max-width: 640px)" });
   const router = useRouter();
   const [openScanner, setOpenScanner] = useState(false);
+  const [scannerResult, setScannerResult] = useState("");
 
   const sign_out = async () => {
     await signOut(auth);
@@ -34,6 +36,14 @@ export default function Home() {
 
   const [servisMachine, setServiceMachine] = useState([]);
   const [maintenanceMachine, setMaintenanceMachine] = useState([]);
+  const {
+    dataMaintenance,
+    setDataMaintenance,
+    dashboardFetching,
+    setDashboardFetching,
+    dataOutstanding,
+    setDataOutstanding,
+  } = useProvider();
 
   const items = [
     { id: "1" },
@@ -42,6 +52,20 @@ export default function Home() {
     { id: "4" },
     { id: "5" },
   ];
+
+  const fetch_list_outstanding = async () => {
+    const apiUrl = `${API_URL}/listoutstandingoverview`;
+    const response = await axios.get(apiUrl);
+    console.log(response.data["outstanding"]);
+
+    if (response.status == 200) {
+      const dataoutstanding = response.data["outstanding"];
+      const datamaintenance = response.data["maintenance"];
+      setDataOutstanding(dataoutstanding);
+      setDataMaintenance(datamaintenance);
+      setDashboardFetching(false);
+    }
+  };
 
   const fetch_data = async () => {
     const apiUrl = `/api/outstanding`;
@@ -59,15 +83,15 @@ export default function Home() {
   };
 
   useEffect(() => {
-    fetch_data();
+    //fetch_data();
+    if (dashboardFetching) {
+      fetch_list_outstanding();
+    }
   }, []);
 
   useEffect(() => {
-    const scan_result = localStorage.getItem("qrcode");
-
-    if (scan_result != "") {
-      localStorage.setItem("qrcode", "");
-      router.push(`/asset/${scan_result}`);
+    if (scannerResult != "") {
+      router.push(`/asset/${scannerResult}`);
     }
   }, [openScanner]);
 
@@ -130,6 +154,7 @@ export default function Home() {
                 className="object-cover"
               />
             </div>
+
             <div className="p-5">
               <div className="grid grid-cols-4 gap-4">
                 <div
@@ -192,25 +217,24 @@ export default function Home() {
 
             <div className="p-5">
               <div className="">
-                {servisMachine.length > 0 ? (
+                {dataOutstanding.length > 0 ? (
                   <div className="mb-5 flex flex-row justify-between">
+                    <div>Outstanding</div>
                     <div
+                      className="cursor-default"
                       onClick={() => {
-                        console.log(servisMachine);
+                        router.push("/listoutstanding");
                       }}
                     >
-                      Outstanding
+                      {`Lihat semua (${dataOutstanding.length})`}{" "}
                     </div>
-                    <div>{`Lihat semua (${servisMachine.length})`} </div>
                   </div>
                 ) : (
                   <div></div>
                 )}
-                <ListOutstanding />
 
-                {/*
                 <div className=" flex space-x-4 overflow-x-auto">
-                  {servisMachine.map((item, index) => {
+                  {dataOutstanding.map((item, index) => {
                     const title =
                       item["Type"] == "K" ? item["Class"] : item["Description"];
                     const image = `${IMAGE_ASSET}/${item["Image"]}`;
@@ -246,13 +270,13 @@ export default function Home() {
                           <div className="flex flex-row items-center justify-start">
                             <MdOutlineCalendarMonth className="mr-2"></MdOutlineCalendarMonth>
                             <div className="text-sm">
-                              {item["Date_Request"]}
+                              {shortDate(item["Time_Request"])}
                             </div>
                           </div>
                           <div className="flex flex-row items-center justify-start">
                             <MdOutlineAccessTime className="mr-2"></MdOutlineAccessTime>
                             <div className="text-sm">
-                              {item["Time_Request"]}
+                              {formatTime(item["Time_Request"])}
                             </div>
                           </div>
                         </div>
@@ -260,18 +284,26 @@ export default function Home() {
                     );
                   })}
                 </div>
-                */}
               </div>
             </div>
 
             <div className="p-5">
               <div className="">
-                <div className=" mb-5 flex flex-row ">
+                <div className=" mb-5 flex flex-row justify-between">
                   <div>Maintenance</div>
-                  {<div>{`Lihat semua (${maintenanceMachine.length})`} </div>}
+                  {
+                    <div
+                      className="cursor-default"
+                      onClick={() => {
+                        router.push("/listmaintenance");
+                      }}
+                    >
+                      {`Lihat semua (${dataMaintenance.length})`}{" "}
+                    </div>
+                  }
                 </div>
                 <div className=" flex space-x-4 overflow-x-auto">
-                  {maintenanceMachine.map((item, index) => {
+                  {dataMaintenance.map((item, index) => {
                     const title =
                       item["Type"] == "K" ? item["Class"] : item["Description"];
                     const image = `${IMAGE_ASSET}/${item["Image"]}`;
@@ -302,18 +334,20 @@ export default function Home() {
                           </div>
                           <div className="flex flex-row items-center justify-start">
                             <LiaUser className="mr-2" />
-                            <div className="text-sm">{item["Requestor"]}</div>
+                            <div className="overflow-hidden truncate whitespace-nowrap text-sm">
+                              {item["Requestor"]}
+                            </div>
                           </div>
-                          <div className="flex flex-row items-center justify-start">
+                          <div className="flex flex-row items-center ">
                             <MdOutlineCalendarMonth className="mr-2" />
-                            <div className="mr-2 text-sm">
-                              {item["Date_Request"]}
+                            <div className="mr-2  text-sm">
+                              {shortDate(item["Time_Request"])}
                             </div>
                           </div>
                           <div className="flex flex-row items-center justify-start">
                             <MdOutlineAccessTime className="mr-2" />
                             <div className="text-sm">
-                              {item["Time_Request"]}
+                              {formatTime(item["Time_Request"])}
                             </div>
                           </div>
                         </div>
