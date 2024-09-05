@@ -23,5 +23,5 @@ const nextConfig = {
   images: { domains: ["mita.balifoam.com"] },
 };
 
-//module.exports = withPWA(nextConfig);
-module.exports = nextConfig;
+module.exports = withPWA(nextConfig);
+//module.exports = nextConfig;
