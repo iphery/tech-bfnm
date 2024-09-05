@@ -208,8 +208,17 @@ export default function Home() {
                 >
                   <Menu url={"apar.png"}>Fire Safety</Menu>
                 </div>
+                <div
+                  onClick={() => {
+                    const arr = ["PN", "FK", "ME", "GS"];
+                    const stringArr = JSON.stringify(arr);
+                    localStorage.setItem("menu", stringArr);
+                    router.push("/asset");
+                  }}
+                >
+                  <Menu url={"genset.png"}>Power</Menu>
+                </div>
 
-                <Menu url={"genset.png"}>Power</Menu>
                 <Menu url={"lainnya.png"}>Utility</Menu>
                 <Menu url={"other_menu.png"}>Lainnya</Menu>
               </div>

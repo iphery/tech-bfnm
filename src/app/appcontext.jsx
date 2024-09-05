@@ -33,6 +33,10 @@ export function DataProvider({ children }) {
   const [mainCompleted, setMainCompleted] = useState([]);
   const [mainLoading, setMainLoading] = useState(true);
 
+  //scan genset
+  const [scanGenset, setScanGenset] = useState("");
+  const [gensetSelectedId, setGensetSelectedId] = useState("");
+
   const updateCache = (key, data) => {
     setCachedData((prev) => ({ ...prev, [key]: data }));
   };
@@ -82,6 +86,10 @@ export function DataProvider({ children }) {
         setMainCompleted,
         mainLoading,
         setMainLoading,
+        scanGenset,
+        setScanGenset,
+        gensetSelectedId,
+        setGensetSelectedId,
       }}
     >
       {children}

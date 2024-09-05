@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { PageCard, PageCardLimited } from "@/components/card";
 import paginateData from "@/utils/pagination";
 import { DataProvider, useProvider } from "@/app/appcontext";
+import { IoWarning } from "react-icons/io5";
 
 export default function ListAsset() {
   const router = useRouter();
@@ -135,7 +136,14 @@ export default function ListAsset() {
                         </div>*/}
 
                         <div className="flex  flex-col rounded-lg border p-1 text-white">
-                          <div>{item["ID_Asset"]}</div>
+                          <div className="flex items-center">
+                            {item["ID_Asset"]}
+                            {item["Reserve"] == 1 ? (
+                              <IoWarning className="ml-2 text-warning" />
+                            ) : (
+                              <></>
+                            )}
+                          </div>
                           {item["Type"] == "K" ? (
                             <div className="flex flex-row items-center">
                               <div>{item["Model"]}</div>

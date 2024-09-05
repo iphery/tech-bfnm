@@ -52,8 +52,9 @@ import {
 import { TfiSave } from "react-icons/tfi";
 import { LuRefreshCw } from "react-icons/lu";
 import { DataProvider, useProvider } from "@/app/appcontext";
-import { BsFillFuelPumpFill } from "react-icons/bs";
+import { BsFillFuelPumpFill, BsFire } from "react-icons/bs";
 import { BiVerticalCenter } from "react-icons/bi";
+import Pemanasan from "@/components/pemanasan";
 
 export default function DetailAssetMobile({ idAsset }) {
   //params.idAsset
@@ -500,6 +501,23 @@ export default function DetailAssetMobile({ idAsset }) {
                       <></>
                     )}
                   </div>
+                )}
+                {dataAsset.ID_Asset == "BFNMF0402" ? (
+                  <>
+                    <div className="mt-2 flex items-center bg-form-strokedark">
+                      <div className="p-2 text-white">Pemanasan</div>
+                      <div
+                        onClick={() => {
+                          router.push("/pemanasan");
+                        }}
+                      >
+                        <BsFire className="text-danger" />
+                      </div>
+                    </div>
+                    <Pemanasan />
+                  </>
+                ) : (
+                  <></>
                 )}
 
                 <div className="mt-2 bg-form-strokedark">
