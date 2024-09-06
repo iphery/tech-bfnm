@@ -11,7 +11,7 @@ import {
   IMAGE_GALLERY,
 } from "@/utils/constant";
 import axios from "axios";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { HiAcademicCap, HiLocationMarker, HiSearch } from "react-icons/hi";
 import {

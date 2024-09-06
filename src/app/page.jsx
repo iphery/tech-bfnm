@@ -90,10 +90,12 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (scannerResult != "") {
+    const scannerResult = localStorage.getItem("qrcode");
+    if (scannerResult) {
+      localStorage.removeItem("qrcode");
       router.push(`/asset/${scannerResult}`);
     }
-  }, [openScanner]);
+  }, []);
 
   const fetch_data_2 = async () => {
     const apiUrl = `/api/outstanding`;

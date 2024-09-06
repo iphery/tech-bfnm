@@ -120,6 +120,7 @@ export default function ListAsset() {
                       key={index}
                       onClick={() => {
                         router.push(`/asset/${idAsset}`);
+                        //console.log(`asset/${item["ID_Asset"]}?fr=list`);
                       }}
                       className="cursor-default hover:bg-form-strokedark"
                     >
@@ -218,10 +219,10 @@ export default function ListAsset() {
                             key={index}
                             className={`cursor-default text-white   hover:bg-secondary hover:text-black`}
                             onClick={() => {
-                              router.push(`asset/${item["ID_Asset"]}`);
+                              router.push(`asset/${item["ID_Asset"]}?fr=list`);
                             }}
                           >
-                            <td className="p-2 align-top">
+                            <td className=" p-2 align-top">
                               {item["ID_Asset"]}
                             </td>
                             <td className="p-2 align-top">{desc}</td>
