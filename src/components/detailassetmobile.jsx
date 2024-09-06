@@ -371,7 +371,9 @@ export default function DetailAssetMobile({ idAsset }) {
                       </div>
                       <div
                         onClick={() => {
-                          console.log(cameraResult);
+                          setCameraResult("asset_image");
+                          setGlobalIdAsset(dataAsset.ID_Asset);
+                          router.push("/camera");
                         }}
                         className="m-2 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-lg"
                       >

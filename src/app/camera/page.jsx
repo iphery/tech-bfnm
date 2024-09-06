@@ -32,16 +32,29 @@ const CameraPage = () => {
     <div className="min-h-screen bg-boxdark-2">
       {!showCamera ? (
         <div>
-          <Webcam
-            audio={false}
-            ref={webcamRef}
-            // videoConstraints={videoConstraints}
-            onUserMedia={() => {
-              setCameraReady(true);
-            }}
-            screenshotFormat="image/jpeg"
-            className=" left-0 top-0 w-full "
-          />
+          {cameraResult == "asset_user" ? (
+            <Webcam
+              audio={false}
+              ref={webcamRef}
+              // videoConstraints={videoConstraints}
+              onUserMedia={() => {
+                setCameraReady(true);
+              }}
+              screenshotFormat="image/jpeg"
+              className=" left-0 top-0 w-full "
+            />
+          ) : (
+            <Webcam
+              audio={false}
+              ref={webcamRef}
+              videoConstraints={videoConstraints}
+              onUserMedia={() => {
+                setCameraReady(true);
+              }}
+              screenshotFormat="image/jpeg"
+              className=" left-0 top-0 w-full "
+            />
+          )}
           {cameraReady ? (
             <div className="mt-5  flex justify-center">
               <CommonButton onClick={capture} label={"Capture"} />
@@ -91,8 +104,21 @@ const CameraPage = () => {
                     setCameraResult("");
                     router.back();
                   }
+                } else if (cameraResult == "asset_image") {
+                  const apiUrl = `${API_URL}/savingassetimage`;
+                  const response = await axios.post(apiUrl, {
+                    image: imageSrc,
+                    idAsset: globalIdAsset,
+                  });
+
+                  if (response.status == 200) {
+                    setImageSrc("");
+                    setGlobalIdAsset("");
+                    setCameraResult("");
+                    router.back();
+                  }
+                  setOnloadImage(false);
                 }
-                setOnloadImage(false);
               }}
               label={"Simpan"}
             />
