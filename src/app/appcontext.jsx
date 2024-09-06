@@ -26,12 +26,14 @@ export function DataProvider({ children }) {
   const [outProgress, setOutProgress] = useState([]);
   const [outCompleted, setOutCompleted] = useState([]);
   const [outLoading, setOutLoading] = useState(true);
+  const [outCount, setOutCount] = useState(0);
 
   //list maintenance
   const [mainIssued, setMainIssued] = useState([]);
   const [mainProgress, setMainProgress] = useState([]);
   const [mainCompleted, setMainCompleted] = useState([]);
   const [mainLoading, setMainLoading] = useState(true);
+  const [mainCount, setMainCount] = useState(0);
 
   //scan genset
   const [scanGenset, setScanGenset] = useState("");
@@ -90,6 +92,10 @@ export function DataProvider({ children }) {
         setScanGenset,
         gensetSelectedId,
         setGensetSelectedId,
+        outCount,
+        setOutCount,
+        mainCount,
+        setMainCount,
       }}
     >
       {children}

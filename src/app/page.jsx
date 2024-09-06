@@ -43,6 +43,10 @@ export default function Home() {
     setDashboardFetching,
     dataOutstanding,
     setDataOutstanding,
+    outCount,
+    setOutCount,
+    mainCount,
+    setMainCount,
   } = useProvider();
 
   const items = [
@@ -61,9 +65,13 @@ export default function Home() {
     if (response.status == 200) {
       const dataoutstanding = response.data["outstanding"];
       const datamaintenance = response.data["maintenance"];
+      const outcount = response.data["outstanding_count"];
+      const maincount = response.data["maintenance_count"];
       setDataOutstanding(dataoutstanding);
       setDataMaintenance(datamaintenance);
       setDashboardFetching(false);
+      setOutCount(outcount);
+      setMainCount(maincount);
     }
   };
 
@@ -237,7 +245,7 @@ export default function Home() {
                         router.push("/listoutstanding");
                       }}
                     >
-                      {`Lihat semua (${dataOutstanding.length})`}{" "}
+                      {`Lihat semua (${outCount})`}{" "}
                     </div>
                   </div>
                 ) : (
@@ -309,7 +317,7 @@ export default function Home() {
                         router.push("/listmaintenance");
                       }}
                     >
-                      {`Lihat semua (${dataMaintenance.length})`}{" "}
+                      {`Lihat semua (${mainCount})`}{" "}
                     </div>
                   }
                 </div>
