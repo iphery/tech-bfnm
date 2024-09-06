@@ -84,6 +84,7 @@ export default function Pemanasan() {
                   onClick={() => {
                     // setGensetSelectedId(item["ID_Request"]);
                     // scan();
+                    scan(item["ID_Request"]);
                   }}
                   className="flex items-center rounded bg-warning px-1 text-center text-xs text-white"
                 >
