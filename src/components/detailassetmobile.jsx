@@ -31,7 +31,11 @@ import {
   MdOutlinePhotoCameraFront,
 } from "react-icons/md";
 import { useMediaQuery } from "react-responsive";
-import { formatDateTime } from "@/utils/dateformat";
+import {
+  formatDateTime,
+  getCurrentDate,
+  getCurrentTime,
+} from "@/utils/dateformat";
 import paginateData from "@/utils/pagination";
 import { IoTime, IoTimeOutline } from "react-icons/io5";
 import DetailAssetWeb from "@/components/detailassetweb";
@@ -131,6 +135,13 @@ export default function DetailAssetMobile({ idAsset }) {
   const [nextService, setNextService] = useState("");
 
   const [test] = useState([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
+
+  const [currentDate, setCurrentDate] = useState("");
+  const [currentTime, setCurrentTime] = useState("");
+  const [receiveDateTime, setReceiveDateTime] = useState("");
+  const [currentDateError, setCurrentDateError] = useState(false);
+  const [currentTimeError, setCurrentTimeError] = useState(false);
+  const [modalReceivePart, setModalReceivePart] = useState(false);
 
   const fetch_data = async () => {
     const apiUrl = `${API_URL}/fetchassetdetail`;
@@ -264,6 +275,7 @@ export default function DetailAssetMobile({ idAsset }) {
       status: step,
       solution: caseSolution,
       uid: parseUser[0]["Uid"],
+      receivePart: receiveDateTime,
     });
 
     if (response.status == 200) {
@@ -293,6 +305,11 @@ export default function DetailAssetMobile({ idAsset }) {
       }
     }
   }, [router]);
+
+  useEffect(() => {
+    setCurrentDate(getCurrentDate());
+    setCurrentTime(getCurrentTime());
+  }, []);
 
   useEffect(() => {
     setIsClient(true);
@@ -780,6 +797,27 @@ export default function DetailAssetMobile({ idAsset }) {
                             ) : (
                               <></>
                             );
+                          case "3":
+                            //return uid == selectedCase.ID_Tech ? (
+                            return parseInt(userLevel) <= 2 ? (
+                              <div className=" border p-2">
+                                <div>
+                                  <CommonButtonFull
+                                    label={"Terima spare part"}
+                                    onClick={() => {
+                                      setModalReceivePart(true);
+                                      //setCaseLoaderCompleted(true);
+                                      //setUpdatedStep("receive_part");
+                                    }}
+                                    //disabled={caseLoaderCompleted}
+                                    //onload={caseLoaderCompleted}
+                                  />
+                                </div>
+                              </div>
+                            ) : (
+                              <></>
+                            );
+
                           case "4":
                             //hanya teknisi yg scan
                             return uid == selectedCase.ID_Tech ? (
@@ -1354,6 +1392,70 @@ export default function DetailAssetMobile({ idAsset }) {
                 //kirim ke server
               }
               setOnloadRequestPerawatan(false);
+            }}
+          />
+        </CustomModal>
+
+        <CustomModal
+          isVisible={modalReceivePart}
+          isSmallWidth="sm"
+          onClose={() => {}}
+        >
+          <div className="mb-2">Input tanggal / jam terima spare part</div>
+          <div className="flex flex-row justify-evenly">
+            <div className="w-full">
+              <CommonInput
+                type={"date"}
+                input={currentDate}
+                onInputChange={(val) => {
+                  console.log(val);
+                }}
+                error={currentDateError}
+                errorMessage={"Required"}
+                onChg={() => {
+                  setCurrentDateError(false);
+                }}
+              />
+            </div>
+            <div className="mr-2"></div>
+            <div className="w-full">
+              <CommonInput
+                type={"time"}
+                input={currentTime}
+                onInputChange={(val) => {
+                  console.log(val);
+                }}
+                error={currentTimeError}
+                errorMessage={"Required"}
+                onChg={() => {
+                  setCurrentTimeError(false);
+                }}
+              />
+            </div>
+          </div>
+          <div className="mb-5"></div>
+          <CommonButtonFull
+            label={"Kirim"}
+            onClick={() => {
+              if (currentDate == "") {
+                setCurrentDateError(true);
+              } else {
+                setCurrentDateError(false);
+              }
+
+              if (currentTime == "") {
+                setCurrentTimeError(true);
+              } else {
+                setCurrentTimeError(false);
+              }
+
+              if (currentDate != "" && currentTime != "") {
+                const datetime = `${currentDate} ${currentTime}`;
+                setReceiveDateTime(datetime);
+                setModalReceivePart(false);
+                setCaseLoaderCompleted(true);
+                setUpdatedStep("receive_part");
+              }
             }}
           />
         </CustomModal>
