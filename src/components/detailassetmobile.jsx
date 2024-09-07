@@ -984,7 +984,22 @@ export default function DetailAssetMobile({ idAsset }) {
                       </>
                     )}
 
-                    <div className="p-2 text-white">Progress</div>
+                    <div className="flex items-center justify-between p-2 text-white">
+                      <div>Progress</div>
+                      {parseInt(userLevel) <= 1 ? (
+                        <div
+                          onClick={() => {
+                            router.push(
+                              `/asset/${idAsset}/${selectedCase.ID_Request}`,
+                            );
+                          }}
+                        >
+                          <CiEdit />
+                        </div>
+                      ) : (
+                        <></>
+                      )}
+                    </div>
                     <div className="p-2">
                       <div className="rounded-lg border p-1">
                         <ProgressCard

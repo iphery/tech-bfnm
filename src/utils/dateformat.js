@@ -176,3 +176,19 @@ export const getCurrentTime = () => {
   const seconds = "00";
   return `${hours}:${minutes}:${seconds}`;
 };
+
+export const getCurrentDateFromDatetime = (datetime) => {
+  const today = new Date(datetime);
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0"); // Month is zero-based
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+export const getCurrentTimeFromDatetime = (datetime) => {
+  const now = new Date(datetime);
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  const seconds = String(now.getSeconds()).padStart(2, "0");
+  return `${hours}:${minutes}:${seconds}`;
+};
