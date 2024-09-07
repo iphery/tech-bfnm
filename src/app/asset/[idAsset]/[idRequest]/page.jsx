@@ -124,10 +124,10 @@ export default function Page({ params }) {
                         onClick={() => {
                           setEditItem("response");
                           setCurrentDate(
-                            getCurrentDateFromDatetime(data.Time_Request),
+                            getCurrentDateFromDatetime(data.Time_Response),
                           );
                           setCurrentTime(
-                            getCurrentTimeFromDatetime(data.Time_Request),
+                            getCurrentTimeFromDatetime(data.Time_Response),
                           );
                           setModalEdit(true);
                         }}
@@ -146,10 +146,10 @@ export default function Page({ params }) {
                         onClick={() => {
                           setEditItem("part_request");
                           setCurrentDate(
-                            getCurrentDateFromDatetime(data.Time_Request),
+                            getCurrentDateFromDatetime(data.Time_POS),
                           );
                           setCurrentTime(
-                            getCurrentTimeFromDatetime(data.Time_Request),
+                            getCurrentTimeFromDatetime(data.Time_POS),
                           );
                           setModalEdit(true);
                         }}
@@ -168,10 +168,10 @@ export default function Page({ params }) {
                         onClick={() => {
                           setEditItem("part_receive");
                           setCurrentDate(
-                            getCurrentDateFromDatetime(data.Time_Request),
+                            getCurrentDateFromDatetime(data.Time_POS_Complete),
                           );
                           setCurrentTime(
-                            getCurrentTimeFromDatetime(data.Time_Request),
+                            getCurrentTimeFromDatetime(data.Time_POS_Complete),
                           );
                           setModalEdit(true);
                         }}
@@ -189,10 +189,14 @@ export default function Page({ params }) {
                         onClick={() => {
                           setEditItem("completed");
                           setCurrentDate(
-                            getCurrentDateFromDatetime(data.Time_Request),
+                            getCurrentDateFromDatetime(
+                              data.Time_Repair_Complete,
+                            ),
                           );
                           setCurrentTime(
-                            getCurrentTimeFromDatetime(data.Time_Request),
+                            getCurrentTimeFromDatetime(
+                              data.Time_Repair_Complete,
+                            ),
                           );
                           setModalEdit(true);
                         }}
@@ -210,10 +214,10 @@ export default function Page({ params }) {
                         onClick={() => {
                           setEditItem("checked");
                           setCurrentDate(
-                            getCurrentDateFromDatetime(data.Time_Request),
+                            getCurrentDateFromDatetime(data.Tech_SPV),
                           );
                           setCurrentTime(
-                            getCurrentTimeFromDatetime(data.Time_Request),
+                            getCurrentTimeFromDatetime(data.Tech_SPV),
                           );
                           setModalEdit(true);
                         }}
