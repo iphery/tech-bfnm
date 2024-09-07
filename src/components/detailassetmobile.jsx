@@ -1401,7 +1401,9 @@ export default function DetailAssetMobile({ idAsset }) {
         <CustomModal
           isVisible={modalReceivePart}
           isSmallWidth="sm"
-          onClose={() => {}}
+          onClose={() => {
+            setModalReceivePart(false);
+          }}
         >
           <div className="mb-2">Input tanggal / jam terima spare part</div>
           <div className="flex flex-row justify-evenly">
@@ -1410,7 +1412,7 @@ export default function DetailAssetMobile({ idAsset }) {
                 type={"date"}
                 input={currentDate}
                 onInputChange={(val) => {
-                  console.log(val);
+                  setCurrentDate(val);
                 }}
                 error={currentDateError}
                 errorMessage={"Required"}
@@ -1425,7 +1427,7 @@ export default function DetailAssetMobile({ idAsset }) {
                 type={"time"}
                 input={currentTime}
                 onInputChange={(val) => {
-                  console.log(val);
+                  setCurrentTime(val);
                 }}
                 error={currentTimeError}
                 errorMessage={"Required"}
