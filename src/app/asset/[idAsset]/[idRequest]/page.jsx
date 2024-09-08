@@ -64,6 +64,7 @@ export default function Page({ params }) {
       console.log(resp);
       NotifySuccess("Updating success");
       setModalEdit(false);
+      fetch_data();
     }
   };
 

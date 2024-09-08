@@ -39,6 +39,14 @@ export function DataProvider({ children }) {
   const [scanGenset, setScanGenset] = useState("");
   const [gensetSelectedId, setGensetSelectedId] = useState("");
 
+  //web dashboard
+  const [webOutstandingRequest, setWebOutstandingRequest] = useState([]);
+  const [webMaintenanceRequest, setWebMaintenanceRequest] = useState([]);
+  const [webITRequest, setWebITRequest] = useState([]);
+  const [loadWebOutstanding, setLoadWebOutstanding] = useState(true);
+  const [loadWebMaintenance, setLoadWebMaintenance] = useState(true);
+  const [loadWebIT, setLoadWebIT] = useState(true);
+
   const updateCache = (key, data) => {
     setCachedData((prev) => ({ ...prev, [key]: data }));
   };
@@ -96,6 +104,19 @@ export function DataProvider({ children }) {
         setOutCount,
         mainCount,
         setMainCount,
+        webOutstandingRequest,
+        setWebOutstandingRequest,
+        webMaintenanceRequest,
+        setWebMaintenanceRequest,
+        webITRequest,
+        setWebITRequest,
+        loadWebOutstanding,
+        setLoadWebOutstanding,
+        loadWebMaintenance,
+        setLoadWebMaintenance,
+
+        loadWebIT,
+        setLoadWebIT,
       }}
     >
       {children}

@@ -22,6 +22,7 @@ import { DiVim } from "react-icons/di";
 import { AiTwotonePicture } from "react-icons/ai";
 import { DataProvider, useProvider } from "@/app/appcontext";
 import { formatTime, shortDate } from "@/utils/dateformat";
+import WebDashboard from "@/components/dashboard";
 
 export default function Home() {
   const [isClient, setIsClient] = useState(false);
