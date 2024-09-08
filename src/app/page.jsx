@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useContext, useEffect, useState } from "react";
 import { LiaUser } from "react-icons/lia";
 import {
+  MdLogout,
   MdOutlineAccessTime,
   MdOutlineAddBox,
   MdOutlineCalendarMonth,
@@ -13,7 +14,13 @@ import { useMediaQuery } from "react-responsive";
 import { auth } from "@/app/firebase-config";
 import { signOut } from "firebase/auth";
 
-import { API_URL, ICON, IMAGE_ASSET, OLD_API_URL } from "@/utils/constant";
+import {
+  API_URL,
+  ICON,
+  IMAGE_ASSET,
+  IMAGE_PROFILE,
+  OLD_API_URL,
+} from "@/utils/constant";
 import axios from "axios";
 import { Menu } from "@/components/menu";
 import UserAuth from "@/components/auth";
@@ -22,7 +29,7 @@ import { DiVim } from "react-icons/di";
 import { AiTwotonePicture } from "react-icons/ai";
 import { DataProvider, useProvider } from "@/app/appcontext";
 import { formatTime, shortDate } from "@/utils/dateformat";
-import WebDashboard from "@/components/dashboard";
+import Notifikasi from "@/components/notifikasi";
 
 export default function Home() {
   const [isClient, setIsClient] = useState(false);
@@ -49,6 +56,7 @@ export default function Home() {
     mainCount,
     setMainCount,
   } = useProvider();
+  const [imageUrl, setImageUrl] = useState("");
 
   const items = [
     { id: "1" },
@@ -118,6 +126,22 @@ export default function Home() {
     }
   };
 
+  useEffect(() => {
+    const user = localStorage.getItem("info");
+    if (user != null) {
+      const parseUser = JSON.parse(user);
+      const imageUrl = parseUser[0]["imageUrl"];
+      const name = parseUser[0]["Name"];
+      const divisi = parseUser[0]["divisi"];
+      console.log(parseUser);
+      setImageUrl(imageUrl);
+      //setUserName(name);
+      //if (divisi != null) {
+      // setUserDivisi(divisi);
+      //}
+    }
+  }, []);
+
   //waiting for client side
   useEffect(() => {
     setIsClient(true);
@@ -154,6 +178,29 @@ export default function Home() {
                     >
                       <MdOutlineDocumentScanner className="h-6 w-6" />
                     </div>
+                    <div
+                      onClick={async () => {
+                        await signOut(auth);
+
+                        router.push("/");
+                      }}
+                      className="px-3 py-2"
+                    >
+                      <MdLogout className="h-6 w-6 text-danger" />
+                    </div>
+                    <div className="mr-3">
+                      <img
+                        // src={"/images/user/user-01.png"}
+
+                        src={
+                          imageUrl == null
+                            ? "/images/user/user-01.png"
+                            : `${IMAGE_PROFILE}/${imageUrl}`
+                        }
+                        alt="User"
+                        className="h-10 w-10 rounded-full object-cover"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -161,7 +208,7 @@ export default function Home() {
 
             <div className="mb-5 h-[190px]">
               <img
-                src="https://mita.balifoam.com/mobile/flutter/image_carousel/image_picker_crop_6885ee38-a228-4c21-bfc8-16549c41a76d.jpg"
+                src="https://mita.balifoam.com/mobile/flutter/image_carousel/image_picker_crop_2bea56fe-9d5e-4af9-a1c7-0245074d25dd_20220308062026467.jpg"
                 className="object-cover"
               />
             </div>
@@ -234,6 +281,8 @@ export default function Home() {
                 <Menu url={"other_menu.png"}>Lainnya</Menu>
               </div>
             </div>
+
+            <Notifikasi />
 
             <div className="p-5">
               <div className="">

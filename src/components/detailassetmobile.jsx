@@ -294,6 +294,28 @@ export default function DetailAssetMobile({ idAsset }) {
     setCaseLoaderCompleted(false);
   };
 
+  const create_maintenance = async (idasset) => {
+    const user = localStorage.getItem("info");
+    const parseUser = JSON.parse(user);
+    const uid = parseUser[0]["Uid"];
+
+    setOnloadRequestPerawatan(true);
+    const apiUrl = `${API_URL}/createmaintenance`;
+    const response = await axios.post(apiUrl, {
+      idAsset: idasset,
+
+      uid: uid,
+    });
+
+    if (response.status == 200) {
+      const msg = response.data["message"];
+      NotifySuccess(msg);
+      fetch_data_service();
+    }
+
+    setOnloadRequestPerawatan(false);
+  };
+
   useEffect(() => {
     const qr = localStorage.getItem("qrcode_case");
     if (qr != "") {
@@ -464,7 +486,7 @@ export default function DetailAssetMobile({ idAsset }) {
                               //untuk mobil
                               setModalPerawatan(true);
                             } else {
-                              setOnloadRequestPerawatan(true);
+                              create_maintenance(dataAsset.ID_Asset);
                               //kirim ke server//
                             }
                           }

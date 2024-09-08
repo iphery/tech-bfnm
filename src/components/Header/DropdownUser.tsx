@@ -55,13 +55,6 @@ const DropdownUser = () => {
                 ? "/images/user/user-01.png"
                 : `${IMAGE_PROFILE}/${imageUrl}`
             }
-            /*
-            style={{
-              width: "auto",
-              height: "auto",
-            }}
-              */
-
             alt="User"
             className="object-cover"
           />
