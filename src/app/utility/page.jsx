@@ -69,6 +69,12 @@ export default function ListAsset() {
   const [loader, setLoader] = useState(false);
   const [loaderComplete, setLoaderComplete] = useState(false);
 
+  const [modalSolution, setModalSolution] = useState(false);
+  const [dataSolution, setDataSolution] = useState("");
+  const [dataSolutionError, setDataSolutionError] = useState(false);
+  const [loaderSolution, setLoaderSolution] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState("");
+
   const fetch_data = async () => {
     const apiUrl = `${API_URL}/listutility`;
     const response = await axios.get(apiUrl);
@@ -100,6 +106,11 @@ export default function ListAsset() {
 
     setListUtility(filterData);
   }, [detailData, searchUtility]);
+
+  const update_selected_request = (id_request) => {
+    setSelectedRequest(id_request);
+  };
+  useEffect(() => {}, [selectedRequest]);
 
   useEffect(() => {
     setIsClient(true);
@@ -179,6 +190,7 @@ export default function ListAsset() {
                           {imageUtility[index].map((image, ind) => {
                             return (
                               <img
+                                key={ind}
                                 src={`${IMAGE_GALLERY}/${image}`}
                                 className="h-60 w-full object-cover"
                               />
@@ -186,13 +198,23 @@ export default function ListAsset() {
                           })}
                         </div>
                         <div className="mb-3"></div>
-                        <div className="flex justify-end">
-                          <CommonButton
-                            label={"Selesai"}
-                            disabled={loaderComplete}
-                            onload={loaderComplete}
-                            onClick={async () => {}}
-                          />
+
+                        <div>
+                          {item["Step"] != "5" ? (
+                            <div className="flex justify-end">
+                              <CommonButton
+                                label={"Selesai"}
+                                disabled={loaderComplete}
+                                onload={loaderComplete}
+                                onClick={() => {
+                                  update_selected_request(item["ID_Request"]);
+                                  setModalSolution(true);
+                                }}
+                              />
+                            </div>
+                          ) : (
+                            <></>
+                          )}
                         </div>
                       </div>
                     );
@@ -352,6 +374,57 @@ export default function ListAsset() {
               }
               setLoader(false);
             }}
+          />
+        </CustomModal>
+        <CustomModal
+          isVisible={modalSolution}
+          onClose={() => {
+            setModalSolution(false);
+          }}
+        >
+          <CommonInput
+            input={dataSolution}
+            errorMessage={"Required"}
+            error={dataSolutionError}
+            onInputChange={(val) => {
+              setDataSolution(val);
+            }}
+            onKeyChange={() => {
+              setDataSolutionError(false);
+            }}
+            placeholder={"Tuliskan tindakan yang sudah dilakukan"}
+          />
+          <div className="mb-3"></div>
+          <CommonButtonFull
+            label={"Selesai"}
+            onClick={async () => {
+              setLoaderSolution(true);
+              if (dataSolution == "") {
+                setDataSolutionError(true);
+              } else {
+                setDataSolutionError(false);
+                const user = localStorage.getItem("info");
+                const parseUser = JSON.parse(user);
+                const apiUrl = `${API_URL}/closeutility`;
+                const response = await axios.post(apiUrl, {
+                  id_request: selectedRequest,
+                  uid: parseUser[0]["Uid"],
+                  solution: dataSolution,
+                });
+
+                if (response.status == 200) {
+                  const message = response.data["response"];
+                  NotifySuccess(message);
+                }
+              }
+              console.log(dataSolution);
+              setModalSolution(false);
+              setDataSolution("");
+              setLoaderSolution(false);
+              fetch_data();
+            }}
+            disabled={loaderSolution}
+            onload={loaderSolution}
           />
         </CustomModal>
       </div>
