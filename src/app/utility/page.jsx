@@ -74,6 +74,7 @@ export default function ListAsset() {
   const [dataSolutionError, setDataSolutionError] = useState(false);
   const [loaderSolution, setLoaderSolution] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState("");
+  const [loaderDelete, setLoaderDelete] = useState(false);
 
   const fetch_data = async () => {
     const apiUrl = `${API_URL}/listutility`;
@@ -202,6 +203,26 @@ export default function ListAsset() {
                         <div>
                           {item["Step"] != "5" ? (
                             <div className="flex justify-end">
+                              <CommonButton
+                                label={"Delete"}
+                                disabled={loaderDelete}
+                                onload={loaderDelete}
+                                onClick={async () => {
+                                  setLoaderDelete(true);
+                                  const apiUrl = `${API_URL}/deleteutility`;
+                                  const response = await axios.post(apiUrl, {
+                                    id_request: item["ID_Request"],
+                                  });
+
+                                  if (response.status == 200) {
+                                    const message = response.data["response"];
+                                    NotifySuccess(message);
+                                    window.location.reload();
+                                  }
+                                  setLoaderDelete(false);
+                                }}
+                              />
+                              <div className="mr-3"></div>
                               <CommonButton
                                 label={"Selesai"}
                                 disabled={loaderComplete}
@@ -370,6 +391,7 @@ export default function ListAsset() {
                   });
 
                   NotifySuccess(data);
+                  window.location.reload();
                 }
               }
               setLoader(false);
