@@ -276,8 +276,15 @@ export default function Home() {
                 >
                   <Menu url={"genset.png"}>Power</Menu>
                 </div>
+                <div
+                  onClick={() => {
+                    router.push("/utility");
+                  }}
+                  className="group"
+                >
+                  <Menu url={"lainnya.png"}>Utility</Menu>
+                </div>
 
-                <Menu url={"lainnya.png"}>Utility</Menu>
                 <Menu url={"other_menu.png"}>Lainnya</Menu>
               </div>
             </div>

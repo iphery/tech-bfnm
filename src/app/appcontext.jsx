@@ -47,6 +47,12 @@ export function DataProvider({ children }) {
   const [loadWebMaintenance, setLoadWebMaintenance] = useState(true);
   const [loadWebIT, setLoadWebIT] = useState(true);
 
+  //utility
+  const [listUtility, setListUtility] = useState([]);
+  const [loadUtility, setLoadUtility] = useState(true);
+  const [searchUtility, setSearchUtility] = useState("");
+  const [imageUtility, setImageUtility] = useState([]);
+
   const updateCache = (key, data) => {
     setCachedData((prev) => ({ ...prev, [key]: data }));
   };
@@ -117,6 +123,14 @@ export function DataProvider({ children }) {
 
         loadWebIT,
         setLoadWebIT,
+        listUtility,
+        setListUtility,
+        loadUtility,
+        setLoadUtility,
+        searchUtility,
+        setSearchUtility,
+        imageUtility,
+        setImageUtility,
       }}
     >
       {children}
