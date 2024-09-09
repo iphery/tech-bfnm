@@ -76,6 +76,8 @@ export default function ListAsset() {
   const [selectedRequest, setSelectedRequest] = useState("");
   const [loaderDelete, setLoaderDelete] = useState(false);
 
+  const [userLevel, setUserLevel] = useState(4);
+
   const fetch_data = async () => {
     const apiUrl = `${API_URL}/listutility`;
     const response = await axios.get(apiUrl);
@@ -90,6 +92,17 @@ export default function ListAsset() {
 
   useEffect(() => {
     fetch_data();
+  }, []);
+
+  useEffect(() => {
+    const user = localStorage.getItem("info");
+    if (user != null) {
+      const parseUser = JSON.parse(user);
+      const imageUrl = parseUser[0]["imageUrl"];
+
+      const level = parseUser[0]["Level"];
+      setUserLevel(level);
+    }
   }, []);
 
   useEffect(() => {
@@ -201,7 +214,7 @@ export default function ListAsset() {
                         <div className="mb-3"></div>
 
                         <div>
-                          {item["Step"] != "5" ? (
+                          {item["Step"] != "5" && userLevel <= 2 ? (
                             <div className="flex justify-end">
                               <CommonButton
                                 label={"Delete"}
