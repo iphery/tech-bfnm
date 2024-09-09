@@ -112,9 +112,17 @@ export default function ListPart() {
 
   useEffect(() => {
     //if (!loading) {
-    const filterData = detailData.filter((item) =>
-      item["description"].toLowerCase().includes(partKeyword.toLowerCase()),
-    );
+
+    const filterData = detailData.filter((item) => {
+      const description =
+        item["description"] &&
+        item["description"].toLowerCase().includes(partKeyword.toLowerCase());
+      const code =
+        item["vendor_code"] &&
+        item["vendor_code"].toLowerCase().includes(partKeyword.toLowerCase());
+
+      return description || code;
+    });
     const { data, pageCurrent, start, end } = paginateData(
       filterData,
       //keyword,
