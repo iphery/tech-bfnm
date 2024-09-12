@@ -423,15 +423,15 @@ export default function DetailAssetMobile({ idAsset }) {
                   <div className="p-2 text-white">Detail Info</div>
                 </div>
                 <div className="mb-2"></div>
-                <div className="flex flex-row items-center px-2 py-1">
+                <div className="flex flex-row items-center px-2 py-1 text-warning">
                   <HiUser />
                   <div className="ml-2">{dataAsset.User}</div>
                 </div>
-                <div className="flex flex-row items-center px-2 py-1">
+                <div className="flex flex-row items-center px-2 py-1 text-warning">
                   <HiLocationMarker />
                   <div className="ml-2">{dataAsset.Location}</div>
                 </div>
-                <div className="flex flex-row items-center px-2 py-1">
+                <div className="flex flex-row items-center px-2 py-1 text-warning">
                   <MdOutlineMiscellaneousServices />
                   <div className="ml-2">
                     {dataAsset.Available == 1 && dataAsset.Reserve == 1
@@ -443,7 +443,7 @@ export default function DetailAssetMobile({ idAsset }) {
                 </div>
                 {dataAsset.Type == "K" && dataAsset.Based == "KM" ? (
                   <div>
-                    <div className="flex flex-row items-center px-2 py-1">
+                    <div className="flex flex-row items-center px-2 py-1 text-warning">
                       <BsFillFuelPumpFill />
                       <div className="ml-2">{`${lastSeen} (${ratio})`}</div>
                     </div>
@@ -451,7 +451,7 @@ export default function DetailAssetMobile({ idAsset }) {
                 ) : (
                   <></>
                 )}
-                <div className="flex flex-row items-center px-2 py-1">
+                <div className="flex flex-row items-center px-2 py-1 text-warning">
                   <FaCalendarAlt />
                   <div className="ml-2">{nextService}</div>
                 </div>
