@@ -16,6 +16,7 @@ import { HiArrowRight, HiMinus, HiOutlineSearch, HiPlus } from "react-icons/hi";
 import { PageLoader } from "./loader";
 import { PageCard, PageCardLimited } from "@/components/card";
 import { formatDate } from "@/utils/dateformat";
+import { useInView } from "@/utils/inview";
 
 export default function DetailAssetWeb({ idAsset }) {
   const router = useRouter();
@@ -41,8 +42,14 @@ export default function DetailAssetWeb({ idAsset }) {
   const [keywordStock, setKeywordStock] = useState("");
   const [enabledAddButton, setEnabledAddButton] = useState([]);
 
+  const [isBottom, setIsBottom] = useState(false);
+
   //order part
   const [transactionStock, setTransactionStock] = useState([]);
+
+  const [ref, isInView, hasBeenSeen] = useInView({
+    threshold: 0.1, // Trigger when 10% of the element is visible
+  });
 
   const fetch_data = async () => {
     const apiUrl = `${API_URL}/fetchassetdetail`;
@@ -71,8 +78,8 @@ export default function DetailAssetWeb({ idAsset }) {
       const array = response.data["service"];
       console.log("dfd");
       console.log(array);
-      setFilteredDataService(array);
-      //setDataService(array);
+      //setFilteredDataService(array);
+      setDataService(array);
     }
   };
 
@@ -117,28 +124,40 @@ export default function DetailAssetWeb({ idAsset }) {
     }
   }, [modalStocks]);
 
-  useEffect(() => {
+  const fetch_data_service2 = () => {
     const filterService = dataService.filter((item) =>
       item["Problem"].toLowerCase().includes(keyword.toLowerCase()),
     );
+
+    console.log(filterService);
     const { data, pageCurrent, pageLast } = paginateData(
       filterService,
 
       currentPage,
       itemPerPage,
     );
+
     setFilteredDataService(data);
     setLastPage(pageLast);
     //setItemPerPage(5);
     if (pageCurrent < pageLast) {
-      setShowLoadMore(true);
+      //setShowLoadMore(true);
+      if (isBottom) {
+        setItemPerPage(itemPerPage + 5);
+        setIsBottom(false);
+      }
     } else {
       setShowLoadMore(false);
     }
     console.log(data);
     console.log(pageLast);
-  }, [keyword, dataAsset, itemPerPage]);
+  };
 
+  useEffect(() => {
+    fetch_data_service2();
+  }, [keyword, dataService, isBottom]);
+
+  /*
   useEffect(() => {
     const filterData = listStock.filter((item) =>
       item["description"].toLowerCase().includes(keywordStock.toLowerCase()),
@@ -146,6 +165,7 @@ export default function DetailAssetWeb({ idAsset }) {
     // console.log(filterData);
     setFilteredStock(filterData);
   }, [keywordStock]);
+  */
 
   const [userLevel, setUserLevel] = useState("");
 
@@ -157,6 +177,14 @@ export default function DetailAssetWeb({ idAsset }) {
       setUserLevel(userlevel);
     }
   }, []);
+
+  useEffect(() => {
+    if (hasBeenSeen) {
+      console.log("keliaan");
+      setItemPerPage(itemPerPage + 5);
+    }
+    console.log("refresh");
+  }, [hasBeenSeen]);
 
   return (
     <UserAuth>
@@ -229,9 +257,9 @@ export default function DetailAssetWeb({ idAsset }) {
                             </CommonInput>
                           </div>
                         </div>
-                        <div className="h-[calc(100vh-520px)] overflow-y-auto">
+                        <div className="">
                           <table className="w-full">
-                            <thead className="sticky top-0 h-10 bg-black">
+                            <thead className=" h-10 bg-black">
                               <tr>
                                 <th>ID Request</th>
                                 <th>Date</th>
@@ -328,6 +356,10 @@ export default function DetailAssetWeb({ idAsset }) {
                               })}
                             </tbody>
                           </table>
+
+                          <div ref={ref} className="mt-20">
+                            show
+                          </div>
                         </div>
                       </div>
                     </div>

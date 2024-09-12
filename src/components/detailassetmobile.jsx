@@ -83,6 +83,7 @@ export default function DetailAssetMobile({ idAsset }) {
   const [partList, setPartList] = useState([]);
   const [galleryList, setGalleryList] = useState([]);
   const [caseLoaderReceived, setCaseLoaderReceived] = useState(false);
+  const [servisList, setServisList] = useState([]);
   const [caseLoaderOrder, setCaseLoaderOrder] = useState(false);
   const [caseLoaderCompleted, setCaseLoaderCompleted] = useState(false);
   const [caseLoaderPart, setCaseLoaderPart] = useState(false);
@@ -202,9 +203,11 @@ export default function DetailAssetMobile({ idAsset }) {
       const galleries = response.data["galleries"];
       const respTime = response.data["response_time"];
       const reprTime = response.data["repair_time"];
+      const servis = response.data["servis"];
       setSelectedCase(array);
       setPartList(parts);
       setGalleryList(galleries);
+      setServisList(servis);
       //console.log(array);
       const checkList = array["new_checklist"];
       setpmList([]);
@@ -1108,6 +1111,35 @@ export default function DetailAssetMobile({ idAsset }) {
                                   </div>
                                   <div className="text-xs text-white">
                                     {item["dpm"]}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <></>
+                    )}
+
+                    {servisList.length > 0 ? (
+                      <div>
+                        <div className="p-2 text-white">Service Luar</div>
+                        <div className="p-2">
+                          <div className="rounded-lg border border p-1">
+                            {servisList.map((item, index) => {
+                              return (
+                                <div className="p-2 " key={index}>
+                                  <div className="flex justify-between">
+                                    <div className="text-white">
+                                      {item["item"]}
+                                    </div>
+                                    <div className="text-white">
+                                      {item["quantity"]}
+                                    </div>
+                                  </div>
+                                  <div className="text-xs text-white">
+                                    {item["id_register"]}
                                   </div>
                                 </div>
                               );
