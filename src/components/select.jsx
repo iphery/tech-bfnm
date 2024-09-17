@@ -4,7 +4,7 @@ import Select, { components } from "react-select";
 const GroupOption = (props) => {
   return (
     <components.Option {...props}>
-      <div>
+      <div className="text-strokedark">
         <div className="">{props.data.label}</div>
       </div>
     </components.Option>
@@ -14,7 +14,7 @@ const GroupOption = (props) => {
 const GroupOptionWithSub = (props) => {
   return (
     <components.Option {...props}>
-      <div>
+      <div className="text-strokedark">
         <div className="">{props.data.label}</div>
         <div className="text-sm">{props.data.title}</div>
       </div>
@@ -47,7 +47,7 @@ export const CustomSelect = ({
       backgroundColor: isSelected
         ? "green"
         : isFocused
-          ? "blue"
+          ? "#80CAEE"
           : "transparent", // Adds a slight background on hover for visibility
     }),
   };

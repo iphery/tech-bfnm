@@ -97,26 +97,53 @@ export default function PartsIn() {
 
   useEffect(() => {
     //if (!loading) {
-    const filterData = detailData.filter((item) =>
-      item["description"].toLowerCase().includes(keyword.toLowerCase()),
-    );
-    /*
-    const { data, pageCurrent, start, end } = paginateData(
-      filterData,
-      //keyword,
-      currentPage,
-      10,
-    );
-    */
+    const filterData = detailData.filter((item) => {
+      const description =
+        item["description"] &&
+        item["description"].toLowerCase().includes(keyword.toLowerCase());
+      const code =
+        item["vendor_code"] &&
+        item["vendor_code"].toLowerCase().includes(keyword.toLowerCase());
+      const remark =
+        item["remark"] &&
+        item["remark"].toLowerCase().includes(keyword.toLowerCase());
+      return description || code || remark;
+    });
+
     setFilteredList(filterData);
 
     //}
   }, [detailData, keyword]);
 
   useEffect(() => {
-    const filterRequest = pendingService.filter((item) =>
-      item["ID_Request"].toLowerCase().includes(keywordRequest.toLowerCase()),
-    );
+    const filterRequest = pendingService.filter((item) => {
+      const id_request =
+        item["ID_Request"] &&
+        item["ID_Request"].toLowerCase().includes(keywordRequest.toLowerCase());
+      const id_asset =
+        item["ID_Asset"] &&
+        item["ID_Asset"].toLowerCase().includes(keywordRequest.toLowerCase());
+      const description =
+        item["Description"] &&
+        item["Description"]
+          .toLowerCase()
+          .includes(keywordRequest.toLowerCase());
+      const manufacture =
+        item["Manufacture"] &&
+        item["Manufacture"]
+          .toLowerCase()
+          .includes(keywordRequest.toLowerCase());
+      const model =
+        item["Model"] &&
+        item["Model"].toLowerCase().includes(keywordRequest.toLowerCase());
+      const no =
+        item["No"] &&
+        item["No"].toLowerCase().includes(keywordRequest.toLowerCase());
+
+      return (
+        id_request || id_asset || description || manufacture || model || no
+      );
+    });
 
     console.log(filterRequest);
 
@@ -334,7 +361,7 @@ export default function PartsIn() {
                   </div>
                 </div>
                 <div>
-                  {keyword.length >= 3 ? (
+                  {keyword.length >= 2 ? (
                     searchNotFound ? (
                       <div>ga ketemu</div>
                     ) : (
@@ -345,7 +372,7 @@ export default function PartsIn() {
                               {filteredList.map((item, index) => {
                                 return (
                                   <tr
-                                    className={`cursor-default hover:bg-secondary hover:text-white ${index % 2 === 0 ? "bg-gray" : "bg-white"}`}
+                                    className={`cursor-default text-strokedark hover:bg-secondary hover:text-white ${index % 2 === 0 ? "bg-gray" : "bg-white"}`}
                                     key={index}
                                     onClick={() => {
                                       console.log(item.description);
@@ -481,7 +508,7 @@ export default function PartsIn() {
                     </div>
                   </div>
 
-                  {keywordRequest.length > 3 ? (
+                  {keywordRequest.length >= 2 ? (
                     <div className="mt-2 h-30 overflow-y-auto bg-white">
                       <table className="w-full">
                         <tbody>
@@ -489,7 +516,7 @@ export default function PartsIn() {
                             return (
                               <tr
                                 key={index}
-                                className={`cursor-default text-black hover:bg-secondary hover:text-white ${index % 2 === 0 ? "bg-gray" : "bg-white"}`}
+                                className={`cursor-default text-black text-strokedark hover:bg-secondary hover:text-white ${index % 2 === 0 ? "bg-gray" : "bg-white"}`}
                                 onClick={() => {
                                   setInputIdService(item["ID_Request"]);
                                   setKeywordRequest("");
@@ -641,14 +668,18 @@ export default function PartsIn() {
                   </table>
                 </div>
                 <div className="mb-3"></div>
-                <div className="flex justify-end">
-                  <CommonButton
-                    label={"Save"}
-                    onClick={save_item}
-                    onload={loadingSubmit}
-                    disabled={loadingSubmit}
-                  />
-                </div>
+                {listOrder.length > 0 ? (
+                  <div className="flex justify-end">
+                    <CommonButton
+                      label={"Save"}
+                      onClick={save_item}
+                      onload={loadingSubmit}
+                      disabled={loadingSubmit}
+                    />
+                  </div>
+                ) : (
+                  <></>
+                )}
               </PageCard>
             </div>
           </DefaultLayout>

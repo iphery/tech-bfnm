@@ -437,7 +437,7 @@ export default function PartsOut() {
                               return (
                                 <tr
                                   key={index}
-                                  className={`cursor-default hover:text-red`}
+                                  className={`cursor-default text-strokedark hover:text-red`}
                                   onClick={() => {
                                     setKeywordAsset("");
                                     setDataAsset({
@@ -596,7 +596,7 @@ export default function PartsOut() {
                                 {filteredList.map((item, index) => {
                                   return (
                                     <tr
-                                      className={`cursor-default hover:bg-secondary hover:text-white ${index % 2 === 0 ? "bg-gray" : "bg-white"}`}
+                                      className={`cursor-default text-strokedark hover:bg-secondary hover:text-white ${index % 2 === 0 ? "bg-gray" : "bg-white"}`}
                                       key={index}
                                       onClick={() => {
                                         console.log(item.description);
