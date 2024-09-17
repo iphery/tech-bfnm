@@ -85,7 +85,7 @@ export default function Page() {
                           Completed
                         </div>
                       ) : step == "3" ? (
-                        <div className="rounded-lg bg-white p-1 text-center text-sm">
+                        <div className="rounded-lg bg-white p-1 text-center text-sm text-strokedark">
                           Parts
                         </div>
                       ) : step == "6" ? (
