@@ -12,6 +12,7 @@ import { CustomSelect } from "@/components/select";
 import Link from "next/link";
 import { HiArrowLeft } from "react-icons/hi2";
 import UserAuth from "@/components/auth";
+import { useRouter } from "next/navigation";
 
 //import { AppBar } from "@/components/appbar";
 
@@ -27,7 +28,7 @@ const GroupOption = (props) => {
 
 export default function Page() {
   const isSmallScreen = useMediaQuery({ query: "(max-width: 640px)" });
-
+  const router = useRouter();
   //description
   //manufacture
   //model
@@ -176,7 +177,7 @@ export default function Page() {
 
       if (response.status == 200) {
         console.log("ok");
-        //belum selesai
+        router.push("/");
       }
     }
 
