@@ -30,6 +30,7 @@ import { AiTwotonePicture } from "react-icons/ai";
 import { DataProvider, useProvider } from "@/app/appcontext";
 import { formatTime, shortDate } from "@/utils/dateformat";
 import Notifikasi from "@/components/notifikasi";
+import ECommerce from "@/components/Dashboard/E-commerce";
 
 export default function Home() {
   const [isClient, setIsClient] = useState(false);
@@ -437,7 +438,9 @@ export default function Home() {
         </div>
       ) : (
         <div className="min-h-screen  bg-boxdark-2">
-          <DefaultLayout>WELCOME TO MITA</DefaultLayout>
+          <DefaultLayout>
+            <ECommerce></ECommerce>
+          </DefaultLayout>
         </div>
       )}
     </UserAuth>

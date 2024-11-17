@@ -24,7 +24,7 @@ export default function RootLayout({
   return (
     <DataProvider>
       <html lang="en">
-        <body suppressHydrationWarning={true}>
+        <body suppressHydrationWarning={true} className="bg-boxdark-2">
           <ToastContainer />
           <div className="dark:bg-boxdark-2 dark:text-bodydark">{children}</div>
         </body>

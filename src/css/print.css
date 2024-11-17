@@ -1,5 +1,7 @@
 @media print {
-
+    body{
+        background-color: #fff;
+    }
 
     th, td {
         font-size:10px;
