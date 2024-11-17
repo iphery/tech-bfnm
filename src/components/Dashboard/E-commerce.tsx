@@ -1,11 +1,13 @@
 "use client";
 import dynamic from "next/dynamic";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import ChartOne from "../Charts/ChartOne";
 import ChartTwo from "../Charts/ChartTwo";
 import ChatCard from "../Chat/ChatCard";
 import TableOne from "../Tables/TableOne";
 import CardDataStats from "../CardDataStats";
+import { API_URL } from "@/utils/constant";
+import axios from "axios";
 
 const MapOne = dynamic(() => import("@/components/Maps/MapOne"), {
   ssr: false,
@@ -16,10 +18,35 @@ const ChartThree = dynamic(() => import("@/components/Charts/ChartThree"), {
 });
 
 const ECommerce: React.FC = () => {
+  const [series, setSeries] = useState([]);
+  const [inYear, setInYear] = useState(0);
+  const [inMonth, setInMonth] = useState(0);
+  const [waitingPart, setWaitingPart] = useState(0);
+  const [openOrder, setOpenOrder] = useState(0);
+
+  const fetch_data = async () => {
+    const apiUrl = `${API_URL}/datadashboard`;
+    const response = await axios.get(apiUrl);
+    if (response.status == 200) {
+      console.log(response.data);
+
+      setSeries(response.data["data"]);
+      setInYear(response.data["inyear"]);
+      setInMonth(response.data["inmonth"]);
+      setWaitingPart(response.data["waiting_part"]);
+      setOpenOrder(response.data["open_order"]);
+    }
+  };
+
+  useEffect(() => {
+    fetch_data();
+  }, []);
+
   return (
     <>
+      <div>dt</div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 xl:grid-cols-4 2xl:gap-7.5">
-        <CardDataStats title="Total views" total="$3.456K" rate="0.43%" levelUp>
+        <CardDataStats title="Open Order" total={openOrder.toString()}>
           <svg
             className="fill-primary dark:fill-white"
             width="22"
@@ -38,7 +65,7 @@ const ECommerce: React.FC = () => {
             />
           </svg>
         </CardDataStats>
-        <CardDataStats title="Total Profit" total="$45,2K" rate="4.35%" levelUp>
+        <CardDataStats title="Waiting Part" total={`${waitingPart}`}>
           <svg
             className="fill-primary dark:fill-white"
             width="20"
@@ -64,7 +91,7 @@ const ECommerce: React.FC = () => {
       </div>
 
       <div className="mt-4 grid grid-cols-12 gap-4 md:mt-6 md:gap-6 2xl:mt-7.5 2xl:gap-7.5">
-        <ChartOne />
+        <ChartOne series={series} inMonth={inMonth} inYear={inYear} />
       </div>
     </>
   );

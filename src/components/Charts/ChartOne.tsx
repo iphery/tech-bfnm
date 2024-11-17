@@ -10,6 +10,12 @@ const ReactApexChart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
 });
 
+type ChartOneProps = {
+  series: any; // Replace `any` with a more specific type if possible
+  inYear: number;
+  inMonth: number;
+};
+
 const options: ApexOptions = {
   legend: {
     show: false,
@@ -130,7 +136,15 @@ interface ChartOneState {
   }[];
 }
 
-const ChartOne: React.FC = () => {
+const ChartOne: React.FC<ChartOneProps> = ({
+  series,
+  inYear,
+  inMonth,
+}: {
+  series: any;
+  inYear: number;
+  inMonth: number;
+}) => {
   /*
   const series = [
     {
@@ -144,26 +158,6 @@ const ChartOne: React.FC = () => {
     },
   ];
   */
-
-  const [series, setSeries] = useState([]);
-  const [inYear, setInYear] = useState(0);
-  const [inMonth, setInMonth] = useState(0);
-
-  const fetch_data = async () => {
-    const apiUrl = `${API_URL}/datadashboard`;
-    const response = await axios.get(apiUrl);
-    if (response.status == 200) {
-      console.log(response.data);
-
-      setSeries(response.data["data"]);
-      setInYear(response.data["inyear"]);
-      setInMonth(response.data["inmonth"]);
-    }
-  };
-
-  useEffect(() => {
-    fetch_data();
-  }, []);
 
   return (
     <div className="col-span-12 rounded-sm border border-stroke bg-white px-5 pb-5 pt-7.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:col-span-8">

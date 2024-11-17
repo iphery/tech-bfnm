@@ -55,6 +55,7 @@ export default function DetailAssetWeb({ idAsset }) {
   const [selectedChecklist, setSelectedChecklist] = useState([]);
   const [openImage, setOpenImage] = useState(false);
   const [openImageUser, setOpenImageUser] = useState(false);
+  const [partList, setPartList] = useState([]);
 
   //order part
   const [transactionStock, setTransactionStock] = useState([]);
@@ -95,8 +96,8 @@ export default function DetailAssetWeb({ idAsset }) {
     }
   };
 
-  /*
   const fetch_detail_service = async (id) => {
+    //setLoadDetailService(true);
     //console.log(id);
     const apiUrl = `${API_URL}/fetchdetailservice`;
     const response = await axios.post(apiUrl, {
@@ -104,11 +105,39 @@ export default function DetailAssetWeb({ idAsset }) {
     });
 
     if (response.status == 200) {
+      console.log(response.data);
       const array = response.data["response"][0];
+      const parts = response.data["parts"];
+      const galleries = response.data["galleries"];
+      const respTime = response.data["response_time"];
+      const reprTime = response.data["repair_time"];
+      const servis = response.data["servis"];
+      setPartList(parts);
+      /*
       setSelectedCase(array);
+      
+      setGalleryList(galleries);
+      setServisList(servis);
+      //console.log(array);
+      const checkList = array["new_checklist"];
+      setpmList([]);
+      setpmTempList([]);
+      console.log(response);
+      if (checkList != "" && checkList != null) {
+        const pmparsed = JSON.parse(checkList);
+        setpmList(pmparsed);
+        setpmTempList(pmparsed);
+      }
+
+      console.log(respTime);
+      console.log(reprTime);
+
+      setResponseTime(respTime);
+      setRepairTime(reprTime);
+      */
     }
+    //setLoadDetailService(false);
   };
-*/
   const fetch_stock = async () => {
     const apiUrl = `${API_URL}/stocklist`;
     const response = await axios.post(apiUrl);
@@ -253,9 +282,7 @@ export default function DetailAssetWeb({ idAsset }) {
                             <div className="">
                               {dataAsset.Image == null ||
                               dataAsset.Image == "" ? (
-                                <div className="flex h-100 items-center justify-center">
-                                  No Image
-                                </div>
+                                <></>
                               ) : (
                                 <>
                                   <div>
@@ -290,9 +317,7 @@ export default function DetailAssetWeb({ idAsset }) {
                             <div className="ml-10">
                               {dataAsset.Profile_Image == null ||
                               dataAsset.Profile_Image == "" ? (
-                                <div className="flex h-100 items-center justify-center">
-                                  No Image
-                                </div>
+                                <></>
                               ) : (
                                 <>
                                   <div>
@@ -363,13 +388,7 @@ export default function DetailAssetWeb({ idAsset }) {
                           <table className="w-full">
                             <thead className=" h-10 bg-black">
                               <tr>
-                                <th
-                                  onClick={() => {
-                                    console.log(selectedCase);
-                                  }}
-                                >
-                                  ID Request
-                                </th>
+                                <th>ID Request</th>
                                 <th>Date</th>
                                 <th>Requestor</th>
                                 <th>Kendala</th>
@@ -435,8 +454,9 @@ export default function DetailAssetWeb({ idAsset }) {
                                           } else {
                                             setSelectedChecklist([]);
                                           }
-
-                                          console.log(item);
+                                          fetch_detail_service(
+                                            item["ID_Request"],
+                                          );
                                         }}
                                       >
                                         {item["ID_Request"]}
@@ -615,9 +635,59 @@ export default function DetailAssetWeb({ idAsset }) {
                           </div>
                         </div>
                       </div>
-                      {selectedChecklist ? (
-                        <div className="mt-10">
-                          <hr />
+                      <br />
+                      <hr />
+                      <br />
+                      {partList.length > 0 ? (
+                        <div className="mt-5 w-1/2">
+                          <div className="p-5">
+                            <div>Spare Part / Service</div>
+                            {partList.length > 0 ? (
+                              <div>
+                                {partList.map((item, index) => {
+                                  return (
+                                    <div
+                                      className="cursor-default py-2 pr-2  hover:bg-strokedark "
+                                      key={index}
+                                      onClick={() => {
+                                        if (item["dpm"].includes("SO")) {
+                                          router.push(
+                                            `/parts/${item["id_part"]}`,
+                                          );
+                                        } else {
+                                          router.push(
+                                            `/partsorder/${item["id_register"]}`,
+                                          );
+                                        }
+                                      }}
+                                    >
+                                      <div className="flex justify-between">
+                                        <div className="text-white">
+                                          {item["description"]}
+                                        </div>
+                                        <div className="text-white">
+                                          {item["quantity"]}
+                                        </div>
+                                      </div>
+                                      <div className="cursor-default text-xs text-white ">
+                                        {item["dpm"]}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <></>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <></>
+                      )}
+
+                      {selectedCase.new_checklist != "" &&
+                      selectedCase.new_checklist != null ? (
+                        <div className="mt-5">
                           <div className=" p-5">
                             <div>Checklist</div>
                             {selectedCase.new_checklist != null ? (
@@ -652,6 +722,7 @@ export default function DetailAssetWeb({ idAsset }) {
                       ) : (
                         <></>
                       )}
+                      <div className="mb-10"></div>
                     </PageCard>
                   ) : (
                     <></>

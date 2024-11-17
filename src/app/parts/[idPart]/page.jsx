@@ -6,6 +6,7 @@ import { CommonInput } from "@/components/input";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import { PageLoader } from "@/components/loader";
 import { API_URL } from "@/utils/constant";
+import { formatDateLocal } from "@/utils/dateformat";
 import { NotifyError, NotifySuccess } from "@/utils/notify";
 import axios from "axios";
 import { useRouter } from "next/navigation";
@@ -232,35 +233,41 @@ export default function DetailPart({ params }) {
                 <div className="mb-5"></div>
                 <table className="w-full">
                   <thead>
-                    <tr>
-                      <th className="w-1/7">Date</th>
-                      <th className="w-1/7">In</th>
-                      <th className="w-1/7">Out</th>
-                      <th className="w-1/7">Balance</th>
-                      <th className="w-1/7">From/To</th>
-                      <th className="w-1/7">Asset</th>
-                      <th className="w-1/7">Request</th>
+                    <tr className="bg-black text-white">
+                      <th className="w-1/7 p-1">Date</th>
+                      <th className="w-1/7 p-1">In</th>
+                      <th className="w-1/7 p-1">Out</th>
+                      <th className="w-1/7 p-1">Balance</th>
+                      <th className="w-1/7 p-1">From/To</th>
+                      <th className="w-1/7 p-1">Asset</th>
+                      <th className="w-1/7 p-1">Request</th>
                     </tr>
                   </thead>
                   <tbody>
                     {stockData.map((item, index) => {
                       return (
-                        <tr key={index}>
-                          <td className="">
+                        <tr key={index} className="text-info">
+                          <td className="p-1 text-center">
                             {index == stockData.length - 1
                               ? "Before date"
-                              : item["date"]}
+                              : formatDateLocal(item["date"])}
                           </td>
-                          <td className="text-center">
+                          <td className="p-1 text-center">
                             {index == stockData.length - 1 ? "" : item["in"]}
                           </td>
-                          <td className="text-center">
+                          <td className="p-1 text-center">
                             {index == stockData.length - 1 ? "" : item["out"]}
                           </td>
-                          <td className="text-center">{item["balance"]}</td>
-                          <td>{item["subject"]}</td>
-                          <td>{item["asset"]}</td>
-                          <td>{item["request"]}</td>
+                          <td className="p-1 text-center">
+                            <div
+                              className={`${index == stockData.length - 1 ? "font-bold text-success" : ""}`}
+                            >
+                              {item["balance"]}
+                            </div>
+                          </td>
+                          <td className="p-1 text-center">{item["subject"]}</td>
+                          <td className="p-1 text-center">{item["asset"]}</td>
+                          <td className="p-1 text-center">{item["request"]}</td>
                         </tr>
                       );
                     })}

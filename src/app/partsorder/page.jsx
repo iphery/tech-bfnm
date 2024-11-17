@@ -53,7 +53,10 @@ export default function PartOrder() {
       const requestor =
         item["requestor"] &&
         item["requestor"].toLowerCase().includes(keyword.toLowerCase());
-      return register || dpm || requestor;
+      const status =
+        item["status_def"] &&
+        item["status_def"].toLowerCase().includes(keyword.toLowerCase());
+      return register || dpm || requestor || status;
     });
     const { data, pageCurrent, start, end } = paginateData(
       filterData,
