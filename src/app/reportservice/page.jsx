@@ -5,12 +5,14 @@ import { API_URL } from "@/utils/constant";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { PageCard } from "@/components/card";
+import { useRouter } from "next/navigation";
 
 export default function Page() {
   const [dataService, setDataService] = useState([]);
   const [month, setMonth] = useState("");
   const [year, setYear] = useState("");
   const [monthYear, setMonthYear] = useState();
+  const router = useRouter();
 
   const handleChange = (e) => {
     const value = e.target.value; // This will be in 'YYYY-MM' format
@@ -121,6 +123,9 @@ export default function Page() {
                       <tr
                         key={index}
                         className="border text-info hover:bg-meta-4"
+                        onClick={() => {
+                          router.push(`/asset/${item["id_asset"]}`);
+                        }}
                       >
                         <td className="p-1 text-center">{index + 1}</td>
                         <td className="p-1 text-center">
