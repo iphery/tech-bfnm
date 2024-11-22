@@ -57,8 +57,8 @@ export default function Page() {
               <th>Detail</th>
               <th>Lokasi</th>
               <th>Stok</th>
-              <th>Keluar</th>
               <th>Masuk</th>
+              <th>Keluar</th>
               <th>Total</th>
             </tr>
           </thead>
