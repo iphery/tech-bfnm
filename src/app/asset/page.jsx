@@ -53,6 +53,9 @@ export default function ListAsset() {
 
   useEffect(() => {
     const filterData = detailData.filter((item) => {
+      const id =
+        item["ID_Asset"] &&
+        item["ID_Asset"].toLowerCase().includes(assetKeyword.toLowerCase());
       const description =
         item["Description"] &&
         item["Description"].toLowerCase().includes(assetKeyword.toLowerCase());
@@ -62,7 +65,7 @@ export default function ListAsset() {
       const user =
         item["User"] &&
         item["User"].toLowerCase().includes(assetKeyword.toLowerCase());
-      return description || manufacture || user;
+      return description || manufacture || user || id;
     });
 
     setFilteredAssetList(filterData);
