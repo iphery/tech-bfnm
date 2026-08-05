@@ -269,7 +269,7 @@ export default function Home() {
                 </div>
                 <div
                   onClick={() => {
-                    const arr = ["PN", "FK", "ME", "GS"];
+                    const arr = ["PN", "FK", "ME", "GS", "KL"];
                     const stringArr = JSON.stringify(arr);
                     localStorage.setItem("menu", stringArr);
                     router.push("/asset");
