@@ -118,6 +118,7 @@ const menuGroups = [
         children: [
           { label: "Monthly Report", route: "/reportservice" },
           { label: "Quality Objective", route: "/qualityobjective" },
+          { label: "Machine Utilize", route: "/machineutilize" },
         ],
       },
       /*
