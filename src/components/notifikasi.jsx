@@ -43,10 +43,12 @@ export default function Notifikasi() {
   useEffect(() => {
     const user = localStorage.getItem("info");
     const parseUser = JSON.parse(user);
-    setUid(parseUser[0]["Uid"]);
-    setLevel(parseUser[0]["Level"]);
+    if (user) {
+      setUid(parseUser[0]["Uid"]);
+      setLevel(parseUser[0]["Level"]);
 
-    setTempUid(true);
+      setTempUid(true);
+    }
   }, []);
 
   useEffect(() => {
