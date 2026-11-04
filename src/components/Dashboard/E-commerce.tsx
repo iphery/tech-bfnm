@@ -273,7 +273,7 @@ const ECommerce: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-3">
-                {dataMaintenance.slice(0, 4).map((item, index) => {
+                {dataMaintenance.slice(0, 4).map((item: any, index: number) => {
                   const title =
                     item["Type"] === "K" ? item["Class"] : item["Description"];
 
