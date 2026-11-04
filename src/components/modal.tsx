@@ -1,4 +1,4 @@
-import React, { Children } from "react";
+import React from "react";
 import { HiOutlineXMark } from "react-icons/hi2";
 
 export const CustomModal = ({
@@ -14,28 +14,34 @@ export const CustomModal = ({
 }) => {
   if (!isVisible) return null;
 
-  const handleClose = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    //if ((e.target as HTMLElement).id === "wrapper") onClose();
-  };
-
   return (
     <div
-      className="fixed inset-0 flex  items-center justify-center bg-black bg-opacity-25 backdrop-blur-sm"
-      id="wrapper"
-      onClick={handleClose}
+      className="fixed inset-0 z-999 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div
-        className={`w-full ${isSmallWidth == "sm" ? "sm:w-1/3" : isSmallWidth == "md" ? "sm:w-2/3" : "sm:w-2/3"} px-5`}
+        className={`w-full max-w-lg ${
+          isSmallWidth === "sm"
+            ? "sm:max-w-md"
+            : isSmallWidth === "md"
+            ? "sm:max-w-xl"
+            : "sm:max-w-2xl"
+        }`}
       >
-        <div className="flex justify-end p-1">
-          <div
-            className=" justify center flex h-8 w-8 cursor-pointer items-center  rounded-full p-2 text-xl text-white hover:bg-primary hover:bg-opacity-20"
+        <div className="flex justify-end pb-2">
+          <button
+            type="button"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors"
             onClick={() => onClose()}
           >
-            <HiOutlineXMark />
-          </div>
+            <HiOutlineXMark className="text-xl" />
+          </button>
         </div>
-        <div className="rounded-lg bg-white p-10">{children}</div>
+        <div className="rounded-2xl border border-stroke bg-white p-6 shadow-2xl dark:border-strokedark dark:bg-boxdark text-black dark:text-white">
+          {children}
+        </div>
       </div>
     </div>
   );

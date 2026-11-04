@@ -20,13 +20,16 @@ export default function Page() {
   } = useProvider();
 
   const fetch_data = async () => {
-    const apiUrl = `${API_URL}/webmaintenance`;
-    const response = await axios.get(apiUrl);
-    const maintenance = response.data["maintenance"];
+    try {
+      const response = await axios.get("/api/webmaintenance");
+      const maintenance = response.data["maintenance"] || [];
 
-    if (response.status == 200) {
-      setWebMaintenanceRequest(maintenance);
-      setLoadWebMaintenance(false);
+      if (response.status === 200) {
+        setWebMaintenanceRequest(maintenance);
+        setLoadWebMaintenance(false);
+      }
+    } catch (err) {
+      console.error("Gagal load webmaintenance:", err);
     }
   };
 

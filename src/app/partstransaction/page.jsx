@@ -1,18 +1,26 @@
 "use client";
-import React, { useContext, useEffect, useState } from "react";
-import { AppContext } from "../appcontext";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 import { useMediaQuery } from "react-responsive";
-import { API_URL, IMAGE_ASSET } from "@/utils/constant";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import UserAuth from "@/components/auth";
-import { Appbar } from "@/components/appbar";
 import { CommonInput } from "@/components/input";
-import { HiOutlineSearch } from "react-icons/hi";
-import { useRouter } from "next/navigation";
-import { PageCard, PageCardLimited } from "@/components/card";
-import paginateData from "@/utils/pagination";
+import { PageCardLimited } from "@/components/card";
+import { PageLoader } from "@/components/loader";
 import { formatDate } from "@/utils/dateformat";
+
+// Icons
+import {
+  HiArrowLeft,
+  HiOutlineSearch,
+  HiOutlineCube,
+} from "react-icons/hi";
+import {
+  HiOutlineArrowDownTray,
+  HiOutlineArrowUpTray,
+} from "react-icons/hi2";
+import { BsBoxSeam } from "react-icons/bs";
 
 export default function PageTransaction() {
   const router = useRouter();
@@ -20,156 +28,329 @@ export default function PageTransaction() {
   const isSmallScreen = useMediaQuery({ query: "(max-width: 640px)" });
 
   const [detailData, setDetailData] = useState([]);
-  const [countData, setCountData] = useState(0);
+  const [loading, setLoading] = useState(true);
   const [keyword, setKeyword] = useState("");
-  const [keywordError, setKeywordError] = useState(false);
-  const [filteredList, setFilteredList] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
+
+  // Infinite Scroll for mobile (15 items per page)
+  const [page, setPage] = useState(1);
+  const [desktopPage, setDesktopPage] = useState(1);
+  const pageSize = 15;
+  const [displayedData, setDisplayedData] = useState([]);
+  const [hasMore, setHasMore] = useState(true);
+  const observerTarget = useRef(null);
 
   const fetch_data = async () => {
-    const apiUrl = `${API_URL}/gettransaction`;
-    const response = await axios.post(apiUrl, {});
-
-    if (response.status == 200) {
-      const array = response.data["response"];
-      setDetailData(array);
-      setFilteredList(array);
-      console.log(array);
+    try {
+      const response = await axios.post("/api/gettransaction");
+      if (response.status === 200) {
+        setDetailData(response.data.response || []);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     fetch_data();
-  }, []);
-
-  useEffect(() => {
-    //if (!loading) {
-    const filterData = detailData.filter((item) => {
-      const description =
-        item["description"] &&
-        item["description"].toLowerCase().includes(keyword.toLowerCase());
-
-      const manufacture =
-        item["vendor_code"] &&
-        item["vendor_code"].toLowerCase().includes(keyword.toLowerCase());
-
-      return description || manufacture;
-    });
-    console.log(filterData);
-
-    setFilteredList(filterData);
-
-    //}
-  }, [detailData, keyword]);
-
-  useEffect(() => {
     setIsClient(true);
   }, []);
 
-  if (!isClient) {
-    return null;
-  }
+  const filteredList = detailData.filter((item) => {
+    const q = keyword.toLowerCase();
+    const desc = (item.description || "").toLowerCase();
+    const code = (item.vendor_code || "").toLowerCase();
+    const subj = (item.subject || "").toLowerCase();
+    const asset = (item.id_asset || "").toLowerCase();
+    const req = (item.id_for || "").toLowerCase();
+    return desc.includes(q) || code.includes(q) || subj.includes(q) || asset.includes(q) || req.includes(q);
+  });
+
+  useEffect(() => {
+    const nextList = filteredList.slice(0, page * pageSize);
+    setDisplayedData(nextList);
+    setHasMore(nextList.length < filteredList.length);
+  }, [detailData, keyword, page]);
+
+  const handleObserver = useCallback(
+    (entries) => {
+      const [target] = entries;
+      if (target.isIntersecting && hasMore && !loading) {
+        setPage((prev) => prev + 1);
+      }
+    },
+    [hasMore, loading]
+  );
+
+  useEffect(() => {
+    const element = observerTarget.current;
+    if (!element) return;
+    const observer = new IntersectionObserver(handleObserver, { threshold: 0.2 });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [handleObserver, isSmallScreen]);
+
+  if (!isClient) return null;
+
   return (
     <UserAuth>
-      {isSmallScreen ? (
-        <>In progress</>
-      ) : (
-        <div className="min-h-screen  bg-boxdark-2">
-          <DefaultLayout>
-            <div className="flex min-h-[calc(100vh-115px)] flex-col text-info">
-              <div className="mb-3 flex items-center justify-start">
-                <div className="text-lg text-white">Transaction</div>
-              </div>
-
-              <PageCardLimited>
-                <div className="flex flex-row items-center">
-                  <div className="w-1/2">
-                    <CommonInput
-                      input={keyword}
-                      type={"text"}
-                      onInputChange={(val) => {
-                        //setKeyword(val);
-                        //  fetch_data();
-                        setKeyword(val);
-                        setCurrentPage(1);
-                      }}
-                      onKeyChange={() => {
-                        setKeywordError(false);
-                      }}
-                      placeholder={"Search"}
-                    >
-                      <HiOutlineSearch />
-                    </CommonInput>
+      <div className="min-h-screen bg-whiten text-body dark:bg-boxdark-2 dark:text-bodydark">
+        {loading ? (
+          <PageLoader />
+        ) : isSmallScreen ? (
+          /* ================= MOBILE VIEW ================= */
+          <div className="flex flex-col min-h-screen pb-20">
+            {/* Top Bar */}
+            <div className="sticky top-0 z-40 border-b border-stroke/60 bg-white/80 px-4 py-3 backdrop-blur-md dark:border-strokedark/60 dark:bg-boxdark/80">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => router.push("/parts")}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 text-black hover:bg-gray-200 dark:bg-meta-4 dark:text-white"
+                  >
+                    <HiArrowLeft className="text-lg" />
+                  </button>
+                  <div>
+                    <h1 className="text-base font-bold text-black dark:text-white leading-none">
+                      Mutasi & Transaksi Stok
+                    </h1>
+                    <span className="text-[11px] text-body dark:text-bodydark">
+                      {detailData.length} catatan transaksi
+                    </span>
                   </div>
                 </div>
-                <div className="mb-3"></div>
-                <div className="h-[calc(100vh-235px)] w-[calc(100vw-430px)] overflow-x-auto overflow-y-auto">
-                  <table className="w-full ">
-                    <thead className="sticky top-0 bg-black">
-                      <tr>
-                        <th className="w-1/5">Date</th>
-                        <th className="w-1/5">Deskripsi</th>
-                        <th className="w-1/5">Detail</th>
-                        <th className="w-1/5">Type</th>
-                        <th className="w-1/5">Quantity</th>
-                        <th className="w-1/5">Unit</th>
-                        <th className="w-1/5">From/To</th>
-                        <th className="w-1/5">Asset</th>
-                        <th className="w-1/5">Request</th>
-                        <th className="w-1/5">Created At</th>
-                      </tr>
-                    </thead>
-                    <tbody className="">
-                      {filteredList.map((item, index) => {
-                        return (
-                          <tr
-                            key={index}
-                            className={`cursor-default   hover:bg-secondary hover:text-white`}
-                            onClick={() => {
-                              router.push(`parts/${item["id_part"]}`);
-                            }}
-                          >
-                            <td className="p-2 align-top">
-                              {formatDate(item["date"])}
-                            </td>
-                            <td className="p-2 align-top">
-                              {item["description"]}
-                            </td>
-                            <td className="p-2 align-top">
-                              {item["vendor_code"]}
-                            </td>
-                            <td className="p-2 text-center align-top">
-                              <div
-                                className={`rounded-lg text-sm ${item["type"] == "in" ? "bg-success" : "bg-red"} text-white`}
-                              >
-                                {item["type"].toUpperCase()}
-                              </div>
-                            </td>
-                            <td className="p-2 text-center align-top">
-                              {item["quantity"]}
-                            </td>
-                            <td className="p-2 text-center align-top">
-                              {item["unit"]}
-                            </td>
-                            <td className="p-2 align-top">{item["subject"]}</td>
-                            <td className="p-2 align-top">
-                              {item["id_asset"]}
-                            </td>
-                            <td className="p-2 align-top">{item["id_for"]}</td>
-                            <td className="p-2 align-top">
-                              {item["created_at"]}
+              </div>
+
+              {/* Search Bar */}
+              <div className="relative">
+                <CommonInput
+                  input={keyword}
+                  type="text"
+                  onInputChange={(val) => {
+                    setKeyword(val);
+                    setPage(1);
+                  }}
+                  placeholder="Cari part, keterangan, nomor tiket..."
+                >
+                  <HiOutlineSearch className="text-body dark:text-bodydark" />
+                </CommonInput>
+              </div>
+            </div>
+
+            {/* List of Transactions */}
+            <div className="p-4 space-y-2.5">
+              {displayedData.length === 0 ? (
+                <div className="rounded-2xl border border-stroke bg-white p-8 text-center text-xs text-body dark:border-strokedark dark:bg-boxdark dark:text-bodydark">
+                  Tidak ada transaksi mutasi yang cocok.
+                </div>
+              ) : (
+                displayedData.map((item, index) => {
+                  const isIncoming = Number(item.qty || 0) > 0;
+                  return (
+                    <div
+                      key={index}
+                      onClick={() => {
+                        if (item.id_part) router.push(`/parts/${item.id_part}`);
+                      }}
+                      className="group cursor-pointer rounded-2xl border border-stroke bg-white p-3.5 shadow-sm hover:border-primary hover:shadow dark:border-strokedark dark:bg-boxdark dark:hover:border-primary transition-all active:scale-[0.99]"
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-1.5">
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-xs font-bold text-black dark:text-white truncate">
+                            {item.description || "Tanpa Nama"}
+                          </h3>
+                          {item.vendor_code && (
+                            <span className="font-mono text-[10px] text-body dark:text-bodydark">
+                              {item.vendor_code}
+                            </span>
+                          )}
+                        </div>
+
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold shrink-0 ${
+                            isIncoming
+                              ? "bg-success/15 text-success"
+                              : "bg-warning/15 text-warning"
+                          }`}
+                        >
+                          {isIncoming ? <HiOutlineArrowDownTray /> : <HiOutlineArrowUpTray />}
+                          {isIncoming ? `+${item.quantity}` : `-${item.quantity}`} {item.unit || "pcs"}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between border-t border-stroke/60 pt-2 text-[11px] text-body dark:border-strokedark/60 dark:text-bodydark">
+                        <span>{item.subject || item.id_asset || "-"}</span>
+                        <span>{formatDate(item.date)}</span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+
+              <div ref={observerTarget} className="py-2 text-center">
+                {hasMore && !loading && (
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent mx-auto" />
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* ================= DESKTOP VIEW ================= */
+          <DefaultLayout>
+            <div className="mx-auto max-w-7xl space-y-6">
+              {/* Header */}
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => router.push("/parts")}
+                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-stroke bg-white text-black hover:bg-gray-50 dark:border-strokedark dark:bg-boxdark dark:text-white transition-all shadow-sm"
+                  >
+                    <HiArrowLeft className="text-xl" />
+                  </button>
+                  <div>
+                    <h1 className="text-xl font-bold text-black dark:text-white">
+                      Mutasi & Transaksi Stok Barang
+                    </h1>
+                    <p className="text-xs text-body dark:text-bodydark">
+                      Seluruh rekapitulasi penerimaan (Stock In) dan pengeluaran (Stock Out) gudang
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Data Table Card */}
+              <PageCardLimited>
+                <div className="space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-4 border-b border-stroke pb-4 dark:border-strokedark">
+                    <div className="w-full sm:w-80">
+                      <CommonInput
+                        input={keyword}
+                        type="text"
+                        onInputChange={(val) => {
+                          setKeyword(val);
+                          setPage(1);
+                          setDesktopPage(1);
+                        }}
+                        placeholder="Cari part, keterangan, aset..."
+                      >
+                        <HiOutlineSearch className="text-body dark:text-bodydark" />
+                      </CommonInput>
+                    </div>
+
+                    <span className="text-xs text-body dark:text-bodydark">
+                      Menampilkan {filteredList.length} transaksi
+                    </span>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full table-auto text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-stroke bg-gray-50 text-body dark:border-strokedark dark:bg-meta-4/20 dark:text-bodydark">
+                          <th className="py-3 px-4 font-semibold">Tanggal</th>
+                          <th className="py-3 px-4 font-semibold">Deskripsi Barang</th>
+                          <th className="py-3 px-4 font-semibold">Part No / Detail</th>
+                          <th className="py-3 px-4 font-semibold text-center">Mutasi</th>
+                          <th className="py-3 px-4 font-semibold">Satuan</th>
+                          <th className="py-3 px-4 font-semibold">Keterangan / Tujuan</th>
+                          <th className="py-3 px-4 font-semibold">Aset</th>
+                          <th className="py-3 px-4 font-semibold">No. Tiket</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-stroke dark:divide-strokedark">
+                        {filteredList.length === 0 ? (
+                          <tr>
+                            <td colSpan={8} className="py-8 text-center text-body dark:text-bodydark">
+                              Tidak ada riwayat mutasi stok.
                             </td>
                           </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                        ) : (
+                          filteredList
+                            .slice((desktopPage - 1) * pageSize, desktopPage * pageSize)
+                            .map((item, index) => {
+                            const isIncoming = Number(item.qty || 0) > 0;
+                            return (
+                              <tr
+                                key={index}
+                                onClick={() => {
+                                  if (item.id_part) router.push(`/parts/${item.id_part}`);
+                                }}
+                                className="cursor-pointer hover:bg-gray-50 dark:hover:bg-meta-4/10 transition-colors"
+                              >
+                                <td className="py-3 px-4 text-black dark:text-white whitespace-nowrap">
+                                  {formatDate(item.date)}
+                                </td>
+                                <td className="py-3 px-4 font-semibold text-black dark:text-white">
+                                  {item.description}
+                                </td>
+                                <td className="py-3 px-4 font-mono text-body dark:text-bodydark">
+                                  {item.vendor_code || "-"}
+                                </td>
+                                <td className="py-3 px-4 text-center">
+                                  <span
+                                    className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                                      isIncoming
+                                        ? "bg-success/15 text-success"
+                                        : "bg-warning/15 text-warning"
+                                    }`}
+                                  >
+                                    {isIncoming ? `+${item.quantity}` : `-${item.quantity}`}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-4 text-body dark:text-bodydark">
+                                  {item.unit || "pcs"}
+                                </td>
+                                <td className="py-3 px-4 text-body dark:text-bodydark">
+                                  {item.subject || "-"}
+                                </td>
+                                <td className="py-3 px-4 font-mono text-body dark:text-bodydark">
+                                  {item.id_asset || "-"}
+                                </td>
+                                <td className="py-3 px-4 font-mono text-body dark:text-bodydark">
+                                  {item.id_for || "-"}
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Desktop Pagination Controls (15 items per page) */}
+                  {Math.ceil(filteredList.length / pageSize) > 1 && (
+                    <div className="flex items-center justify-between border-t border-stroke pt-4 dark:border-strokedark text-xs">
+                      <span className="text-body dark:text-bodydark">
+                        Halaman {desktopPage} dari {Math.ceil(filteredList.length / pageSize)}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          disabled={desktopPage === 1}
+                          onClick={() => setDesktopPage((p) => Math.max(1, p - 1))}
+                          className="rounded-lg border border-stroke px-3 py-1.5 font-semibold text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 disabled:opacity-40"
+                        >
+                          Sebelumnya
+                        </button>
+                        <button
+                          type="button"
+                          disabled={desktopPage === Math.ceil(filteredList.length / pageSize)}
+                          onClick={() => setDesktopPage((p) => Math.min(Math.ceil(filteredList.length / pageSize), p + 1))}
+                          className="rounded-lg border border-stroke px-3 py-1.5 font-semibold text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 disabled:opacity-40"
+                        >
+                          Berikutnya
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </PageCardLimited>
             </div>
           </DefaultLayout>
-        </div>
-      )}
+        )}
+      </div>
     </UserAuth>
   );
 }

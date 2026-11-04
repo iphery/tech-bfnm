@@ -1,21 +1,26 @@
 "use client";
-import dynamic from "next/dynamic";
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import ChartOne from "../Charts/ChartOne";
-import ChartTwo from "../Charts/ChartTwo";
-import ChatCard from "../Chat/ChatCard";
-import TableOne from "../Tables/TableOne";
 import CardDataStats from "../CardDataStats";
-import { API_URL } from "@/utils/constant";
 import axios from "axios";
-
-const MapOne = dynamic(() => import("@/components/Maps/MapOne"), {
-  ssr: false,
-});
-
-const ChartThree = dynamic(() => import("@/components/Charts/ChartThree"), {
-  ssr: false,
-});
+import {
+  MdOutlineBuild,
+  MdOutlinePendingActions,
+  MdOutlineCalendarMonth,
+  MdOutlineShoppingBag,
+  MdOutlineWarningAmber,
+  MdOutlineAccessTime,
+  MdOutlineCheckCircle,
+  MdArrowForward,
+  MdOutlinePrecisionManufacturing,
+  MdOutlineQrCodeScanner,
+  MdOutlineAddBox,
+} from "react-icons/md";
+import { LiaUser } from "react-icons/lia";
+import { useProvider } from "@/app/appcontext";
+import { formatTime, shortDate } from "@/utils/dateformat";
+import { IMAGE_ASSET } from "@/utils/constant";
 
 const ECommerce: React.FC = () => {
   const [series, setSeries] = useState([]);
@@ -24,17 +29,25 @@ const ECommerce: React.FC = () => {
   const [waitingPart, setWaitingPart] = useState(0);
   const [openOrder, setOpenOrder] = useState(0);
 
-  const fetch_data = async () => {
-    const apiUrl = `${API_URL}/datadashboard`;
-    const response = await axios.get(apiUrl);
-    if (response.status == 200) {
-      console.log(response.data);
+  const {
+    dataMaintenance,
+    dataOutstanding,
+    outCount,
+    mainCount,
+  } = useProvider();
 
-      setSeries(response.data["data"]);
-      setInYear(response.data["inyear"]);
-      setInMonth(response.data["inmonth"]);
-      setWaitingPart(response.data["waiting_part"]);
-      setOpenOrder(response.data["open_order"]);
+  const fetch_data = async () => {
+    try {
+      const response = await axios.get("/api/datadashboard");
+      if (response.status === 200 && response.data) {
+        setSeries(response.data["data"] || []);
+        setInYear(response.data["inyear"] || 0);
+        setInMonth(response.data["inmonth"] || 0);
+        setWaitingPart(response.data["waiting_part"] || 0);
+        setOpenOrder(response.data["open_order"] || 0);
+      }
+    } catch (err) {
+      console.error("Fetch dashboard data error:", err);
     }
   };
 
@@ -43,57 +56,247 @@ const ECommerce: React.FC = () => {
   }, []);
 
   return (
-    <>
-      <div>dt</div>
+    <div className="space-y-6">
+      {/* 4 Core Maintenance KPIs */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 xl:grid-cols-4 2xl:gap-7.5">
-        <CardDataStats title="Open Order" total={openOrder.toString()}>
-          <svg
-            className="fill-primary dark:fill-white"
-            width="22"
-            height="16"
-            viewBox="0 0 22 16"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M11 15.1156C4.19376 15.1156 0.825012 8.61876 0.687512 8.34376C0.584387 8.13751 0.584387 7.86251 0.687512 7.65626C0.825012 7.38126 4.19376 0.918762 11 0.918762C17.8063 0.918762 21.175 7.38126 21.3125 7.65626C21.4156 7.86251 21.4156 8.13751 21.3125 8.34376C21.175 8.61876 17.8063 15.1156 11 15.1156ZM2.26876 8.00001C3.02501 9.27189 5.98126 13.5688 11 13.5688C16.0188 13.5688 18.975 9.27189 19.7313 8.00001C18.975 6.72814 16.0188 2.43126 11 2.43126C5.98126 2.43126 3.02501 6.72814 2.26876 8.00001Z"
-              fill=""
-            />
-            <path
-              d="M11 10.9219C9.38438 10.9219 8.07812 9.61562 8.07812 8C8.07812 6.38438 9.38438 5.07812 11 5.07812C12.6156 5.07812 13.9219 6.38438 13.9219 8C13.9219 9.61562 12.6156 10.9219 11 10.9219ZM11 6.625C10.2437 6.625 9.625 7.24375 9.625 8C9.625 8.75625 10.2437 9.375 11 9.375C11.7563 9.375 12.375 8.75625 12.375 8C12.375 7.24375 11.7563 6.625 11 6.625Z"
-              fill=""
-            />
-          </svg>
+        <CardDataStats title="Perbaikan Bulan Ini" total={`${inMonth}`}>
+          <MdOutlineCalendarMonth className="h-6 w-6 text-primary dark:text-white" />
         </CardDataStats>
-        <CardDataStats title="Waiting Part" total={`${waitingPart}`}>
-          <svg
-            className="fill-primary dark:fill-white"
-            width="20"
-            height="22"
-            viewBox="0 0 20 22"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M11.7531 16.4312C10.3781 16.4312 9.27808 17.5312 9.27808 18.9062C9.27808 20.2812 10.3781 21.3812 11.7531 21.3812C13.1281 21.3812 14.2281 20.2812 14.2281 18.9062C14.2281 17.5656 13.0937 16.4312 11.7531 16.4312ZM11.7531 19.8687C11.2375 19.8687 10.825 19.4562 10.825 18.9406C10.825 18.425 11.2375 18.0125 11.7531 18.0125C12.2687 18.0125 12.6812 18.425 12.6812 18.9406C12.6812 19.4219 12.2343 19.8687 11.7531 19.8687Z"
-              fill=""
-            />
-            <path
-              d="M5.22183 16.4312C3.84683 16.4312 2.74683 17.5312 2.74683 18.9062C2.74683 20.2812 3.84683 21.3812 5.22183 21.3812C6.59683 21.3812 7.69683 20.2812 7.69683 18.9062C7.69683 17.5656 6.56245 16.4312 5.22183 16.4312ZM5.22183 19.8687C4.7062 19.8687 4.2937 19.4562 4.2937 18.9406C4.2937 18.425 4.7062 18.0125 5.22183 18.0125C5.73745 18.0125 6.14995 18.425 6.14995 18.9406C6.14995 19.4219 5.73745 19.8687 5.22183 19.8687Z"
-              fill=""
-            />
-            <path
-              d="M19.0062 0.618744H17.15C16.325 0.618744 15.6031 1.23749 15.5 2.06249L14.95 6.01562H1.37185C1.0281 6.01562 0.684353 6.18749 0.443728 6.46249C0.237478 6.73749 0.134353 7.11562 0.237478 7.45937C0.237478 7.49374 0.237478 7.49374 0.237478 7.52812L2.36873 13.9562C2.50623 14.4375 2.9531 14.7812 3.46873 14.7812H12.9562C14.2281 14.7812 15.3281 13.8187 15.5 12.5469L16.9437 2.26874C16.9437 2.19999 17.0125 2.16562 17.0812 2.16562H18.9375C19.35 2.16562 19.7281 1.82187 19.7281 1.37499C19.7281 0.928119 19.4187 0.618744 19.0062 0.618744ZM14.0219 12.3062C13.9531 12.8219 13.5062 13.2 12.9906 13.2H3.7781L1.92185 7.56249H14.7094L14.0219 12.3062Z"
-              fill=""
-            />
-          </svg>
+
+        <CardDataStats title="Total Perbaikan Tahun Ini" total={`${inYear}`}>
+          <MdOutlineBuild className="h-6 w-6 text-emerald-500 dark:text-emerald-400" />
+        </CardDataStats>
+
+        <CardDataStats title="Menunggu Sparepart" total={`${waitingPart}`}>
+          <MdOutlinePendingActions className="h-6 w-6 text-amber-500 dark:text-amber-400" />
+        </CardDataStats>
+
+        <CardDataStats title="Open Order Part" total={`${openOrder}`}>
+          <MdOutlineShoppingBag className="h-6 w-6 text-rose-500 dark:text-rose-400" />
         </CardDataStats>
       </div>
 
-      <div className="mt-4 grid grid-cols-12 gap-4 md:mt-6 md:gap-6 2xl:mt-7.5 2xl:gap-7.5">
-        <ChartOne series={series} inMonth={inMonth} inYear={inYear} />
+      {/* Main Grid: Chart + Sidebar Panels */}
+      <div className="grid grid-cols-12 gap-6">
+        {/* Left Column: Trend Chart & Recent Breakdown Tickets */}
+        <div className="col-span-12 xl:col-span-8 space-y-6">
+          <ChartOne series={series} inMonth={inMonth} inYear={inYear} />
+
+          {/* Outstanding Breakdown Jobs (CM) Table */}
+          <div className="rounded-2xl border border-slate-200/80 bg-white/90 p-6 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-boxdark/90">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-amber-500"></span>
+                  Antrean Perbaikan Berjalan (CM)
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Daftar tiket breakdown mesin & kendaraan yang membutuhkan tindakan
+                </p>
+              </div>
+
+              <Link
+                href="/listoutstanding"
+                className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline"
+              >
+                Lihat Semua ({outCount}) <MdArrowForward className="h-4 w-4" />
+              </Link>
+            </div>
+
+            {dataOutstanding.length === 0 ? (
+              <div className="py-8 text-center text-sm text-slate-400 border border-dashed border-slate-200 rounded-xl dark:border-slate-700">
+                Semua aset dalam kondisi normal, tidak ada perbaikan aktif.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-slate-200/80 text-slate-500 dark:border-slate-700/80 dark:text-slate-400">
+                      <th className="pb-3 font-semibold">Aset / Mesin</th>
+                      <th className="pb-3 font-semibold">Tipe</th>
+                      <th className="pb-3 font-semibold">Pemohon</th>
+                      <th className="pb-3 font-semibold">Waktu Lapor</th>
+                      <th className="pb-3 font-semibold">Status</th>
+                      <th className="pb-3 text-right font-semibold">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {dataOutstanding.slice(0, 5).map((item, index) => {
+                      const title =
+                        item["Type"] === "K" ? item["Class"] : item["Description"];
+                      const isKendaraan = item["Type"] === "K";
+
+                      return (
+                        <tr
+                          key={index}
+                          className="hover:bg-slate-50/80 dark:hover:bg-boxdark-2/50 transition-colors"
+                        >
+                          <td className="py-3.5 pr-3 font-bold text-slate-800 dark:text-white">
+                            <div className="flex items-center gap-2.5">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-boxdark-2 dark:text-slate-300">
+                                <MdOutlinePrecisionManufacturing className="h-4 w-4" />
+                              </div>
+                              <span className="truncate max-w-[180px]">{title || "-"}</span>
+                            </div>
+                          </td>
+                          <td className="py-3.5 pr-3">
+                            <span
+                              className={`rounded px-2 py-0.5 text-[10px] font-bold ${
+                                isKendaraan
+                                  ? "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
+                                  : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
+                              }`}
+                            >
+                              {isKendaraan ? "Kendaraan" : "Mesin"}
+                            </span>
+                          </td>
+                          <td className="py-3.5 pr-3 text-slate-600 dark:text-slate-300">
+                            <div className="flex items-center gap-1.5">
+                              <LiaUser className="h-3.5 w-3.5 text-slate-400" />
+                              <span>{item["Requestor"] || "-"}</span>
+                            </div>
+                          </td>
+                          <td className="py-3.5 pr-3 text-slate-500 dark:text-slate-400">
+                            <div className="flex items-center gap-1 text-[11px]">
+                              <MdOutlineAccessTime className="h-3 w-3" />
+                              <span>
+                                {shortDate(item["Time_Request"])} {formatTime(item["Time_Request"])}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3.5 pr-3">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40">
+                              <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                              Step {item["Step"] || 1}
+                            </span>
+                          </td>
+                          <td className="py-3.5 text-right">
+                            <Link
+                              href={`/asset/${item["ID_Asset"]}`}
+                              className="rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-primary hover:text-white transition dark:bg-boxdark-2 dark:text-slate-300"
+                            >
+                              Detail →
+                            </Link>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: Preventive Maintenance & Quick Shortcuts */}
+        <div className="col-span-12 xl:col-span-4 space-y-6">
+          {/* Quick Operations Actions */}
+          <div className="rounded-2xl border border-slate-200/80 bg-gradient-to-br from-slate-900 to-slate-800 p-5 text-white shadow-md">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300">
+              Aksi Cepat Operasional
+            </h3>
+            <p className="mt-1 text-xs text-slate-400">
+              Pintasan cepat untuk input pekerjaan dan laporan
+            </p>
+
+            <div className="mt-4 grid grid-cols-2 gap-2.5">
+              <Link
+                href="/new_asset"
+                className="flex flex-col items-center justify-center rounded-xl bg-white/10 p-3 text-center transition hover:bg-white/20 border border-white/10"
+              >
+                <MdOutlineAddBox className="h-6 w-6 text-emerald-400" />
+                <span className="mt-1.5 text-xs font-semibold">Tambah Aset</span>
+              </Link>
+
+              <Link
+                href="/scanner"
+                className="flex flex-col items-center justify-center rounded-xl bg-white/10 p-3 text-center transition hover:bg-white/20 border border-white/10"
+              >
+                <MdOutlineQrCodeScanner className="h-6 w-6 text-sky-400" />
+                <span className="mt-1.5 text-xs font-semibold">Scan QR Barcode</span>
+              </Link>
+
+              <Link
+                href="/machineutilize"
+                className="flex flex-col items-center justify-center rounded-xl bg-white/10 p-3 text-center transition hover:bg-white/20 border border-white/10"
+              >
+                <MdOutlinePrecisionManufacturing className="h-6 w-6 text-amber-400" />
+                <span className="mt-1.5 text-xs font-semibold">Utilisasi Mesin</span>
+              </Link>
+
+              <Link
+                href="/partstransaction"
+                className="flex flex-col items-center justify-center rounded-xl bg-white/10 p-3 text-center transition hover:bg-white/20 border border-white/10"
+              >
+                <MdOutlineShoppingBag className="h-6 w-6 text-purple-400" />
+                <span className="mt-1.5 text-xs font-semibold">Transaksi Part</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Preventive Maintenance (PM) Feed */}
+          <div className="rounded-2xl border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-boxdark/90">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 rounded-full bg-sky-500"></span>
+                  Jadwal Servis Berkala (PM)
+                </h3>
+                <span className="text-xs text-slate-400">Total {mainCount} jadwal</span>
+              </div>
+
+              <Link
+                href="/listmaintenance"
+                className="text-xs font-bold text-primary hover:underline"
+              >
+                Semua →
+              </Link>
+            </div>
+
+            {dataMaintenance.length === 0 ? (
+              <div className="py-6 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-xl dark:border-slate-700">
+                Tidak ada jadwal PM aktif saat ini.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {dataMaintenance.slice(0, 4).map((item, index) => {
+                  const title =
+                    item["Type"] === "K" ? item["Class"] : item["Description"];
+
+                  return (
+                    <div
+                      key={index}
+                      className="group flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/60 p-3 transition hover:border-sky-300 hover:bg-white dark:border-slate-800 dark:bg-boxdark-2/60 dark:hover:border-sky-800"
+                    >
+                      <div className="min-w-0 flex-1 pr-3">
+                        <h4 className="truncate text-xs font-bold text-slate-800 dark:text-white" title={title}>
+                          {title || "Aset Tanpa Nama"}
+                        </h4>
+                        <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+                          <span className="flex items-center gap-1">
+                            <MdOutlineCalendarMonth className="h-3 w-3" />
+                            {shortDate(item["Time_Request"])}
+                          </span>
+                          <span>•</span>
+                          <span className="truncate">{item["Requestor"] || "Tim"}</span>
+                        </div>
+                      </div>
+
+                      <Link
+                        href={`/asset/${item["ID_Asset"]}`}
+                        className="rounded-lg bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 shadow-sm border border-slate-200 hover:bg-primary hover:text-white transition dark:bg-boxdark dark:border-slate-700 dark:text-slate-200"
+                      >
+                        Cek
+                      </Link>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-    </>
+    </div>
   );
 };
 

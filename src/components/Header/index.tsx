@@ -10,8 +10,8 @@ const Header = (props: {
   setSidebarOpen: (arg0: boolean) => void;
 }) => {
   return (
-    <header className="sticky top-0 z-999 flex h-[70px] w-full bg-strokedark drop-shadow-1 dark:bg-boxdark dark:drop-shadow-none">
-      <div className="flex flex-grow items-center justify-between px-4 py-4 shadow-2 md:px-6 lg:justify-end 2xl:px-11">
+    <header className="sticky top-0 z-999 flex h-[70px] w-full border-b border-slate-200/80 bg-white/90 backdrop-blur-md dark:border-slate-800 dark:bg-boxdark/90 transition-colors duration-200">
+      <div className="flex flex-grow items-center justify-between px-4 py-4 shadow-sm md:px-6 2xl:px-11">
         <div className="flex items-center gap-2 sm:gap-4 lg:hidden">
           {/* <!-- Hamburger Toggle BTN --> */}
           <button
@@ -20,34 +20,34 @@ const Header = (props: {
               e.stopPropagation();
               props.setSidebarOpen(!props.sidebarOpen);
             }}
-            className="z-99999 block rounded-sm  bg-strokedark p-1.5 shadow-sm dark:border-strokedark dark:bg-boxdark lg:hidden"
+            className="z-99999 block rounded-lg border border-slate-200 bg-slate-100 p-1.5 shadow-sm dark:border-slate-700 dark:bg-boxdark lg:hidden"
           >
             <span className="relative block h-5.5 w-5.5 cursor-pointer">
               <span className="du-block absolute right-0 h-full w-full">
                 <span
-                  className={`relative left-0 top-0 my-1 block h-0.5 w-0 rounded-sm bg-info delay-[0] duration-200 ease-in-out dark:bg-white ${
+                  className={`relative left-0 top-0 my-1 block h-0.5 w-0 rounded-sm bg-slate-700 delay-[0] duration-200 ease-in-out dark:bg-white ${
                     !props.sidebarOpen && "!w-full delay-300"
                   }`}
                 ></span>
                 <span
-                  className={`relative left-0 top-0 my-1 block h-0.5 w-0 rounded-sm bg-info delay-150 duration-200 ease-in-out dark:bg-white ${
+                  className={`relative left-0 top-0 my-1 block h-0.5 w-0 rounded-sm bg-slate-700 delay-150 duration-200 ease-in-out dark:bg-white ${
                     !props.sidebarOpen && "delay-400 !w-full"
                   }`}
                 ></span>
                 <span
-                  className={`relative left-0 top-0 my-1 block h-0.5 w-0 rounded-sm bg-info delay-200 duration-200 ease-in-out dark:bg-white ${
+                  className={`relative left-0 top-0 my-1 block h-0.5 w-0 rounded-sm bg-slate-700 delay-200 duration-200 ease-in-out dark:bg-white ${
                     !props.sidebarOpen && "!w-full delay-500"
                   }`}
                 ></span>
               </span>
               <span className="absolute right-0 h-full w-full rotate-45">
                 <span
-                  className={`absolute left-2.5 top-0 block h-full w-0.5 rounded-sm bg-black delay-300 duration-200 ease-in-out dark:bg-white ${
+                  className={`absolute left-2.5 top-0 block h-full w-0.5 rounded-sm bg-slate-700 delay-300 duration-200 ease-in-out dark:bg-white ${
                     !props.sidebarOpen && "!h-0 !delay-[0]"
                   }`}
                 ></span>
                 <span
-                  className={`delay-400 absolute left-0 top-2.5 block h-0.5 w-full rounded-sm bg-black duration-200 ease-in-out dark:bg-white ${
+                  className={`delay-400 absolute left-0 top-2.5 block h-0.5 w-full rounded-sm bg-slate-700 duration-200 ease-in-out dark:bg-white ${
                     !props.sidebarOpen && "!h-0 !delay-200"
                   }`}
                 ></span>
@@ -60,54 +60,21 @@ const Header = (props: {
             <Image width={32} height={32} src={"/logo/logo.png"} alt="Logo" />
           </Link>
         </div>
-        {/*
-        <div className="hidden sm:block">
-          <form action="https://formbold.com/s/unique_form_id" method="POST">
-            <div className="relative">
-              <button className="absolute left-0 top-1/2 -translate-y-1/2">
-                <svg
-                  className="fill-body hover:fill-primary dark:fill-bodydark dark:hover:fill-primary"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 20 20"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    fillRule="evenodd"
-                    clipRule="evenodd"
-                    d="M9.16666 3.33332C5.945 3.33332 3.33332 5.945 3.33332 9.16666C3.33332 12.3883 5.945 15 9.16666 15C12.3883 15 15 12.3883 15 9.16666C15 5.945 12.3883 3.33332 9.16666 3.33332ZM1.66666 9.16666C1.66666 5.02452 5.02452 1.66666 9.16666 1.66666C13.3088 1.66666 16.6667 5.02452 16.6667 9.16666C16.6667 13.3088 13.3088 16.6667 9.16666 16.6667C5.02452 16.6667 1.66666 13.3088 1.66666 9.16666Z"
-                    fill=""
-                  />
-                  <path
-                    fillRule="evenodd"
-                    clipRule="evenodd"
-                    d="M13.2857 13.2857C13.6112 12.9603 14.1388 12.9603 14.4642 13.2857L18.0892 16.9107C18.4147 17.2362 18.4147 17.7638 18.0892 18.0892C17.7638 18.4147 17.2362 18.4147 16.9107 18.0892L13.2857 14.4642C12.9603 14.1388 12.9603 13.6112 13.2857 13.2857Z"
-                    fill=""
-                  />
-                </svg>
-              </button>
 
-              <input
-                type="text"
-                placeholder="Type to search..."
-                className="w-full bg-transparent pl-9 pr-4 font-medium focus:outline-none xl:w-125"
-              />
-            </div>
-          </form>
+        {/* Dashboard Title & Live Badge */}
+        <div className="hidden lg:flex items-center space-x-3">
+          <h1 className="text-base font-bold text-slate-800 dark:text-white">
+            MITA Maintenance & Operations
+          </h1>
+          <span className="flex items-center space-x-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Live System</span>
+          </span>
         </div>
-*/}
-        <div className="flex items-center gap-3 2xsm:gap-7">
+
+        <div className="flex items-center gap-3 2xsm:gap-5">
           <ul className="flex items-center gap-2 2xsm:gap-4">
-            {/* 
             <DarkModeSwitcher />
-             */}
-
-            {/* <!-- Notification Menu Area --> */}
-            {/*<DropdownNotification /> */}
-            {/* <!-- Notification Menu Area --> */}
-
-            {/*<DropdownMessage />*/}
           </ul>
 
           {/* <!-- User Area --> */}

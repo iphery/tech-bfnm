@@ -21,19 +21,20 @@ const SignIn = () => {
   const [disabledLogin, setDisabledLogin] = useState(false);
 
   const fetch_data = async (uid) => {
-    console.log("sini");
-    console.log(uid);
-    const apiUrl = `${API_URL}/fetchuser`;
-    const response = await axios.post(apiUrl, {
-      uid: uid,
-    });
+    try {
+      const response = await axios.post("/api/fetchuser", {
+        uid: uid,
+      });
 
-    if (response.status == 200) {
-      console.log(response.data["data"]);
-      localStorage.setItem("info", JSON.stringify(response.data["data"]));
-      window.location.reload();
+      if (response.status === 200 && response.data?.data) {
+        localStorage.setItem("info", JSON.stringify(response.data["data"]));
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error("Fetch user error:", error);
+    } finally {
+      setOnloadLogin(false);
     }
-    setOnloadLogin(false);
   };
   const proceed_login = async () => {
     setOnloadLogin(true);

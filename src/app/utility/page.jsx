@@ -79,14 +79,16 @@ export default function ListAsset() {
   const [userLevel, setUserLevel] = useState(4);
 
   const fetch_data = async () => {
-    const apiUrl = `${API_URL}/listutility`;
-    const response = await axios.get(apiUrl);
+    try {
+      const response = await axios.get("/api/listutility");
 
-    if (response.status == 200) {
-      const data = response.data["response"];
-
-      setDetailData(data);
-      setImageUtility(response.data["image"]);
+      if (response.status === 200) {
+        const data = response.data["response"] || [];
+        setDetailData(data);
+        setImageUtility(response.data["image"] || []);
+      }
+    } catch (err) {
+      console.error("Gagal load listutility:", err);
     }
   };
 
@@ -222,15 +224,18 @@ export default function ListAsset() {
                                 onload={loaderDelete}
                                 onClick={async () => {
                                   setLoaderDelete(true);
-                                  const apiUrl = `${API_URL}/deleteutility`;
-                                  const response = await axios.post(apiUrl, {
-                                    id_request: item["ID_Request"],
-                                  });
+                                  try {
+                                    const response = await axios.post("/api/deleteutility", {
+                                      id_request: item["ID_Request"],
+                                    });
 
-                                  if (response.status == 200) {
-                                    const message = response.data["response"];
-                                    NotifySuccess(message);
-                                    window.location.reload();
+                                    if (response.status === 200) {
+                                      const message = response.data["response"];
+                                      NotifySuccess(message);
+                                      fetch_data();
+                                    }
+                                  } catch (err) {
+                                    console.error("Gagal delete utility:", err);
                                   }
                                   setLoaderDelete(false);
                                 }}
@@ -439,17 +444,21 @@ export default function ListAsset() {
               } else {
                 setDataSolutionError(false);
                 const user = localStorage.getItem("info");
-                const parseUser = JSON.parse(user);
-                const apiUrl = `${API_URL}/closeutility`;
-                const response = await axios.post(apiUrl, {
-                  id_request: selectedRequest,
-                  uid: parseUser[0]["Uid"],
-                  solution: dataSolution,
-                });
+                const parseUser = JSON.parse(user || "[]");
+                try {
+                  const response = await axios.post("/api/closeutility", {
+                    id_request: selectedRequest,
+                    uid: parseUser[0]?.["Uid"] || "SYSTEM",
+                    solution: dataSolution,
+                  });
 
-                if (response.status == 200) {
-                  const message = response.data["response"];
-                  NotifySuccess(message);
+                  if (response.status === 200) {
+                    const message = response.data["response"];
+                    NotifySuccess(message);
+                    fetch_data();
+                  }
+                } catch (err) {
+                  console.error("Gagal close utility:", err);
                 }
               }
               console.log(dataSolution);

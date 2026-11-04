@@ -20,13 +20,16 @@ export default function Page() {
   } = useProvider();
 
   const fetch_data = async () => {
-    const apiUrl = `${API_URL}/weboutstanding`;
-    const response = await axios.get(apiUrl);
-    const outstanding = response.data["outstanding"];
+    try {
+      const response = await axios.get("/api/weboutstanding");
+      const outstanding = response.data["outstanding"] || [];
 
-    if (response.status == 200) {
-      setWebOutstandingRequest(outstanding);
-      setLoadWebOutstanding(false);
+      if (response.status === 200) {
+        setWebOutstandingRequest(outstanding);
+        setLoadWebOutstanding(false);
+      }
+    } catch (err) {
+      console.error("Gagal load weboutstanding:", err);
     }
   };
 

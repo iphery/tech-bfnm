@@ -9,16 +9,17 @@ export default function Page() {
   const [year, setYear] = useState("");
 
   useEffect(() => {
-    const dataqo = JSON.parse(localStorage.getItem("dataqo"));
-    const dataavg = JSON.parse(localStorage.getItem("dataavg"));
-    const qoyear = localStorage.getItem("qoyear");
+    try {
+      const dataqo = JSON.parse(localStorage.getItem("dataqo") || "[]");
+      const dataavg = JSON.parse(localStorage.getItem("dataavg") || "[]");
+      const qoyear = localStorage.getItem("qoyear") || String(new Date().getFullYear());
 
-    setDataQO(dataqo);
-    setDataAvg(dataavg);
-    setYear(qoyear);
-
-    console.log(dataavg);
-    console.log(dataqo);
+      setDataQO(Array.isArray(dataqo) ? dataqo : []);
+      setDataAvg(Array.isArray(dataavg) ? dataavg : []);
+      setYear(qoyear);
+    } catch (e) {
+      console.error("Gagal load data print QO:", e);
+    }
   }, []);
   return (
     <div>

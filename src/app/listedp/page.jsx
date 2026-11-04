@@ -16,13 +16,16 @@ export default function Page() {
     useProvider();
 
   const fetch_data = async () => {
-    const apiUrl = `${API_URL}/webit`;
-    const response = await axios.get(apiUrl);
-    const edp = response.data["it"];
+    try {
+      const response = await axios.get("/api/webit");
+      const edp = response.data["it"] || [];
 
-    if (response.status == 200) {
-      setWebITRequest(edp);
-      setLoadWebIT(false);
+      if (response.status === 200) {
+        setWebITRequest(edp);
+        setLoadWebIT(false);
+      }
+    } catch (err) {
+      console.error("Gagal load webit:", err);
     }
   };
 

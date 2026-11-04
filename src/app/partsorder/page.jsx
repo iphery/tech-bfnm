@@ -1,165 +1,370 @@
 "use client";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import axios from "axios";
-import { useEffect, useState } from "react";
-import { API_URL } from "@/utils/constant";
-import UserAuth from "@/components/auth";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import { useRouter } from "next/navigation";
-import { BsCartPlus } from "react-icons/bs";
 import { useMediaQuery } from "react-responsive";
-import Loader from "@/components/common/Loader";
-import { PageLoader } from "@/components/loader";
-import { HiOutlineSearch } from "react-icons/hi";
+import DefaultLayout from "@/components/Layouts/DefaultLayout";
+import UserAuth from "@/components/auth";
 import { CommonInput } from "@/components/input";
-import { formatDate, formatDateTime } from "@/utils/dateformat";
-import { AiOutlineDelete } from "react-icons/ai";
-import paginateData from "@/utils/pagination";
+import { PageCardLimited } from "@/components/card";
+import { PageLoader } from "@/components/loader";
+import { formatDate } from "@/utils/dateformat";
+
+// Icons
+import {
+  HiArrowLeft,
+  HiOutlineSearch,
+  HiOutlinePlus,
+  HiOutlineDocumentText,
+  HiOutlineArrowRight,
+} from "react-icons/hi";
+import { BsCartPlus, BsBoxSeam } from "react-icons/bs";
 
 export default function PartOrder() {
   const router = useRouter();
   const isSmallScreen = useMediaQuery({ query: "(max-width: 640px)" });
+
   const [orderData, setOrderData] = useState([]);
   const [loader, setLoader] = useState(true);
   const [keyword, setKeyword] = useState("");
-  const [filteredList, setFilteredList] = useState([]);
+  const [isClient, setIsClient] = useState(false);
+
+  // Pagination (15 items per page)
+  const pageSize = 15;
+  const [mobilePage, setMobilePage] = useState(1);
+  const [desktopPage, setDesktopPage] = useState(1);
+  const observerTarget = useRef(null);
 
   const fetch_data = async () => {
-    const apiUrl = `${API_URL}/getorder`;
-    const response = await axios.post(apiUrl, {});
-
-    if (response.status == 200) {
-      // console.log(response.data["detail"][0].ID_Asset);
-      const list = response.data["response"];
-
-      console.log(list);
-      setOrderData(list);
+    try {
+      const response = await axios.post("/api/getorder");
+      if (response.status === 200) {
+        setOrderData(response.data.response || []);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
       setLoader(false);
     }
   };
 
   useEffect(() => {
     fetch_data();
+    setIsClient(true);
   }, []);
 
-  useEffect(() => {
-    //if (!loading) {
-    const filterData = orderData.filter((item) => {
-      const register =
-        item["id_register"] &&
-        item["id_register"].toLowerCase().includes(keyword.toLowerCase());
-      const dpm =
-        item["dpm"] &&
-        item["dpm"].toLowerCase().includes(keyword.toLowerCase());
-      const requestor =
-        item["requestor"] &&
-        item["requestor"].toLowerCase().includes(keyword.toLowerCase());
-      const status =
-        item["status_def"] &&
-        item["status_def"].toLowerCase().includes(keyword.toLowerCase());
-      return register || dpm || requestor || status;
-    });
-    const { data, pageCurrent, start, end } = paginateData(
-      filterData,
-      //keyword,
-      //currentPage,
-      15,
-    );
-    setFilteredList(filterData);
+  const filteredList = orderData.filter((item) => {
+    const q = keyword.toLowerCase();
+    const reg = (item.id_register || "").toLowerCase();
+    const dpm = (item.dpm || "").toLowerCase();
+    const req = (item.requestor || "").toLowerCase();
+    const st = (item.status_def || "").toLowerCase();
+    return reg.includes(q) || dpm.includes(q) || req.includes(q) || st.includes(q);
+  });
 
-    //}
-  }, [orderData, keyword]);
+  // Mobile Infinite Scroll (15 per batch)
+  const displayedMobile = filteredList.slice(0, mobilePage * pageSize);
+  const hasMoreMobile = displayedMobile.length < filteredList.length;
+
+  const handleObserver = useCallback(
+    (entries) => {
+      const [target] = entries;
+      if (target.isIntersecting && hasMoreMobile) {
+        setMobilePage((prev) => prev + 1);
+      }
+    },
+    [hasMoreMobile]
+  );
+
+  useEffect(() => {
+    const element = observerTarget.current;
+    if (!element) return;
+    const observer = new IntersectionObserver(handleObserver, { threshold: 0.1 });
+    observer.observe(element);
+    return () => observer.unobserve(element);
+  }, [handleObserver]);
+
+  // Desktop Pagination (15 per page)
+  const totalDesktopPages = Math.ceil(filteredList.length / pageSize) || 1;
+  const displayedDesktop = filteredList.slice(
+    (desktopPage - 1) * pageSize,
+    desktopPage * pageSize
+  );
+
+  if (!isClient) return null;
 
   return (
     <UserAuth>
-      <div className="min-h-screen  bg-boxdark-2">
-        {isSmallScreen ? (
-          <>
-            <div>in progerss</div>
-          </>
-        ) : (
-          <DefaultLayout>
-            <div className="min-h-[calc(100vh-115px)] text-white">
-              <div className="mb-3 flex items-center justify-center">
-                <div className="text-lg text-white">Order</div>
-
-                <div className="w-full">
-                  <div className="flex justify-end">
-                    <div
-                      className="flex cursor-default items-center justify-center px-5  hover:text-white"
-                      onClick={() => {
-                        router.push("/partsin");
-                      }}
-                    >
-                      <BsCartPlus />
-                      <div className="ml-1">New Order</div>
-                    </div>
+      <div className="min-h-screen bg-whiten text-body dark:bg-boxdark-2 dark:text-bodydark">
+        {loader ? (
+          <PageLoader />
+        ) : isSmallScreen ? (
+          /* ================= MOBILE VIEW ================= */
+          <div className="flex flex-col min-h-screen pb-20">
+            {/* Top Bar */}
+            <div className="sticky top-0 z-40 border-b border-stroke/60 bg-white/80 px-4 py-3 backdrop-blur-md dark:border-strokedark/60 dark:bg-boxdark/80">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => router.push("/parts")}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 text-black hover:bg-gray-200 dark:bg-meta-4 dark:text-white"
+                  >
+                    <HiArrowLeft className="text-lg" />
+                  </button>
+                  <div>
+                    <h1 className="text-base font-bold text-black dark:text-white leading-none">
+                      Order Pengadaan (DPM)
+                    </h1>
+                    <span className="text-[11px] text-body dark:text-bodydark">
+                      {filteredList.length} order tercatat
+                    </span>
                   </div>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={() => router.push("/partsin")}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white shadow-sm hover:bg-opacity-90 transition-all"
+                  title="Buat Order Baru"
+                >
+                  <HiOutlinePlus className="text-lg" />
+                </button>
               </div>
-              <div className=" w-full rounded-sm border border-strokedark bg-boxdark shadow-default">
-                <div className="p-3">
-                  <div className="flex flex-row items-center">
-                    <div className="w-1/2">
+
+              {/* Search Bar */}
+              <div className="relative">
+                <CommonInput
+                  input={keyword}
+                  type="text"
+                  onInputChange={(val) => {
+                    setKeyword(val);
+                    setMobilePage(1);
+                  }}
+                  placeholder="Cari nomor order, DPM, atau pemohon..."
+                >
+                  <HiOutlineSearch className="text-body dark:text-bodydark" />
+                </CommonInput>
+              </div>
+            </div>
+
+            {/* List of Orders (15 items per batch) */}
+            <div className="p-4 space-y-2.5">
+              {filteredList.length === 0 ? (
+                <div className="rounded-2xl border border-stroke bg-white p-8 text-center text-xs text-body dark:border-strokedark dark:bg-boxdark dark:text-bodydark">
+                  Tidak ada order pengadaan yang cocok.
+                </div>
+              ) : (
+                <>
+                  {displayedMobile.map((item, index) => {
+                    const isOpen = Number(item.status || 0) === 0;
+                    return (
+                      <div
+                        key={index}
+                        onClick={() => router.push(`/partsorder/${item.id_register}`)}
+                        className="group cursor-pointer rounded-2xl border border-stroke bg-white p-3.5 shadow-sm hover:border-primary hover:shadow dark:border-strokedark dark:bg-boxdark dark:hover:border-primary transition-all active:scale-[0.99]"
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="font-mono text-xs font-bold text-black dark:text-white">
+                            {item.id_register}
+                          </span>
+                          <span
+                            className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                              isOpen
+                                ? "bg-warning/15 text-warning"
+                                : "bg-success/15 text-success"
+                            }`}
+                          >
+                            {isOpen ? "OPEN" : "CLOSED"}
+                          </span>
+                        </div>
+
+                        <div className="text-xs text-black dark:text-white font-medium mb-1">
+                          DPM: <span className="font-semibold text-primary">{item.dpm}</span>
+                        </div>
+
+                        <div className="flex items-center justify-between border-t border-stroke/60 pt-2 text-[11px] text-body dark:border-strokedark/60 dark:text-bodydark">
+                          <span>Pemohon: {item.requestor || "-"}</span>
+                          <span>{formatDate(item.date)}</span>
+                          <HiOutlineArrowRight className="text-xs group-hover:translate-x-1 transition-transform" />
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Infinite scroll observer target */}
+                  <div ref={observerTarget} className="py-2 text-center text-xs text-body dark:text-bodydark">
+                    {hasMoreMobile && (
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                        <span>Memuat 15 order berikutnya...</span>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* ================= DESKTOP VIEW ================= */
+          <DefaultLayout>
+            <div className="mx-auto max-w-7xl space-y-6">
+              {/* Header */}
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => router.push("/parts")}
+                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-stroke bg-white text-black hover:bg-gray-50 dark:border-strokedark dark:bg-boxdark dark:text-white transition-all shadow-sm"
+                  >
+                    <HiArrowLeft className="text-xl" />
+                  </button>
+                  <div>
+                    <h1 className="text-xl font-bold text-black dark:text-white">
+                      Daftar Permohonan Material (DPM) & Order
+                    </h1>
+                    <p className="text-xs text-body dark:text-bodydark">
+                      Status pengadaan suku cadang dan penerimaan barang masuk ke gudang
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => router.push("/partsin")}
+                  className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-white shadow hover:bg-opacity-90 active:scale-[0.99] transition-all"
+                >
+                  <BsCartPlus className="text-base" />
+                  <span>Buat Order DPM Baru</span>
+                </button>
+              </div>
+
+              {/* Table Card (15 items per page) */}
+              <PageCardLimited>
+                <div className="space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-4 border-b border-stroke pb-4 dark:border-strokedark">
+                    <div className="w-full sm:w-80">
                       <CommonInput
                         input={keyword}
-                        type={"text"}
+                        type="text"
                         onInputChange={(val) => {
                           setKeyword(val);
+                          setDesktopPage(1);
                         }}
-                        placeholder={"Search"}
+                        placeholder="Cari ID order, DPM, pemohon..."
                       >
-                        <HiOutlineSearch />
+                        <HiOutlineSearch className="text-body dark:text-bodydark" />
                       </CommonInput>
                     </div>
+
+                    <span className="text-xs text-body dark:text-bodydark">
+                      Menampilkan {displayedDesktop.length} dari {filteredList.length} order
+                    </span>
                   </div>
 
-                  <div className="mb-5"></div>
-                  <div className="h-[calc(100vh-235px)] overflow-y-auto">
-                    <table className="w-full">
+                  <div className="overflow-x-auto">
+                    <table className="w-full table-auto text-left text-xs">
                       <thead>
-                        <tr className="sticky top-0 bg-black">
-                          <th className="">Date</th>
-                          <th className="">No Register</th>
-                          <th className="">No DPM</th>
-                          <th className="">Status</th>
-                          <th className="">Created by</th>
-                          <th className="">Created at</th>
+                        <tr className="border-b border-stroke bg-gray-50 text-body dark:border-strokedark dark:bg-meta-4/20 dark:text-bodydark">
+                          <th className="py-3 px-4 font-semibold">ID Register</th>
+                          <th className="py-3 px-4 font-semibold">No. DPM</th>
+                          <th className="py-3 px-4 font-semibold">Tanggal Order</th>
+                          <th className="py-3 px-4 font-semibold">Pemohon</th>
+                          <th className="py-3 px-4 font-semibold">Penerima</th>
+                          <th className="py-3 px-4 font-semibold text-center">Status</th>
+                          <th className="py-3 px-4 font-semibold text-center">Aksi</th>
                         </tr>
                       </thead>
-                      <tbody>
-                        {filteredList.map((item, index) => {
-                          return (
-                            <tr
-                              key={index}
-                              className="cursor-default hover:bg-meta-10"
-                              onClick={() => {
-                                router.push(
-                                  `/partsorder/${item["id_register"]}`,
-                                );
-                              }}
-                            >
-                              <td className="p-1">
-                                {formatDate(item["date"])}
-                              </td>
-                              <td className="p-1 text-center">
-                                {item["id_register"]}
-                              </td>
-                              <td className="p-1 text-center">{item["dpm"]}</td>
-                              <td
-                                className={`${item["status"] == 0 ? "text-red" : "text-success"} p-1 text-center`}
+                      <tbody className="divide-y divide-stroke dark:divide-strokedark">
+                        {filteredList.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="py-8 text-center text-body dark:text-bodydark">
+                              Tidak ada data order pengadaan.
+                            </td>
+                          </tr>
+                        ) : (
+                          displayedDesktop.map((item, index) => {
+                            const isOpen = Number(item.status || 0) === 0;
+                            return (
+                              <tr
+                                key={index}
+                                onClick={() => router.push(`/partsorder/${item.id_register}`)}
+                                className="cursor-pointer hover:bg-gray-50 dark:hover:bg-meta-4/10 transition-colors"
                               >
-                                {item["status"] == 0 ? "Open" : "Close"}
-                              </td>
-                              <td>{item["requestor"]}</td>
-                              <td>{formatDateTime(item["created_at"])}</td>
-                            </tr>
-                          );
-                        })}
+                                <td className="py-3 px-4 font-mono font-bold text-black dark:text-white">
+                                  {item.id_register}
+                                </td>
+                                <td className="py-3 px-4 font-semibold text-primary">
+                                  {item.dpm}
+                                </td>
+                                <td className="py-3 px-4 text-body dark:text-bodydark whitespace-nowrap">
+                                  {formatDate(item.date)}
+                                </td>
+                                <td className="py-3 px-4 text-black dark:text-white">
+                                  {item.requestor || "-"}
+                                </td>
+                                <td className="py-3 px-4 text-body dark:text-bodydark">
+                                  {item.receiver || "-"}
+                                </td>
+                                <td className="py-3 px-4 text-center">
+                                  <span
+                                    className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                                      isOpen
+                                        ? "bg-warning/15 text-warning"
+                                        : "bg-success/15 text-success"
+                                    }`}
+                                  >
+                                    {isOpen ? "OPEN" : "CLOSED"}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-4 text-center">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      router.push(`/partsorder/${item.id_register}`);
+                                    }}
+                                    className="rounded-lg border border-stroke px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-primary hover:text-white dark:border-strokedark transition-colors"
+                                  >
+                                    Rincian
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
                       </tbody>
                     </table>
                   </div>
+
+                  {/* Desktop Pagination Controls (15 items per page) */}
+                  {totalDesktopPages > 1 && (
+                    <div className="flex items-center justify-between border-t border-stroke pt-4 dark:border-strokedark text-xs">
+                      <span className="text-body dark:text-bodydark">
+                        Halaman {desktopPage} dari {totalDesktopPages}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          disabled={desktopPage === 1}
+                          onClick={() => setDesktopPage((p) => Math.max(1, p - 1))}
+                          className="rounded-lg border border-stroke px-3 py-1.5 font-semibold text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 disabled:opacity-40"
+                        >
+                          Sebelumnya
+                        </button>
+                        <button
+                          type="button"
+                          disabled={desktopPage === totalDesktopPages}
+                          onClick={() => setDesktopPage((p) => Math.min(totalDesktopPages, p + 1))}
+                          className="rounded-lg border border-stroke px-3 py-1.5 font-semibold text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 disabled:opacity-40"
+                        >
+                          Berikutnya
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
+              </PageCardLimited>
             </div>
           </DefaultLayout>
         )}

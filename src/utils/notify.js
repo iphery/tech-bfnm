@@ -1,34 +1,52 @@
 import { toast } from "react-toastify";
 
-export const NotifySuccess = (message) =>
-  toast.success(message, {
-    position: "top-center",
-    autoClose: 800,
-    hideProgressBar: true,
-    closeOnClick: true,
-    pauseOnHover: true,
-    progress: undefined,
-    theme: "light",
-  });
+export const NotifySuccess = (message, title = "Berhasil") =>
+  toast.success(
+    <div>
+      <div className="font-bold text-sm leading-snug">{title}</div>
+      <div className="text-xs opacity-90 mt-0.5">{message}</div>
+    </div>,
+    {
+      position: "top-center",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      theme: "colored",
+    }
+  );
 
-export const NotifyError = (message) =>
-  toast.error(message, {
-    position: "top-center",
-    autoClose: 800,
-    hideProgressBar: true,
-    closeOnClick: true,
-    pauseOnHover: true,
-    progress: undefined,
-    theme: "light",
-  });
+export const NotifyError = (message, title = "Perhatian") =>
+  toast.error(
+    <div>
+      <div className="font-bold text-sm leading-snug">{title}</div>
+      <div className="text-xs opacity-90 mt-0.5">{message}</div>
+    </div>,
+    {
+      position: "top-center",
+      autoClose: 4000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      theme: "colored",
+    }
+  );
 
-export const AlertMessage = (message) =>
-  toast.info(message, {
-    position: "top-center",
-    autoClose: 1500,
-    hideProgressBar: false,
-    closeOnClick: true,
-    pauseOnHover: true,
-    progress: undefined,
-    theme: "light",
-  });
+export const AlertMessage = (message, title = "Informasi") =>
+  toast.info(
+    <div>
+      <div className="font-bold text-sm leading-snug">{title}</div>
+      <div className="text-xs opacity-90 mt-0.5">{message}</div>
+    </div>,
+    {
+      position: "top-center",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      theme: "colored",
+    }
+  );

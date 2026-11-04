@@ -160,60 +160,41 @@ const ChartOne: React.FC<ChartOneProps> = ({
   */
 
   return (
-    <div className="col-span-12 rounded-sm border border-stroke bg-white px-5 pb-5 pt-7.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:col-span-8">
-      <div className="flex flex-wrap items-start justify-between gap-3 sm:flex-nowrap">
-        <div className="flex w-full flex-wrap gap-3 sm:gap-5">
-          <div className="flex min-w-47.5">
-            <span className="mr-2 mt-1 flex h-4 w-full max-w-4 items-center justify-center rounded-full border border-primary">
-              <span className="block h-2.5 w-full max-w-2.5 rounded-full bg-primary"></span>
+    <div className="w-full rounded-2xl border border-slate-200/80 bg-white/90 p-6 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-boxdark/90">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="text-base font-bold text-slate-800 dark:text-white">
+            Grafik Kecepatan Perbaikan Aset (Tahun Ini)
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Rata-rata durasi penanganan kerusakan (Jam Kerja) per bulan
+          </p>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded-full bg-primary"></span>
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+              Mesin Produksi
             </span>
-            <div className="w-full">
-              <p
-                className="font-semibold text-primary"
-                onClick={() => {
-                  console.log(series);
-                }}
-              >
-                This Month
-              </p>
-              <p className="text-sm font-medium">{`${inMonth} case`}</p>
-            </div>
           </div>
-          <div className="flex min-w-47.5">
-            <span className="mr-2 mt-1 flex h-4 w-full max-w-4 items-center justify-center rounded-full border border-secondary">
-              <span className="block h-2.5 w-full max-w-2.5 rounded-full bg-secondary"></span>
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded-full bg-secondary"></span>
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+              Kendaraan
             </span>
-            <div className="w-full">
-              <p className="font-semibold text-secondary">This Year</p>
-              <p className="text-sm font-medium">{`${inYear} case`}</p>
-            </div>
           </div>
         </div>
-        {/**  <div className="flex w-full max-w-45 justify-end">
-          <div className="inline-flex items-center rounded-md bg-whiter p-1.5 dark:bg-meta-4">
-            <button className="rounded bg-white px-3 py-1 text-xs font-medium text-black shadow-card hover:bg-white hover:shadow-card dark:bg-boxdark dark:text-white dark:hover:bg-boxdark">
-              Day
-            </button>
-            <button className="rounded px-3 py-1 text-xs font-medium text-black hover:bg-white hover:shadow-card dark:text-white dark:hover:bg-boxdark">
-              Week
-            </button>
-            <button className="rounded px-3 py-1 text-xs font-medium text-black hover:bg-white hover:shadow-card dark:text-white dark:hover:bg-boxdark">
-              Month
-            </button>
-          </div>
-        </div>*/}
       </div>
 
-      <div>
-        <div id="chartOne" className="-ml-5">
-          <ReactApexChart
-            options={options}
-            series={series}
-            type="area"
-            height={350}
-            width={"100%"}
-          />
-        </div>
+      <div className="-ml-3">
+        <ReactApexChart
+          options={options}
+          series={series && series.length > 0 ? series : []}
+          type="area"
+          height={320}
+          width={"100%"}
+        />
       </div>
     </div>
   );

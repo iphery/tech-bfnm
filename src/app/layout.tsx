@@ -24,9 +24,19 @@ export default function RootLayout({
   return (
     <DataProvider>
       <html lang="en">
-        <body suppressHydrationWarning={true} className="bg-boxdark-2">
-          <ToastContainer />
-          <div className="dark:bg-boxdark-2 dark:text-bodydark">{children}</div>
+        <body suppressHydrationWarning={true} className="bg-whiten text-body dark:bg-boxdark-2 dark:text-bodydark transition-colors duration-200">
+          <ToastContainer
+            position="top-center"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop={true}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+          />
+          <div className="min-h-screen">{children}</div>
         </body>
       </html>
     </DataProvider>

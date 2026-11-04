@@ -1,23 +1,39 @@
 "use client";
-import UserAuth from "@/components/auth";
-import { CommonInput, CurrencyInput } from "@/components/input";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
-import { API_URL } from "@/utils/constant";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useEffect, useState } from "react";
-import { CustomSelect } from "@/components/select";
-import { CommonButton, CommonButtonColor } from "@/components/button";
-import { NotifySuccess } from "@/utils/notify";
 import { useRouter } from "next/navigation";
+import { useMediaQuery } from "react-responsive";
+import UserAuth from "@/components/auth";
+import DefaultLayout from "@/components/Layouts/DefaultLayout";
+import { CommonInput, CurrencyInput } from "@/components/input";
+import { CommonButtonFull } from "@/components/button";
+import { CustomSelect } from "@/components/select";
 import { PageCard } from "@/components/card";
-import { formatDate, formatDateTime } from "@/utils/dateformat";
 import { PageLoader } from "@/components/loader";
+import { formatDate } from "@/utils/dateformat";
+import { NotifyError, NotifySuccess } from "@/utils/notify";
+
+// Icons
+import {
+  HiArrowLeft,
+  HiOutlineTrash,
+  HiOutlineCheckCircle,
+  HiOutlineClock,
+  HiOutlineDocumentText,
+} from "react-icons/hi";
 
 export default function PartOrderDetail({ params }) {
   const router = useRouter();
+  const isSmallScreen = useMediaQuery({ query: "(max-width: 640px)" });
+  const idRegister = params?.idRegister || "";
+
   const [dataOrder, setDataOrder] = useState({});
-  const [isClient, setIsClient] = useState(false);
   const [dataOrderDetail, setDataOrderDetail] = useState([]);
+  const [isClient, setIsClient] = useState(false);
+  const [loader, setLoader] = useState(true);
+  const [onSubmit, setOnSubmit] = useState(false);
+  const [loaderDelete, setLoaderDelete] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   const groupBudget = [
     { label: "ME01", value: "ME01", title: "Pelumasan" },
@@ -27,389 +43,441 @@ export default function PartOrderDetail({ params }) {
     { label: "ME05", value: "ME05", title: "Spare Part Mesin Produksi" },
   ];
 
-  const [inputAmount, setInputAmount] = useState([]);
-  const [ids, setIds] = useState([]);
   const [listData, setListData] = useState([]);
   const [amountError, setAmountError] = useState([]);
   const [budgetError, setBudgetError] = useState([]);
   const [sellerError, setSellerError] = useState([]);
-  const [dateReceive, setDateReceive] = useState("");
+  const [dateReceive, setDateReceive] = useState(new Date().toISOString().substring(0, 10));
   const [dateReceiveError, setDateReceiveError] = useState(false);
-  const [onSubmit, setOnSubmit] = useState(false);
-  const [loader, setLoader] = useState(true);
-  const [loaderDelete, setLoaderDelete] = useState(false);
 
   const fetch_data = async () => {
-    const apiUrl = `${API_URL}/getorderdetail`;
-    const response = await axios.post(apiUrl, {
-      idRegister: params,
-    });
-
-    if (response.status == 200) {
-      // console.log(response.data["detail"][0].ID_Asset);
-      const order = response.data["order"][0];
-      const detail = response.data["detail"];
-      setDataOrder(order);
-      setDataOrderDetail(detail);
-
-      setLoader(false);
-
-      const list = [];
-      const amountErrorData = [];
-      const budgetErrorData = [];
-      const sellerErrorData = [];
-
-      detail.map((item) => {
-        // console.log(item);
-        list.push({
-          id: item["ids"],
-          amount: "",
-          budget: "",
-          seller: "",
-          stock: item["stock"],
-        });
-        amountErrorData.push(false);
-        budgetErrorData.push(false);
-        sellerErrorData.push(false);
+    try {
+      const response = await axios.post("/api/getorderdetail", {
+        idRegister: idRegister,
       });
-      setListData(list);
-      setAmountError(amountErrorData);
-      setBudgetError(budgetErrorData);
-      setSellerError(sellerErrorData);
-      //console.log(order);
-      //console.log(detail);
-      // setOrderData(list);
+
+      if (response.status === 200) {
+        const order = response.data?.order?.[0] || {};
+        const detail = response.data?.detail || [];
+        setDataOrder(order);
+        setDataOrderDetail(detail);
+
+        const list = [];
+        const aErr = [];
+        const bErr = [];
+        const sErr = [];
+
+        detail.forEach((item) => {
+          list.push({
+            id: item.ids,
+            amount: item.amount || "",
+            budget: item.budget_pos || "",
+            seller: item.seller || "",
+            stock: item.stock,
+          });
+          aErr.push(false);
+          bErr.push(false);
+          sErr.push(false);
+        });
+
+        setListData(list);
+        setAmountError(aErr);
+        setBudgetError(bErr);
+        setSellerError(sErr);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoader(false);
     }
   };
 
   useEffect(() => {
-    console.log(params);
-    fetch_data();
-  }, []);
+    if (idRegister) {
+      fetch_data();
+    }
+    setIsClient(true);
+  }, [idRegister]);
 
   const receive_parts = async () => {
     setOnSubmit(true);
-    let errorReceive = 0;
-    if (dateReceive == "") {
+    let hasErr = false;
+
+    if (!dateReceive) {
       setDateReceiveError(true);
-      errorReceive = 1;
+      hasErr = true;
     } else {
       setDateReceiveError(false);
-      errorReceive = 0;
     }
-    const amount = [...amountError];
-    const budget = [...budgetError];
-    const seller = [...sellerError];
-    let amountCount = [];
-    let budgetCount = [];
-    let sellerCount = [];
-    listData.map((item, index) => {
-      if (item.amount == 0) {
-        amount[index] = true;
-        amountCount.push(1);
+
+    const nextAmountErr = [...amountError];
+    const nextBudgetErr = [...budgetError];
+    const nextSellerErr = [...sellerError];
+
+    listData.forEach((item, idx) => {
+      const amt = Number(item.amount || 0);
+      if (amt <= 0) {
+        nextAmountErr[idx] = true;
+        hasErr = true;
       } else {
-        amount[index] = false;
-        amountCount.push(0);
+        nextAmountErr[idx] = false;
       }
 
-      if (item.budget == "") {
-        budget[index] = true;
-        budgetCount.push(1);
+      if (!item.budget) {
+        nextBudgetErr[idx] = true;
+        hasErr = true;
       } else {
-        budget[index] = false;
-        budgetCount.push(0);
+        nextBudgetErr[idx] = false;
       }
 
-      if (item.seller == "") {
-        seller[index] = true;
-        sellerCount.push(1);
+      if (!item.seller?.trim()) {
+        nextSellerErr[idx] = true;
+        hasErr = true;
       } else {
-        seller[index] = false;
-        sellerCount.push(0);
+        nextSellerErr[idx] = false;
       }
     });
-    setAmountError(amount);
-    setBudgetError(budget);
-    setSellerError(seller);
 
-    const amountSum = amountCount.reduce(
-      (accum, current) => accum + current,
-      0,
-    );
-    const budgetSum = budgetCount.reduce(
-      (accum, current) => accum + current,
-      0,
-    );
-    const sellerSum = sellerCount.reduce(
-      (accum, current) => accum + current,
-      0,
-    );
+    setAmountError(nextAmountErr);
+    setBudgetError(nextBudgetErr);
+    setSellerError(nextSellerErr);
 
-    const allError = errorReceive + amountSum + budgetSum + sellerSum;
+    if (hasErr) {
+      NotifyError("Harap lengkapi harga, pos anggaran, dan supplier untuk semua item");
+      setOnSubmit(false);
+      return;
+    }
 
-    if (allError == 0) {
+    try {
       const user = localStorage.getItem("info");
-      const parseUser = JSON.parse(user);
-      const apiUrl = `${API_URL}/getorderreceived`;
-      const response = await axios.post(apiUrl, {
-        idRegister: params.idRegister,
+      const parseUser = user ? JSON.parse(user) : [{}];
+
+      const res = await axios.post("/api/getorderreceived", {
+        idRegister: idRegister,
         date: dateReceive,
         list: listData,
-        uid: parseUser[0]["Uid"],
+        uid: parseUser[0]?.Uid || "",
       });
 
-      if (response.status == 200) {
-        const result = response.data["response"];
-        NotifySuccess(result);
-        router.back();
+      if (res.status === 200) {
+        NotifySuccess(res.data.response || "Penerimaan barang berhasil disimpan");
+        fetch_data();
       }
+    } catch (e) {
+      NotifyError("Gagal menyimpan penerimaan barang");
+    } finally {
+      setOnSubmit(false);
     }
   };
 
   const delete_order = async () => {
     setLoaderDelete(true);
-    const apiUrl = `${API_URL}/deleteorder`;
-    const response = await axios.post(apiUrl, {
-      idOrder: params,
-    });
+    try {
+      const res = await axios.post("/api/deleteorder", {
+        idOrder: idRegister,
+      });
 
-    if (response.status == 200) {
-      const result = response.data["response"];
-      NotifySuccess(result);
-
-      router.back();
+      if (res.status === 200) {
+        NotifySuccess(res.data.response || "Order berhasil dihapus");
+        router.push("/partsorder");
+      }
+    } catch (e) {
+      NotifyError("Gagal menghapus order");
+    } finally {
+      setLoaderDelete(false);
+      setDeleteConfirm(false);
     }
-    setLoaderDelete(false);
   };
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+  if (!isClient) return null;
 
-  if (!isClient) {
-    return null;
-  }
+  const isClosed = dataOrder.status === 1 || dataOrder.status_def === "CLOSE";
+
+  const renderContent = (
+    <div className="space-y-4">
+      {/* Order Info Banner */}
+      <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
+        <div className="flex items-start justify-between gap-2 border-b border-stroke pb-3 dark:border-strokedark">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-mono text-xs font-bold text-black dark:text-white">
+                {dataOrder.id_register}
+              </span>
+              <span
+                className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                  isClosed ? "bg-success/15 text-success" : "bg-warning/15 text-warning"
+                }`}
+              >
+                {isClosed ? "Diterima / Closed" : "Menunggu Penerimaan / Open"}
+              </span>
+            </div>
+            <h2 className="text-base font-bold text-black dark:text-white">
+              DPM: {dataOrder.dpm}
+            </h2>
+          </div>
+
+          {!isClosed && (
+            deleteConfirm ? (
+              <div className="flex items-center gap-1.5 text-xs">
+                <button
+                  type="button"
+                  disabled={loaderDelete}
+                  onClick={delete_order}
+                  className="font-bold text-danger hover:underline"
+                >
+                  {loaderDelete ? "..." : "Hapus"}
+                </button>
+                <span className="text-stroke dark:text-strokedark">|</span>
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirm(false)}
+                  className="text-body dark:text-bodydark hover:underline"
+                >
+                  Batal
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setDeleteConfirm(true)}
+                className="flex items-center gap-1 text-xs text-danger hover:underline"
+              >
+                <HiOutlineTrash className="text-sm" />
+                <span>Hapus Order</span>
+              </button>
+            )
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-3">
+          <div className="rounded-xl bg-gray-50 p-2.5 dark:bg-meta-4/20">
+            <span className="block text-[10px] text-body dark:text-bodydark">Tanggal Pengajuan</span>
+            <span className="font-semibold text-black dark:text-white">
+              {formatDate(dataOrder.date)}
+            </span>
+          </div>
+
+          <div className="rounded-xl bg-gray-50 p-2.5 dark:bg-meta-4/20">
+            <span className="block text-[10px] text-body dark:text-bodydark">Pemohon (Issued)</span>
+            <span className="font-semibold text-black dark:text-white">
+              {dataOrder.Name || "-"}
+            </span>
+          </div>
+
+          <div className="rounded-xl bg-gray-50 p-2.5 dark:bg-meta-4/20">
+            <span className="block text-[10px] text-body dark:text-bodydark">Tanggal Diterima</span>
+            <span className="font-semibold text-black dark:text-white">
+              {dataOrder.receive_date ? formatDate(dataOrder.receive_date) : "-"}
+            </span>
+          </div>
+
+          <div className="rounded-xl bg-gray-50 p-2.5 dark:bg-meta-4/20">
+            <span className="block text-[10px] text-body dark:text-bodydark">Penerima Gudang</span>
+            <span className="font-semibold text-black dark:text-white">
+              {dataOrder.receiver || "-"}
+            </span>
+          </div>
+        </div>
+
+        {/* Receive Date Input (if still open) */}
+        {!isClosed && (
+          <div className="mt-4 pt-4 border-t border-stroke dark:border-strokedark max-w-xs text-xs">
+            <label className="block font-semibold text-black dark:text-white mb-1">
+              Tanggal Penerimaan Fisik Barang
+            </label>
+            <CommonInput
+              type="date"
+              input={dateReceive}
+              error={dateReceiveError}
+              errorMessage="Wajib diisi"
+              onInputChange={(val) => setDateReceive(val)}
+              onChg={() => setDateReceiveError(false)}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Items List & Receive Form */}
+      <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-black dark:text-white mb-3">
+          Rincian Barang yang Dipesan ({dataOrderDetail.length} item)
+        </h3>
+
+        <div className="space-y-3">
+          {dataOrderDetail.map((item, index) => {
+            const currentItem = listData[index] || {};
+
+            return (
+              <div
+                key={index}
+                className="rounded-xl border border-stroke p-3 dark:border-strokedark bg-gray-50/50 dark:bg-meta-4/10 text-xs space-y-2.5"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <span className="font-semibold text-black dark:text-white text-sm block">
+                      {item.description}
+                    </span>
+                    <span className="text-[11px] text-body dark:text-bodydark font-mono">
+                      {item.stock} {item.id_service ? `• Tiket #${item.id_service}` : ""}
+                    </span>
+                    {item.note && (
+                      <span className="text-[11px] italic text-body dark:text-bodydark block">
+                        Catatan: {item.note}
+                      </span>
+                    )}
+                  </div>
+                  <span className="rounded-lg bg-primary/10 px-2.5 py-1 font-mono font-bold text-primary shrink-0">
+                    {item.quantity} {item.unit}
+                  </span>
+                </div>
+
+                {/* Form fields to receive the item */}
+                {!isClosed ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 border-t border-stroke/60 pt-2.5 dark:border-strokedark/60">
+                    <div>
+                      <label className="block text-[10px] text-body dark:text-bodydark mb-0.5 font-semibold">
+                        Harga Total (Amount)
+                      </label>
+                      <CurrencyInput
+                        placeholder="Rp 0"
+                        input={currentItem.amount}
+                        error={amountError[index]}
+                        errorMessage="Wajib"
+                        onInputChange={(val) => {
+                          const updated = [...listData];
+                          updated[index] = { ...updated[index], amount: val };
+                          setListData(updated);
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] text-body dark:text-bodydark mb-0.5 font-semibold">
+                        Pos Anggaran (Budget)
+                      </label>
+                      <CustomSelect
+                        options={groupBudget}
+                        selectedOption={currentItem.budget}
+                        error={budgetError[index]}
+                        errorMessage="Wajib"
+                        onChange={(e) => {
+                          const updated = [...listData];
+                          updated[index] = { ...updated[index], budget: e.target.value };
+                          setListData(updated);
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] text-body dark:text-bodydark mb-0.5 font-semibold">
+                        Supplier / Penjual
+                      </label>
+                      <CommonInput
+                        placeholder="Nama Toko / Vendor..."
+                        input={currentItem.seller}
+                        error={sellerError[index]}
+                        errorMessage="Wajib"
+                        onInputChange={(val) => {
+                          const updated = [...listData];
+                          updated[index] = { ...updated[index], seller: val };
+                          setListData(updated);
+                        }}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-3 gap-2 border-t border-stroke/60 pt-2 text-[11px] text-body dark:border-strokedark/60 dark:text-bodydark">
+                    <div>
+                      <span className="block text-[10px] opacity-75">Harga</span>
+                      <span className="font-semibold text-black dark:text-white">
+                        Rp {Number(item.amount || 0).toLocaleString("id-ID")}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="block text-[10px] opacity-75">Pos Anggaran</span>
+                      <span className="font-semibold text-black dark:text-white">
+                        {item.budget_pos || "-"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="block text-[10px] opacity-75">Supplier</span>
+                      <span className="font-semibold text-black dark:text-white">
+                        {item.seller || "-"}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Submit Receive Action */}
+        {!isClosed && (
+          <div className="pt-4 mt-4 border-t border-stroke dark:border-strokedark">
+            <CommonButtonFull
+              label="Konfirmasi Penerimaan Barang (Masuk Gudang)"
+              disabled={onSubmit}
+              onload={onSubmit}
+              onClick={receive_parts}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <UserAuth>
-      {loader ? (
-        <PageLoader />
-      ) : (
-        <div className="min-h-screen  bg-boxdark-2">
+      <div className="min-h-screen bg-whiten text-body dark:bg-boxdark-2 dark:text-bodydark">
+        {loader ? (
+          <PageLoader />
+        ) : isSmallScreen ? (
+          /* Mobile View */
+          <div className="flex flex-col min-h-screen pb-16">
+            <div className="sticky top-0 z-40 flex items-center justify-between border-b border-stroke/60 bg-white/80 px-4 py-3 backdrop-blur-md dark:border-strokedark/60 dark:bg-boxdark/80">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 text-black hover:bg-gray-200 dark:bg-meta-4 dark:text-white"
+              >
+                <HiArrowLeft className="text-lg" />
+              </button>
+              <h1 className="text-sm font-bold text-black dark:text-white truncate max-w-[200px]">
+                Rincian Order #{idRegister}
+              </h1>
+              <div className="w-9" />
+            </div>
+
+            <div className="p-4">{renderContent}</div>
+          </div>
+        ) : (
+          /* Desktop View */
           <DefaultLayout>
-            <div className="text-white">
-              <div className="min-h-[calc(100vh-115px)]">
-                <div className="mb-3 flex items-center justify-start">
-                  <div className="text-lg text-white">Order Detail</div>
+            <div className="mx-auto max-w-4xl space-y-6">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => router.back()}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-stroke bg-white text-black hover:bg-gray-50 dark:border-strokedark dark:bg-boxdark dark:text-white transition-all shadow-sm"
+                >
+                  <HiArrowLeft className="text-xl" />
+                </button>
+                <div>
+                  <h1 className="text-xl font-bold text-black dark:text-white">
+                    Rincian Order Pengadaan Barang (DPM)
+                  </h1>
+                  <p className="text-xs text-body dark:text-bodydark">
+                    Formulir verifikasi kedatangan suku cadang dan pemutakhiran stok gudang
+                  </p>
                 </div>
-
-                <PageCard>
-                  <div className="flex flex-row">
-                    <div className="w-full">
-                      <div className="flex justify-evenly">
-                        <div className="w-full">No Register</div>
-                        <div className="w-full">{dataOrder["id_register"]}</div>
-                      </div>
-                      <div className="flex justify-evenly">
-                        <div className="w-full">Date</div>
-                        <div className="w-full">
-                          {formatDate(dataOrder["date"])}
-                        </div>
-                      </div>
-                      <div className="flex justify-evenly">
-                        <div className="w-full">No DPM</div>
-                        <div className="w-full">{dataOrder["dpm"]}</div>
-                      </div>
-                      <div className="flex justify-evenly">
-                        <div className="w-full">Issued </div>
-                        <div className="w-full">{dataOrder["Name"]}</div>
-                      </div>
-                    </div>
-                    <div className="px-5"></div>
-
-                    <div className="w-full">
-                      <div className="flex justify-evenly">
-                        <div className="w-full">Status</div>
-                        <div
-                          className={`w-full ${dataOrder["status"] == 0 ? "text-red" : "text-success"}`}
-                        >
-                          {dataOrder["status"] == 0 ? "Open" : "Close"}
-                        </div>
-                      </div>
-                      <div className="flex justify-evenly">
-                        <div className="w-full">Date Receive</div>
-
-                        {dataOrder["status"] == 1 ? (
-                          <div className="w-full">
-                            {formatDate(dataOrder["receive_date"])}
-                          </div>
-                        ) : (
-                          <div className="w-full">
-                            <CommonInput
-                              type={"date"}
-                              input={dateReceive}
-                              errorMessage="Required"
-                              error={dateReceiveError}
-                              onInputChange={(val) => {
-                                setDateReceive(val);
-                              }}
-                              onChg={() => {
-                                setDateReceiveError(false);
-                              }}
-                            ></CommonInput>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </PageCard>
-                <div className="mb-3" />
-                <PageCard>
-                  <div className="h-[calc(100vh-395px)] w-full overflow-y-auto">
-                    <table className="w-full">
-                      <thead className=" bg-black">
-                        <tr>
-                          <th>No</th>
-                          <th>Description</th>
-                          <th>Quantity</th>
-                          <th>Unit</th>
-                          <th>Type</th>
-                          <th>ID Service</th>
-                          <th>Note</th>
-                          {dataOrder["status"] == 0 ? (
-                            <th>Input Data</th>
-                          ) : (
-                            <>
-                              <th>Amount</th>
-                              <th>Budget Pos</th>
-                              <th>Supplier</th>
-                            </>
-                          )}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {dataOrderDetail.map((item, index) => {
-                          return (
-                            <tr key={index}>
-                              <td className="text-center align-top">
-                                {index + 1}
-                              </td>
-                              <td className="align-top">
-                                {item["description"]}
-                              </td>
-                              <td className="text-center align-top">
-                                {item["quantity"]}
-                              </td>
-                              <td className="text-center align-top">
-                                {item["unit"]}
-                              </td>
-                              <td className="text-center align-top">
-                                {item["stock"]}
-                              </td>
-                              <td className="text-center align-top">
-                                {item["id_service"] == null
-                                  ? "-"
-                                  : item["id_service"]}
-                              </td>
-                              <td className="align-top">{item["note"]}</td>
-
-                              {dataOrder["status"] == 0 ? (
-                                <td>
-                                  <CurrencyInput
-                                    placeholder={"Amount"}
-                                    input={listData[index].amount}
-                                    error={amountError[index]}
-                                    errorMessage="Required"
-                                    onInputChange={(val) => {
-                                      const input = [...listData];
-                                      input[index].amount = val;
-                                      setListData(input);
-                                    }}
-                                    onKeyChange={() => {
-                                      const input = [...amountError];
-                                      input[index] = false;
-                                      setAmountError(input);
-                                    }}
-                                  >
-                                    Rp.
-                                  </CurrencyInput>
-                                  <CustomSelect
-                                    optionData={groupBudget}
-                                    placeholder={"Select budget"}
-                                    error={budgetError[index]}
-                                    errorMessage="Required"
-                                    mode={1}
-                                    onSelected={(option) => {
-                                      const input = [...listData];
-                                      input[index].budget = option.value;
-                                      setListData(input);
-
-                                      const input1 = [...budgetError];
-                                      input1[index] = false;
-                                      setBudgetError(input1);
-                                    }}
-                                  />
-                                  <CommonInput
-                                    placeholder={"Enter seller name"}
-                                    error={sellerError[index]}
-                                    errorMessage="Required"
-                                    onInputChange={(val) => {
-                                      const input = [...listData];
-                                      input[index].seller = val;
-                                      setListData(input);
-                                    }}
-                                    onKeyChange={() => {
-                                      const input = [...sellerError];
-                                      input[index] = false;
-                                      setSellerError(input);
-                                    }}
-                                  ></CommonInput>
-                                </td>
-                              ) : (
-                                <>
-                                  <td>{item["amount"]}</td>
-                                  <td>{item["budget_pos"]}</td>
-                                  <td>{item["seller"]}</td>
-                                </>
-                              )}
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                  {dataOrder["status"] == 0 ? (
-                    <>
-                      <hr className="my-5"></hr>
-                      <div className="flex justify-end">
-                        <CommonButtonColor
-                          label={"Delete"}
-                          color1={"bg-red"}
-                          color2={"bg-meta-1"}
-                          onload={loaderDelete}
-                          disabled={loaderDelete}
-                          onClick={delete_order}
-                        ></CommonButtonColor>
-                        <div className="mr-3"></div>
-                        <CommonButton
-                          label={"Receive"}
-                          onClick={() => {
-                            receive_parts();
-                          }}
-                          onload={onSubmit}
-                          disabled={onsubmit}
-                        ></CommonButton>
-                      </div>
-                    </>
-                  ) : (
-                    <></>
-                  )}
-                </PageCard>
               </div>
+
+              {renderContent}
             </div>
           </DefaultLayout>
-        </div>
-      )}
+        )}
+      </div>
     </UserAuth>
   );
 }

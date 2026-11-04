@@ -40,31 +40,34 @@ export default function Page({ params }) {
   const [onload, setOnload] = useState(false);
 
   const fetch_data = async () => {
-    const apiUrl = `${API_URL}/getdatetimerequest`;
-    const response = await axios.post(apiUrl, {
-      idRequest: params.idRequest,
-    });
+    try {
+      const response = await axios.post("/api/getdatetimerequest", {
+        idRequest: params.idRequest,
+      });
 
-    if (response.status == 200) {
-      const array = response.data["response"];
-      setData(array[0]);
+      if (response.status === 200 && response.data?.response?.[0]) {
+        setData(response.data.response[0]);
+      }
+    } catch (err) {
+      console.error("Gagal load datetime request:", err);
     }
   };
 
   const update_date = async (datetime) => {
-    const apiUrl = `${API_URL}/updatealltime`;
-    const response = await axios.post(apiUrl, {
-      idRequest: params.idRequest,
-      mode: editItem,
-      datetime: datetime,
-    });
+    try {
+      const response = await axios.post("/api/updatealltime", {
+        idRequest: params.idRequest,
+        mode: editItem,
+        datetime: datetime,
+      });
 
-    if (response.status == 200) {
-      const resp = response.data["response"];
-      console.log(resp);
-      NotifySuccess("Updating success");
-      setModalEdit(false);
-      fetch_data();
+      if (response.status === 200) {
+        NotifySuccess("Updating success");
+        setModalEdit(false);
+        fetch_data();
+      }
+    } catch (err) {
+      console.error("Gagal update datetime:", err);
     }
   };
 

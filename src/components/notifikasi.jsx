@@ -12,31 +12,34 @@ export default function Notifikasi() {
   const [loaderClose, setLoaderClose] = useState(false);
 
   const fetch_data = async () => {
-    console.log("wow");
-    console.log(uid);
-    const apiUrl = `${API_URL}/checkpending`;
-    const response = await axios.post(apiUrl, {
-      uid: uid,
-    });
+    try {
+      const response = await axios.post("/api/checkpending", {
+        uid: uid,
+      });
 
-    if (response.status == 200) {
-      console.log(response.data);
-      const count = response.data["response"];
-      setPendingCount(count);
+      if (response.status === 200) {
+        const count = response.data["response"] || 0;
+        setPendingCount(count);
+      }
+    } catch (err) {
+      console.error("checkpending error:", err);
     }
   };
 
   const close_pending = async () => {
     setLoaderClose(true);
+    try {
+      const response = await axios.post("/api/closepending", {
+        uid: uid,
+      });
 
-    const apiUrl = `${API_URL}/closepending`;
-    const response = await axios.post(apiUrl, {
-      uid: uid,
-    });
-
-    if (response.status == 200) {
+      if (response.status === 200) {
+        setPendingCount(0);
+      }
+    } catch (err) {
+      console.error("closepending error:", err);
+    } finally {
       setLoaderClose(false);
-      console.log(response.data);
     }
   };
 

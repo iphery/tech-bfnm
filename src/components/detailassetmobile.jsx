@@ -1,67 +1,52 @@
 "use client";
-import { Appbar } from "@/components/appbar";
-import UserAuth from "@/components/auth";
-import Loader from "@/components/common/Loader";
-import { CommonInput, CommonTextArea } from "@/components/input";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
-import {
-  API_URL,
-  IMAGE_ASSET,
-  IMAGE_USER,
-  IMAGE_GALLERY,
-} from "@/utils/constant";
-import axios from "axios";
-import { useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import { HiAcademicCap, HiLocationMarker, HiSearch } from "react-icons/hi";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import axios from "axios";
+import UserAuth from "@/components/auth";
+import { CommonInput, CommonTextArea } from "@/components/input";
+import { CommonButtonFull } from "./button";
+import { PageLoader } from "./loader";
+import { CustomModal } from "./modal";
+import { ProgressCard, ProgressSummary } from "@/components/card";
+import { useProvider } from "@/app/appcontext";
+import { formatDateTime, getCurrentDate, getCurrentTime } from "@/utils/dateformat";
+import paginateData from "@/utils/pagination";
+import { NotifyError, NotifySuccess } from "@/utils/notify";
+import { RepairStatus } from "@/utils/repairstatus";
+import { IMAGE_ASSET, IMAGE_USER, IMAGE_GALLERY } from "@/utils/constant";
+import Pemanasan from "@/components/pemanasan";
+
+// Icons
 import {
   HiArrowLeft,
-  HiCalendar,
-  HiCamera,
   HiOutlineUser,
   HiUser,
+  HiLocationMarker,
+  HiSearch,
+} from "react-icons/hi";
+import {
+  HiCalendar,
+  HiOutlineClock,
+  HiOutlineWrenchScrewdriver,
+  HiSparkles,
 } from "react-icons/hi2";
 import {
-  MdAdd,
-  MdChecklist,
-  MdMedicalServices,
   MdOutlineClose,
   MdOutlineMiscellaneousServices,
   MdOutlinePhotoCamera,
   MdOutlinePhotoCameraFront,
+  MdMedicalServices,
+  MdAdd,
 } from "react-icons/md";
-import { useMediaQuery } from "react-responsive";
-import {
-  formatDateTime,
-  getCurrentDate,
-  getCurrentTime,
-} from "@/utils/dateformat";
-import paginateData from "@/utils/pagination";
-import { IoTime, IoTimeOutline } from "react-icons/io5";
-import DetailAssetWeb from "@/components/detailassetweb";
-import { ProgressCard, ProgressSummary } from "@/components/card";
-import Image from "next/image";
-import { CommonLoader, PageLoader } from "./loader";
-import { CommonButton, CommonButtonFull } from "./button";
-import { NotifyError, NotifySuccess } from "@/utils/notify";
-import { RepairStatus } from "@/utils/repairstatus";
-import { CiEdit } from "react-icons/ci";
 import { FaCalendarAlt, FaCheckSquare } from "react-icons/fa";
-import { CustomModal } from "./modal";
-import {
-  RiCalendarScheduleFill,
-  RiDeleteBin2Line,
-  RiRefreshFill,
-} from "react-icons/ri";
-import { TfiSave } from "react-icons/tfi";
-import { LuRefreshCw } from "react-icons/lu";
-import { DataProvider, useProvider } from "@/app/appcontext";
 import { BsFillFuelPumpFill, BsFire } from "react-icons/bs";
-import { BiVerticalCenter } from "react-icons/bi";
-import Pemanasan from "@/components/pemanasan";
+import { RiCalendarScheduleFill, RiDeleteBin2Line } from "react-icons/ri";
+import { LuRefreshCw } from "react-icons/lu";
+import { CiEdit } from "react-icons/ci";
+import { TfiSave } from "react-icons/tfi";
 
 export default function DetailAssetMobile({ idAsset }) {
-  //params.idAsset
   const router = useRouter();
   const [isClient, setIsClient] = useState(false);
 
@@ -73,7 +58,7 @@ export default function DetailAssetMobile({ idAsset }) {
   const [keyword, setKeyword] = useState("");
   const [keywordError, setKeywordError] = useState(false);
   const [switchPage, setSwitchPage] = useState(false);
-  const [selectedCase, setSelectedCase] = useState([]);
+  const [selectedCase, setSelectedCase] = useState({});
 
   const [itemPerPage, setItemPerPage] = useState(5);
   const [filteredDataService, setFilteredDataService] = useState([]);
@@ -86,9 +71,6 @@ export default function DetailAssetMobile({ idAsset }) {
   const [servisList, setServisList] = useState([]);
   const [caseLoaderOrder, setCaseLoaderOrder] = useState(false);
   const [caseLoaderCompleted, setCaseLoaderCompleted] = useState(false);
-  const [caseLoaderPart, setCaseLoaderPart] = useState(false);
-  const [caseLoaderChecked, setCaseLoaderChecked] = useState(false);
-  const [caseLoaderAccepted, setCaseLoaderAccepted] = useState(false);
   const [pmList, setpmList] = useState([]);
   const [pmTempList, setpmTempList] = useState([]);
   const [pmEditMode, setpmEditMode] = useState(false);
@@ -98,24 +80,20 @@ export default function DetailAssetMobile({ idAsset }) {
   const [userLevel, setUserLevel] = useState("");
 
   const [caseSolution, setCaseSolution] = useState("");
-  const [showSolution, setShowSolution] = useState("");
   const [caseSolutionError, setCaseSolutionError] = useState(false);
 
-  const [requestId, setRequestId] = useState("");
   const [updatedStep, setUpdatedStep] = useState("");
   const [onloadPM, setOnloadPM] = useState(false);
 
   const [responseTime, setResponseTime] = useState("");
   const [repairTime, setRepairTime] = useState("");
-  const [onloadRequestService, setOnloadRequestService] = useState(false);
 
   const [loadDetailService, setLoadDetailService] = useState(false);
   const [modalPerbaikan, setModalPerbaikan] = useState(false);
   const [modalPerawatan, setModalPerawatan] = useState(false);
 
   const [inputRequestPerbaikan, setInputRequestPerbaikan] = useState("");
-  const [inputRequestPerbaikanError, setInputRequestPerbaikanError] =
-    useState(false);
+  const [inputRequestPerbaikanError, setInputRequestPerbaikanError] = useState(false);
   const [onloadRequestPerbaikan, setOnloadRequestPerbaikan] = useState(false);
 
   const [inputKM, setInputKM] = useState("");
@@ -128,14 +106,11 @@ export default function DetailAssetMobile({ idAsset }) {
   const [switchDelete, setSwitchDelete] = useState(false);
   const [onloadDelete, setOnloadDelete] = useState(false);
   const [resetAsset, setResetAsset] = useState(false);
-  const { cameraResult, setCameraResult } = useProvider();
-  const { globalIdAsset, setGlobalIdAsset } = useProvider();
+  const { setCameraResult, setGlobalIdAsset } = useProvider();
 
   const [lastSeen, setLastSeen] = useState("");
   const [ratio, setRatio] = useState("");
   const [nextService, setNextService] = useState("");
-
-  const [test] = useState([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
 
   const [currentDate, setCurrentDate] = useState("");
   const [currentTime, setCurrentTime] = useState("");
@@ -145,1392 +120,1327 @@ export default function DetailAssetMobile({ idAsset }) {
   const [modalReceivePart, setModalReceivePart] = useState(false);
 
   const fetch_data = async () => {
-    const apiUrl = `${API_URL}/fetchassetdetail`;
-    const response = await axios.post(apiUrl, {
-      idAsset: idAsset,
-    });
+    try {
+      const response = await axios.post("/api/fetchassetdetail", {
+        idAsset: idAsset,
+      });
 
-    if (response.status == 200) {
-      // console.log(response.data["detail"][0].ID_Asset);
-      const detail = response.data["detail"][0];
-      const open_service = response.data["open_service"];
-      const open_maintenance = response.data["open_maintenance"];
-      console.log(detail);
-      setDataAsset(detail);
-      setOpenService(open_service);
-      setOpenMaintenance(open_maintenance);
-      setLastSeen(response.data["last_seen"]);
-      setRatio(response.data["ratio"]);
-      setNextService(response.data["next_service"]);
+      if (response.status === 200 && response.data?.detail?.length > 0) {
+        const detail = response.data["detail"][0];
+        setDataAsset(detail);
+        setOpenService(response.data["open_service"]);
+        setOpenMaintenance(response.data["open_maintenance"]);
+        setLastSeen(response.data["last_seen"]);
+        setRatio(response.data["ratio"]);
+        setNextService(response.data["next_service"]);
 
-      const user = localStorage.getItem("info");
-      const parseUser = JSON.parse(user);
-      console.log(parseUser);
-      setUid(parseUser[0]["Uid"]);
-      setUserLevel(parseUser[0]["Level"]);
+        const user = localStorage.getItem("info");
+        if (user) {
+          const parseUser = JSON.parse(user);
+          setUid(parseUser[0]?.["Uid"] || "");
+          setUserLevel(parseUser[0]?.["Level"] || "");
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setFirstLoading(false);
+      setSecondLoading(true);
     }
-    setFirstLoading(false);
-    setSecondLoading(true);
   };
 
   const fetch_data_service = async () => {
-    const apiUrl = `${API_URL}/fetchassetservice`;
-    const response = await axios.post(apiUrl, {
-      idAsset: idAsset,
-      // keyword: keyword,
-    });
+    try {
+      const response = await axios.post("/api/fetchassetservice", {
+        idAsset: idAsset,
+      });
 
-    if (response.status == 200) {
-      const array = response.data["service"];
-      console.log(array);
-
-      setDataService(array);
+      if (response.status === 200) {
+        setDataService(response.data["service"] || []);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setSecondLoading(false);
     }
-    setSecondLoading(false);
   };
 
   const fetch_detail_service = async (id) => {
     setLoadDetailService(true);
-    //console.log(id);
-    const apiUrl = `${API_URL}/fetchdetailservice`;
-    const response = await axios.post(apiUrl, {
-      idRequest: id,
-    });
+    try {
+      const response = await axios.post("/api/fetchdetailservice", {
+        idRequest: id,
+      });
 
-    if (response.status == 200) {
-      const array = response.data["response"][0];
-      const parts = response.data["parts"];
-      const galleries = response.data["galleries"];
-      const respTime = response.data["response_time"];
-      const reprTime = response.data["repair_time"];
-      const servis = response.data["servis"];
-      setSelectedCase(array);
-      setPartList(parts);
-      setGalleryList(galleries);
-      setServisList(servis);
-      //console.log(array);
-      const checkList = array["new_checklist"];
-      setpmList([]);
-      setpmTempList([]);
-      console.log(response);
-      if (checkList != "" && checkList != null) {
-        const pmparsed = JSON.parse(checkList);
-        setpmList(pmparsed);
-        setpmTempList(pmparsed);
+      if (response.status === 200) {
+        const detail = response.data["response"]?.[0] || {};
+        setSelectedCase(detail);
+        setPartList(response.data["parts"] || []);
+        setGalleryList(response.data["galleries"] || []);
+        setServisList(response.data["servis"] || []);
+        setResponseTime(response.data["response_time"] || "-");
+        setRepairTime(response.data["repair_time"] || "-");
+
+        const checkList = detail["new_checklist"];
+        setpmList([]);
+        setpmTempList([]);
+        if (checkList && checkList !== "") {
+          try {
+            const pmparsed = typeof checkList === "string" ? JSON.parse(checkList) : checkList;
+            setpmList(pmparsed);
+            setpmTempList(pmparsed);
+          } catch (err) {
+            console.error("Checklist parse error:", err);
+          }
+        }
       }
-
-      console.log(respTime);
-      console.log(reprTime);
-
-      setResponseTime(respTime);
-      setRepairTime(reprTime);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadDetailService(false);
     }
-    setLoadDetailService(false);
   };
 
   useEffect(() => {
     fetch_data();
-    console.log("wkwkw");
-    console.log(idAsset);
-  }, [keyword]);
+  }, [idAsset, keyword]);
 
   useEffect(() => {
-    fetch_data_service();
+    if (dataAsset?.ID_Asset) {
+      fetch_data_service();
+    }
   }, [dataAsset]);
 
   useEffect(() => {
     const filterService = dataService.filter((item) =>
-      item["Problem"].toLowerCase().includes(keyword.toLowerCase()),
+      (item["Problem"] || "").toLowerCase().includes(keyword.toLowerCase())
     );
     const { data, pageCurrent, pageLast } = paginateData(
       filterService,
-
       currentPage,
-      itemPerPage,
+      itemPerPage
     );
     setFilteredDataService(data);
     setLastPage(pageLast);
-    //setItemPerPage(5);
-    if (pageCurrent < pageLast) {
-      setShowLoadMore(true);
-    } else {
-      setShowLoadMore(false);
+    setShowLoadMore(pageCurrent < pageLast);
+  }, [keyword, dataService, itemPerPage, currentPage]);
+
+  const do_action = async (step, id_request) => {
+    try {
+      const user = localStorage.getItem("info");
+      const parseUser = user ? JSON.parse(user) : [{}];
+      const response = await axios.post("/api/updatecase", {
+        idRequest: id_request,
+        status: step,
+        solution: caseSolution,
+        uid: parseUser[0]?.["Uid"],
+        receivePart: receiveDateTime,
+      });
+
+      if (response.status === 200) {
+        const detail = response.data["response"];
+        const error = response.data["error"];
+        if (error === 1) {
+          NotifyError(detail);
+        } else {
+          NotifySuccess(detail);
+        }
+      }
+      fetch_detail_service(id_request);
+    } catch (e) {
+      NotifyError("Gagal memperbarui status");
+    } finally {
+      setCaseLoaderOrder(false);
+      setCaseLoaderCompleted(false);
     }
-    console.log(data);
-    console.log(pageLast);
-  }, [keyword, dataService, itemPerPage]);
+  };
 
   useEffect(() => {
     const idRequest = localStorage.getItem("selected_idRequest");
-
-    if (updatedStep != "") {
+    if (updatedStep !== "") {
       do_action(updatedStep, idRequest);
       setUpdatedStep("");
     }
   }, [updatedStep]);
 
-  const do_action = async (step, id_request) => {
-    const user = localStorage.getItem("info");
-    const parseUser = JSON.parse(user);
-    const apiUrl = `${API_URL}/updatecase`;
-    const response = await axios.post(apiUrl, {
-      idRequest: id_request,
-      status: step,
-      solution: caseSolution,
-      uid: parseUser[0]["Uid"],
-      receivePart: receiveDateTime,
-    });
-
-    if (response.status == 200) {
-      // console.log(response.data["detail"][0].ID_Asset);
-      const detail = response.data["response"];
-      const error = response.data["error"];
-      if (error == 1) {
-        NotifyError(detail);
-      } else {
-        NotifySuccess(detail);
-      }
-    }
-    fetch_detail_service(id_request);
-
-    setCaseLoaderOrder(false);
-    setCaseLoaderCompleted(false);
-  };
-
   const create_maintenance = async (idasset) => {
-    const user = localStorage.getItem("info");
-    const parseUser = JSON.parse(user);
-    const uid = parseUser[0]["Uid"];
+    try {
+      const user = localStorage.getItem("info");
+      const parseUser = user ? JSON.parse(user) : [{}];
+      const userUid = parseUser[0]?.["Uid"];
 
-    setOnloadRequestPerawatan(true);
-    const apiUrl = `${API_URL}/createmaintenance`;
-    const response = await axios.post(apiUrl, {
-      idAsset: idasset,
+      setOnloadRequestPerawatan(true);
+      const response = await axios.post("/api/createmaintenance", {
+        idAsset: idasset,
+        uid: userUid,
+      });
 
-      uid: uid,
-    });
-
-    if (response.status == 200) {
-      const msg = response.data["message"];
-      NotifySuccess(msg);
-      fetch_data_service();
+      if (response.status === 200) {
+        NotifySuccess(response.data["message"] || "Permintaan perawatan dibuat");
+        fetch_data();
+        fetch_data_service();
+      }
+    } catch (e) {
+      NotifyError("Gagal membuat perawatan");
+    } finally {
+      setOnloadRequestPerawatan(false);
     }
-
-    setOnloadRequestPerawatan(false);
   };
 
   useEffect(() => {
     const qr = localStorage.getItem("qrcode_case");
-    if (qr != "") {
+    if (qr && qr !== "") {
       localStorage.setItem("qrcode_case", "");
-      if (qr != idAsset) {
+      if (qr !== idAsset) {
         NotifyError("Invalid QRCode");
       } else {
         setUpdatedStep("received");
       }
     }
-  }, [router]);
+  }, [router, idAsset]);
 
   useEffect(() => {
     setCurrentDate(getCurrentDate());
     setCurrentTime(getCurrentTime());
-  }, []);
-
-  useEffect(() => {
     setIsClient(true);
   }, []);
 
-  if (!isClient) {
-    return null;
-  }
+  if (!isClient) return null;
 
   return (
     <UserAuth>
-      <div className="relative">
-        <div className="absolute z-0 h-full w-full">
-          {!firstLoading ? (
-            <div className="min-h-screen  justify-center bg-boxdark-2">
-              <div className="relative">
-                <div className="absolute left-5 top-5 z-30">
-                  <div
-                    className="rounded-full bg-white p-2"
-                    onClick={() => {
-                      router.back();
+      <div className="min-h-screen bg-whiten text-body dark:bg-boxdark-2 dark:text-bodydark pb-16">
+        {firstLoading ? (
+          <PageLoader />
+        ) : (
+          <div className="mx-auto max-w-lg">
+            {/* Top Navigation Bar */}
+            <div className="sticky top-0 z-40 flex items-center justify-between border-b border-stroke/60 bg-white/80 px-4 py-3 backdrop-blur-md dark:border-strokedark/60 dark:bg-boxdark/80">
+              <button
+                type="button"
+                onClick={() => {
+                  if (switchPage) {
+                    setSwitchPage(false);
+                  } else {
+                    router.back();
+                  }
+                }}
+                className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 text-black hover:bg-gray-200 dark:bg-meta-4 dark:text-white transition-colors"
+              >
+                <HiArrowLeft className="text-lg" />
+              </button>
+              <div className="flex flex-col items-center">
+                <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+                  {switchPage ? "Detail Servis" : "Detail Aset"}
+                </span>
+                <span className="text-sm font-bold text-black dark:text-white">
+                  {switchPage ? selectedCase?.ID_Request : dataAsset.ID_Asset}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                {/* Reset Asset Button for Admin */}
+                {parseInt(userLevel) === 0 && !switchPage && (
+                  <button
+                    type="button"
+                    title="Reset Status Aset"
+                    onClick={async () => {
+                      setResetAsset(true);
+                      try {
+                        const response = await axios.post("/api/resetasset", {
+                          idAsset: dataAsset.ID_Asset,
+                        });
+                        if (response.status === 200) {
+                          NotifySuccess(response.data["message"] || "Status di-reset");
+                          fetch_data();
+                        }
+                      } catch (e) {
+                        NotifyError("Gagal reset status aset");
+                      } finally {
+                        setResetAsset(false);
+                      }
                     }}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary hover:bg-primary/20 dark:bg-primary/20 transition-colors"
                   >
-                    <HiArrowLeft className="text-black" />
-                  </div>
-                </div>
+                    <LuRefreshCw className={`text-base ${resetAsset ? "animate-spin" : ""}`} />
+                  </button>
+                )}
+                {/* Pemanasan Quick Trigger */}
+                {dataAsset.ID_Asset === "BFNMF0402" && (
+                  <button
+                    type="button"
+                    onClick={() => router.push("/pemanasan")}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-danger/10 text-danger hover:bg-danger/20 transition-colors"
+                  >
+                    <BsFire className="text-base" />
+                  </button>
+                )}
+              </div>
+            </div>
 
-                <div className="absolute left-2 top-40 z-30">
-                  <div className="text-lg text-white">{dataAsset.ID_Asset}</div>
-                  <div className=" text-white">{`${dataAsset.Description} `}</div>
-                  <div className="text-white">{`${dataAsset.Manufacture} `}</div>
-                </div>
-                <div className="absolute  z-20 w-full p-2">
-                  <div className="flex justify-end">
-                    <div className="flex flex-col items-center">
-                      <div className="m-2 flex h-16 w-16 items-center justify-center rounded-full bg-white">
-                        {dataAsset.Profile_Image == null ||
-                        dataAsset.Profile_Image == "" ? (
-                          <div className="">
-                            <HiOutlineUser />
-                          </div>
-                        ) : (
-                          <img
-                            className=" h-16 w-16 rounded-full border border-white  object-cover shadow-lg"
-                            src={`${IMAGE_USER}/${dataAsset.Profile_Image}`}
-                          />
-                        )}
-                      </div>
-                      <div className="mb-2"></div>
-                      <div
-                        onClick={() => {
-                          setCameraResult("asset_user");
-                          setGlobalIdAsset(dataAsset.ID_Asset);
-                          router.push("/camera");
-                        }}
-                        className="m-2 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-lg"
-                      >
-                        <MdOutlinePhotoCameraFront className="h-6 w-6" />
-                      </div>
-                      <div
-                        onClick={() => {
-                          setCameraResult("asset_image");
-                          setGlobalIdAsset(dataAsset.ID_Asset);
-                          router.push("/camera");
-                        }}
-                        className="m-2 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-lg"
-                      >
-                        <MdOutlinePhotoCamera className="h-6 w-6" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="h-[250px] w-full ">
-                  {dataAsset.Image == null || dataAsset.Image == "" ? (
-                    <div className="flex h-100 items-center justify-center">
-                      No Image
-                    </div>
-                  ) : (
-                    <img
-                      className="h-[250px] w-full object-cover"
-                      src={`${IMAGE_ASSET}/${dataAsset.Image}`}
-                    />
-                  )}
-                </div>
-                <div className="bg-form-strokedark">
-                  <div className="p-2 text-white">Detail Info</div>
-                </div>
-                <div className="mb-2"></div>
-                <div className="flex flex-row items-center px-2 py-1 text-warning">
-                  <HiUser />
-                  <div className="ml-2">{dataAsset.User}</div>
-                </div>
-                <div className="flex flex-row items-center px-2 py-1 text-warning">
-                  <HiLocationMarker />
-                  <div className="ml-2">{dataAsset.Location}</div>
-                </div>
-                <div className="flex flex-row items-center px-2 py-1 text-warning">
-                  <MdOutlineMiscellaneousServices />
-                  <div className="ml-2">
-                    {dataAsset.Available == 1 && dataAsset.Reserve == 1
-                      ? "Reserved for service"
-                      : dataAsset.Available == 0 && dataAsset.Reserve == 1
-                        ? "On Maintenance"
-                        : "Ready"}
-                  </div>
-                </div>
-                {dataAsset.Type == "K" && dataAsset.Based == "KM" ? (
-                  <div>
-                    <div className="flex flex-row items-center px-2 py-1 text-warning">
-                      <BsFillFuelPumpFill />
-                      <div className="ml-2">{`${lastSeen} (${ratio})`}</div>
-                    </div>
+            {/* MAIN CONTENT: Either Detail Case Screen or Asset Overview */}
+            {switchPage ? (
+              /* ================= DETAIL SERVIS CASE VIEW ================= */
+              <div className="p-4 space-y-4">
+                {loadDetailService ? (
+                  <div className="flex flex-col items-center justify-center py-16 gap-3">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    <span className="text-sm text-body dark:text-bodydark">Memuat detail pengerjaan...</span>
                   </div>
                 ) : (
-                  <></>
-                )}
-                <div className="flex flex-row items-center px-2 py-1 text-warning">
-                  <FaCalendarAlt />
-                  <div className="ml-2">{nextService}</div>
-                </div>
-
-                {switchPage ? (
-                  <></>
-                ) : (
-                  <div className="flex justify-end">
-                    {openService == 1 ? (
-                      <></>
-                    ) : parseInt(userLevel) == 4 ? (
-                      <div
-                        className="rounded-full bg-white  p-1  text-danger"
-                        onClick={() => {
-                          setModalPerbaikan(true);
-                        }}
-                      >
-                        <MdMedicalServices className="h-6 w-6" />
-                      </div>
-                    ) : (
-                      <></>
-                    )}
-                    <div className="mr-5"></div>
-                    {openMaintenance == 1 ? (
-                      <></>
-                    ) : parseInt(userLevel) <= 2 ||
-                      (dataAsset.Type == "K" &&
-                        dataAsset.Based == "KM" &&
-                        parseInt(userLevel) == 4) ? (
-                      <div
-                        className="rounded-full bg-white p-1 text-warning"
-                        onClick={async () => {
-                          if (!onloadRequestPerawatan) {
-                            if (dataAsset.Type == "K") {
-                              //untuk mobil
-                              setModalPerawatan(true);
-                            } else {
-                              create_maintenance(dataAsset.ID_Asset);
-                              //kirim ke server//
-                            }
-                          }
-                        }}
-                      >
-                        {onloadRequestPerawatan ? (
-                          <div
-                            className={`h-6 w-6 animate-spin rounded-full border-2 border-solid border-warning border-t-transparent`}
-                          ></div>
-                        ) : (
-                          <RiCalendarScheduleFill className="h-6 w-6" />
-                        )}
-                      </div>
-                    ) : (
-                      <></>
-                    )}
-
-                    <div className="mr-5"></div>
-
-                    {parseInt(userLevel) == 0 ? (
-                      <div className="flex flex-row">
-                        <div
-                          className="rounded-full bg-white p-1 text-warning"
-                          onClick={async () => {
-                            setResetAsset(true);
-
-                            const apiUrl = `${API_URL}/resetasset`;
-                            const response = await axios.post(apiUrl, {
-                              idAsset: dataAsset.ID_Asset,
-                            });
-
-                            if (response.status == 200) {
-                              // console.log(response.data["detail"][0].ID_Asset);
-                              const message = response.data["message"];
-                              fetch_data();
-                              NotifySuccess(message);
-                            }
-
-                            setResetAsset(false);
-                          }}
-                        >
-                          {resetAsset ? (
-                            <div
-                              className={`h-6 w-6 animate-spin rounded-full border-2 border-solid border-success border-t-transparent`}
-                            ></div>
-                          ) : (
-                            <LuRefreshCw className="h-6 w-6 text-success" />
-                          )}
-                        </div>
-                        <div className="mr-5"></div>
-                      </div>
-                    ) : (
-                      <></>
-                    )}
-                  </div>
-                )}
-                {dataAsset.ID_Asset == "BFNMF0402" ? (
                   <>
-                    <div className="mt-2 flex items-center bg-form-strokedark">
-                      <div className="p-2 text-white">Pemanasan</div>
-                      <div
-                        onClick={() => {
-                          router.push("/pemanasan");
-                        }}
-                      >
-                        <BsFire className="text-danger" />
-                      </div>
-                    </div>
-                    <Pemanasan />
-                  </>
-                ) : (
-                  <></>
-                )}
-
-                <div className="mt-2 bg-form-strokedark">
-                  <div className="p-2 text-white">Riwayat Perbaikan</div>
-                </div>
-                {!switchPage ? (
-                  <>
-                    {
-                      <div className="p-2">
-                        <CommonInput
-                          placeholder={"Search"}
-                          input={keyword}
-                          onInputChange={(val) => {
-                            setKeyword(val);
-                          }}
-                          onKeyChange={() => {
-                            setKeywordError(false);
-                          }}
-                          error={keywordError}
-                          type={"text"}
-                        >
-                          <HiSearch />
-                        </CommonInput>
-                      </div>
-                    }
-
-                    {filteredDataService.map((item, index) => {
-                      const cardStatus = RepairStatus(item["Step"]);
-                      const checklist = item["new_checklist"];
-                      return (
-                        <div
-                          onClick={() => {
-                            setSwitchPage(true);
-
-                            fetch_detail_service(item["ID_Request"]);
-                            localStorage.setItem(
-                              "selected_idRequest",
-                              item["ID_Request"],
-                            );
-                          }}
-                          className="p-2"
-                          key={index}
-                        >
-                          <div className="flex justify-start">
-                            <div>{item["ID_Request"]}</div>
-                            {item["Maintenance_Type"] == "PM" ? (
-                              <div className="ml-2 flex items-center rounded-lg bg-white px-2 text-xs">
-                                Rutin
-                              </div>
-                            ) : (
-                              <></>
-                            )}
-
-                            <div
-                              className={`ml-2 flex items-center rounded-lg ${cardStatus.color} px-2 text-xs text-white`}
-                            >
-                              {cardStatus.status}
-                            </div>
-                          </div>
-
-                          <div className="bg-grey flex flex-row">
-                            <div className="flex items-center justify-start">
-                              <HiOutlineUser className="mr-2" />
-                              <div>{item["Requestor"]}</div>
-                            </div>
-
-                            <div className="mr-10"></div>
-                            <div className="flex items-center justify-start">
-                              <IoTimeOutline className="mr-2" />
-                              <div>{formatDateTime(item["Time_Request"])}</div>
-                            </div>
-                          </div>
-                          <div>{item["Problem"]}</div>
-                        </div>
-                      );
-                    })}
-
-                    {showLoadMore ? (
-                      <div
-                        onClick={() => {
-                          const nextItem = itemPerPage + 5;
-                          setItemPerPage(nextItem);
-                        }}
-                        className="flex  cursor-default justify-center py-5 text-white"
-                      >
-                        Load more..
-                      </div>
-                    ) : (
-                      <></>
-                    )}
-                  </>
-                ) : loadDetailService ? (
-                  <div className="mt-10 flex justify-center text-white">
-                    Please wait.. fetching data
-                  </div>
-                ) : (
-                  <div>
-                    <div className="flex  items-center justify-between p-2 ">
-                      <div
-                        onClick={() => {
-                          setSwitchPage(false);
-                        }}
-                        className="flex h-6 w-6 items-center justify-center rounded-full bg-white"
-                      >
-                        <MdOutlineClose></MdOutlineClose>
-                      </div>
-                      {selectedCase.Maintenance_Type == "PM" &&
-                      parseInt(selectedCase.Step) >= 2 &&
-                      parseInt(selectedCase.Step) <= 6 ? (
-                        pmList.length > 0 ? (
-                          <></>
-                        ) : (
-                          <div
-                            className="p-1 text-success"
-                            onClick={async () => {
-                              setOnloadAddChecklist(true);
-
-                              const apiUrl = `${API_URL}/addchecklist`;
-                              const response = await axios.post(apiUrl, {
-                                idRequest: selectedCase.ID_Request,
-                                idAsset: selectedCase.ID_Asset,
-                              });
-
-                              if (response.status == 200) {
-                                // console.log(response.data["detail"][0].ID_Asset);
-                                const detail = response.data["response"];
-                                fetch_detail_service(selectedCase.ID_Request);
-                                NotifySuccess(detail);
-                              }
-
-                              setOnloadAddChecklist(false);
-
-                              console.log(selectedCase.ID_Request);
-                              console.log(selectedCase.ID_Asset);
-                            }}
-                          >
-                            {onloadAddChecklist ? (
-                              <div
-                                className={`h-6 w-6 animate-spin rounded-full border-2 border-solid border-success border-t-transparent`}
-                              ></div>
-                            ) : (
-                              <div className="flex items-center justify-start">
-                                <MdAdd />
-                                <div>Checklist</div>
-                              </div>
-                            )}
-                          </div>
-                        )
-                      ) : (
-                        <></>
-                      )}
-                      {selectedCase.Step == "1" ? (
+                    {/* Header Case Status Banner */}
+                    <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
+                      <div className="flex items-start justify-between gap-2">
                         <div>
-                          {switchDelete ? (
-                            onloadDelete ? (
-                              <div className="text-white">Please wait...</div>
-                            ) : (
-                              <div className="flex cursor-default items-center justify-start">
-                                <div className="text-white">Are you sure ?</div>
-                                <div
-                                  onClick={async () => {
-                                    setOnloadDelete(true);
-
-                                    const apiUrl = `${API_URL}/deleterequest`;
-                                    const response = await axios.post(apiUrl, {
-                                      idRequest: selectedCase.ID_Request,
-                                      idAsset: selectedCase.ID_Asset,
-                                    });
-
-                                    if (response.status == 200) {
-                                      const message = response.data["message"];
-                                      NotifySuccess(message);
-                                      fetch_data();
-                                      fetch_data_service();
-                                      setSwitchPage(false);
-                                    }
-
-                                    setOnloadDelete(false);
-                                    setSwitchDelete(false);
-                                  }}
-                                  className="mx-2 text-danger"
-                                >
-                                  Yes
-                                </div>
-                                <div
-                                  onClick={() => {
-                                    setSwitchDelete(false);
-                                  }}
-                                  className="mx-2 text-success"
-                                >
-                                  Cancel
-                                </div>
-                              </div>
-                            )
-                          ) : (
-                            <div
-                              className="flex cursor-default items-center justify-start text-red"
-                              onClick={() => {
-                                setSwitchDelete(true);
-                              }}
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-bold text-black dark:text-white">
+                              {selectedCase.ID_Request}
+                            </span>
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                selectedCase.Maintenance_Type === "PM"
+                                  ? "bg-meta-3/15 text-meta-3"
+                                  : "bg-danger/15 text-danger"
+                              }`}
                             >
-                              <RiDeleteBin2Line />
-                              <div className="ml-2">Delete</div>
+                              {selectedCase.Maintenance_Type === "PM" ? "PM Rutin" : "Perbaikan"}
+                            </span>
+                          </div>
+                          <h3 className="text-base font-bold text-black dark:text-white leading-tight">
+                            {selectedCase.Problem}
+                          </h3>
+                        </div>
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-xs font-semibold text-white ${
+                              RepairStatus(selectedCase.Step)?.color || "bg-primary"
+                            }`}
+                          >
+                            {RepairStatus(selectedCase.Step)?.status}
+                          </span>
+                          {/* Delete Request if Step 1 */}
+                          {String(selectedCase.Step) === "1" && (
+                            <div className="mt-1">
+                              {switchDelete ? (
+                                <div className="flex items-center gap-1.5 text-xs">
+                                  <button
+                                    type="button"
+                                    disabled={onloadDelete}
+                                    onClick={async () => {
+                                      setOnloadDelete(true);
+                                      try {
+                                        const res = await axios.post("/api/deleterequest", {
+                                          idRequest: selectedCase.ID_Request,
+                                          idAsset: selectedCase.ID_Asset,
+                                        });
+                                        if (res.status === 200) {
+                                          NotifySuccess(res.data.message || "Tiket dihapus");
+                                          fetch_data();
+                                          fetch_data_service();
+                                          setSwitchPage(false);
+                                        }
+                                      } catch (e) {
+                                        NotifyError("Gagal menghapus tiket");
+                                      } finally {
+                                        setOnloadDelete(false);
+                                        setSwitchDelete(false);
+                                      }
+                                    }}
+                                    className="font-bold text-danger hover:underline"
+                                  >
+                                    {onloadDelete ? "..." : "Hapus"}
+                                  </button>
+                                  <span className="text-stroke dark:text-strokedark">|</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setSwitchDelete(false)}
+                                    className="font-medium text-body dark:text-bodydark hover:underline"
+                                  >
+                                    Batal
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setSwitchDelete(true)}
+                                  className="flex items-center gap-1 text-[11px] text-danger hover:underline"
+                                >
+                                  <RiDeleteBin2Line className="text-xs" />
+                                  <span>Hapus Tiket</span>
+                                </button>
+                              )}
                             </div>
                           )}
                         </div>
-                      ) : (
-                        <></>
-                      )}
+                      </div>
+
+                      {/* Requestor Info */}
+                      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-stroke/60 pt-3 text-xs text-body dark:border-strokedark/60 dark:text-bodydark">
+                        <div className="flex items-center gap-1.5">
+                          <HiOutlineUser className="text-sm" />
+                          <span>{selectedCase.Requestor || "-"}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <HiOutlineClock className="text-sm" />
+                          <span>{formatDateTime(selectedCase.Time_Request)}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="mb-2 p-2">
+
+                    {/* Step Action Buttons */}
+                    <div className="rounded-2xl border border-stroke bg-white p-3 shadow-sm dark:border-strokedark dark:bg-boxdark">
                       {(() => {
-                        switch (selectedCase.Step) {
+                        switch (String(selectedCase.Step)) {
                           case "1":
                             return (
-                              <div className=" border p-2">
-                                <CommonButtonFull
-                                  label={"Terima"}
-                                  onClick={() => {
-                                    localStorage.setItem("scanner_mode", 1);
-                                    router.push("/scanner");
-                                  }}
-                                  disabled={caseLoaderReceived}
-                                  onload={caseLoaderReceived}
-                                />
-                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  localStorage.setItem("scanner_mode", 1);
+                                  router.push("/scanner");
+                                }}
+                                disabled={caseLoaderReceived}
+                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 px-4 font-semibold text-white shadow-md hover:bg-opacity-90 active:scale-[0.99] transition-all"
+                              >
+                                <HiOutlineWrenchScrewdriver className="text-lg" />
+                                <span>Terima & Mulai Pengerjaan</span>
+                              </button>
                             );
                           case "2":
-                            //hanya teknisi yg scan
-                            return uid == selectedCase.ID_Tech ? (
-                              <div className="border p-2">
-                                <div className=" flex justify-evenly">
-                                  <div className="w-full">
-                                    <CommonButtonFull
-                                      label={"Spare Part"}
-                                      onClick={() => {
-                                        setCaseLoaderOrder(true);
-                                        setUpdatedStep("order_part");
-                                      }}
-                                      disabled={caseLoaderOrder}
-                                      onload={caseLoaderOrder}
-                                    ></CommonButtonFull>
-                                  </div>
-                                  <div className="ml-2"></div>
-                                  <div className="w-full">
-                                    <CommonButtonFull
-                                      label={"Selesai"}
-                                      onClick={() => {
-                                        console.log("ini dia");
-
-                                        setCaseLoaderCompleted(true);
-                                        setUpdatedStep("completed");
-                                      }}
-                                      disabled={caseLoaderCompleted}
-                                      onload={caseLoaderCompleted}
-                                    ></CommonButtonFull>
-                                  </div>
-                                </div>
+                            return uid === selectedCase.ID_Tech ? (
+                              <div className="grid grid-cols-2 gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setCaseLoaderOrder(true);
+                                    setUpdatedStep("order_part");
+                                  }}
+                                  disabled={caseLoaderOrder}
+                                  className="rounded-xl border border-warning bg-warning/10 py-2.5 px-3 text-xs font-semibold text-warning hover:bg-warning/20 transition-all"
+                                >
+                                  {caseLoaderOrder ? "Menyimpan..." : "Order Spare Part"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setCaseLoaderCompleted(true);
+                                    setUpdatedStep("completed");
+                                  }}
+                                  disabled={caseLoaderCompleted}
+                                  className="rounded-xl bg-success py-2.5 px-3 text-xs font-semibold text-white shadow hover:bg-opacity-90 transition-all"
+                                >
+                                  {caseLoaderCompleted ? "Menyimpan..." : "Selesai Pengerjaan"}
+                                </button>
                               </div>
-                            ) : (
-                              <></>
-                            );
+                            ) : null;
                           case "3":
-                            //return uid == selectedCase.ID_Tech ? (
                             return parseInt(userLevel) <= 2 ? (
-                              <div className=" border p-2">
-                                <div>
-                                  <CommonButtonFull
-                                    label={"Terima spare part"}
-                                    onClick={() => {
-                                      setModalReceivePart(true);
-                                      //setCaseLoaderCompleted(true);
-                                      //setUpdatedStep("receive_part");
-                                    }}
-                                    //disabled={caseLoaderCompleted}
-                                    //onload={caseLoaderCompleted}
-                                  />
-                                </div>
-                              </div>
-                            ) : (
-                              <></>
-                            );
-
+                              <button
+                                type="button"
+                                onClick={() => setModalReceivePart(true)}
+                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-meta-5 py-3 px-4 font-semibold text-white shadow hover:bg-opacity-90 transition-all"
+                              >
+                                <span>Konfirmasi Spare Part Tiba</span>
+                              </button>
+                            ) : null;
                           case "4":
-                            //hanya teknisi yg scan
-                            return uid == selectedCase.ID_Tech ? (
-                              <div className=" border p-2">
-                                <div>
-                                  <CommonButtonFull
-                                    label={"Selesai"}
-                                    onClick={() => {
-                                      setCaseLoaderCompleted(true);
-                                      setUpdatedStep("completed");
-                                    }}
-                                    disabled={caseLoaderCompleted}
-                                    onload={caseLoaderCompleted}
-                                  />
-                                </div>
-                              </div>
-                            ) : (
-                              <></>
-                            );
-
+                            return uid === selectedCase.ID_Tech ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setCaseLoaderCompleted(true);
+                                  setUpdatedStep("completed");
+                                }}
+                                disabled={caseLoaderCompleted}
+                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-success py-3 px-4 font-semibold text-white shadow hover:bg-opacity-90 transition-all"
+                              >
+                                <span>{caseLoaderCompleted ? "Menyimpan..." : "Selesaikan Pengerjaan"}</span>
+                              </button>
+                            ) : null;
                           case "5":
                             return parseInt(userLevel) <= 1 ? (
-                              <div className=" border p-2">
-                                <div>
-                                  <CommonButtonFull
-                                    label={"Checked"}
-                                    onClick={() => {
-                                      setCaseLoaderCompleted(true);
-                                      setUpdatedStep("checked");
-                                    }}
-                                    disabled={caseLoaderCompleted}
-                                    onload={caseLoaderCompleted}
-                                  />
-                                </div>
-                              </div>
-                            ) : (
-                              <></>
-                            );
-
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setCaseLoaderCompleted(true);
+                                  setUpdatedStep("checked");
+                                }}
+                                disabled={caseLoaderCompleted}
+                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 px-4 font-semibold text-white shadow hover:bg-opacity-90 transition-all"
+                              >
+                                <span>{caseLoaderCompleted ? "Menyimpan..." : "Verifikasi / Checked"}</span>
+                              </button>
+                            ) : null;
                           case "6":
-                            return selectedCase.Maintenance_Type == "PM" ? (
-                              <>INI PM</>
-                            ) : uid == selectedCase.ID_Requestor ? (
-                              <div className=" border p-2">
-                                <div>
-                                  <CommonButtonFull
-                                    label={"Accepted"}
-                                    onClick={() => {
-                                      setCaseLoaderCompleted(true);
-                                      setUpdatedStep("accepted");
-                                    }}
-                                    disabled={caseLoaderCompleted}
-                                    onload={caseLoaderCompleted}
-                                  />
-                                </div>
-                              </div>
-                            ) : (
-                              <></>
-                            );
-
+                            return uid === selectedCase.ID_Requestor ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setCaseLoaderCompleted(true);
+                                  setUpdatedStep("accepted");
+                                }}
+                                disabled={caseLoaderCompleted}
+                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-success py-3 px-4 font-semibold text-white shadow hover:bg-opacity-90 transition-all"
+                              >
+                                <span>{caseLoaderCompleted ? "Menyimpan..." : "Terima Unit / Accepted"}</span>
+                              </button>
+                            ) : null;
                           default:
-                            return <></>;
+                            return (
+                              <div className="text-center py-1 text-xs text-body dark:text-bodydark">
+                                Status pengerjaan: {RepairStatus(selectedCase.Step)?.status || "Selesai"}
+                              </div>
+                            );
                         }
                       })()}
                     </div>
 
-                    <div
-                      className="px-2 text-white"
-                      onClick={() => {
-                        console.log(requestId);
-                      }}
-                    >
-                      Deskripsi
-                    </div>
-                    <div className="p-2">
-                      <div className="bg-form-strokedark p-1 text-white">
-                        {selectedCase.Problem}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="p-2 text-white">Tindakan</div>
-                      {parseInt(selectedCase.Step) < 2 ||
-                      parseInt(selectedCase.Step) >= 6 ? (
-                        <></>
-                      ) : solutionEditMode ? (
-                        <div className="p-2">
-                          {onloadSolution ? (
-                            <div
-                              className={`h-6 w-6 animate-spin rounded-full border-2 border-solid border-success border-t-transparent`}
-                            ></div>
-                          ) : (
-                            <div
-                              className=" justify center flex h-8 w-8 cursor-default items-center  rounded-full p-2 text-xl text-white hover:bg-white hover:bg-opacity-20"
+                    {/* Tindakan / Solusi Card */}
+                    <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-white">
+                          Tindakan & Solusi
+                        </span>
+                        {parseInt(selectedCase.Step) >= 2 && parseInt(selectedCase.Step) <= 6 && (
+                          solutionEditMode ? (
+                            <button
+                              type="button"
                               onClick={async () => {
                                 setOnloadSolution(true);
-                                if (caseSolution == "") {
+                                if (!caseSolution.trim()) {
                                   setCaseSolutionError(true);
-                                } else {
-                                  setCaseSolutionError(false);
-                                  const apiUrl = `${API_URL}/updatesolution`;
-                                  const response = await axios.post(apiUrl, {
+                                  setOnloadSolution(false);
+                                  return;
+                                }
+                                try {
+                                  await axios.post("/api/updatesolution", {
                                     idRequest: selectedCase.ID_Request,
                                     solution: caseSolution,
                                   });
-
-                                  if (response.status == 200) {
-                                    fetch_detail_service(
-                                      selectedCase.ID_Request,
-                                    );
-                                    setSolutionEditMode(false);
-                                  }
+                                  fetch_detail_service(selectedCase.ID_Request);
+                                  setSolutionEditMode(false);
+                                  NotifySuccess("Solusi berhasil disimpan");
+                                } catch (e) {
+                                  NotifyError("Gagal menyimpan solusi");
+                                } finally {
+                                  setOnloadSolution(false);
                                 }
-
-                                setOnloadSolution(false);
                               }}
+                              className="flex items-center gap-1 rounded-lg bg-success px-2.5 py-1 text-xs font-semibold text-white shadow hover:bg-opacity-90 transition-all"
                             >
-                              <TfiSave />
-                            </div>
+                              <TfiSave className="text-xs" />
+                              <span>Simpan</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCaseSolution(selectedCase.Solution || "");
+                                setSolutionEditMode(true);
+                              }}
+                              className="flex items-center gap-1 rounded-lg bg-gray-100 dark:bg-meta-4 px-2.5 py-1 text-xs font-medium text-black dark:text-white hover:bg-gray-200 transition-colors"
+                            >
+                              <CiEdit className="text-sm" />
+                              <span>Edit</span>
+                            </button>
+                          )
+                        )}
+                      </div>
+
+                      {solutionEditMode ? (
+                        <div className="mt-2">
+                          <CommonTextArea
+                            input={caseSolution}
+                            placeholder="Tuliskan tindakan dan solusi permasalahan..."
+                            error={caseSolutionError}
+                            isDisabled={onloadSolution}
+                            onInputChange={(val) => setCaseSolution(val)}
+                            onChg={() => setCaseSolutionError(false)}
+                          />
+                        </div>
+                      ) : (
+                        <div className="rounded-xl bg-gray-50 dark:bg-meta-4/20 p-3 text-xs leading-relaxed text-black dark:text-white min-h-[48px]">
+                          {selectedCase.Solution || (
+                            <span className="italic text-body dark:text-bodydark opacity-60">
+                              Belum ada catatan solusi atau tindakan...
+                            </span>
                           )}
                         </div>
-                      ) : (
-                        <div className=" p-1">
-                          <div
-                            onClick={() => {
-                              setCaseSolution(selectedCase.Solution);
-                              setSolutionEditMode(true);
-                            }}
-                            className=" justify center flex h-8 w-8 cursor-default items-center  rounded-full p-2 text-xl text-white hover:bg-white hover:bg-opacity-20"
+                      )}
+                    </div>
+
+                    {/* Progress Workflow Timeline */}
+                    <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-white">
+                          Timeline Pengerjaan
+                        </span>
+                        {parseInt(userLevel) <= 1 && (
+                          <button
+                            type="button"
+                            onClick={() => router.push(`/asset/${idAsset}/${selectedCase.ID_Request}`)}
+                            className="text-xs font-medium text-primary hover:underline"
                           >
-                            <CiEdit />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {parseInt(selectedCase.Step) >= 2 &&
-                    parseInt(selectedCase.Step) <= 6 &&
-                    solutionEditMode ? (
-                      <div className="p-2">
-                        <CommonTextArea
-                          input={caseSolution}
-                          placeholder="Tuliskan solusi untuk permasalahan di bawah"
-                          error={caseSolutionError}
-                          isDisabled={onloadSolution}
-                          onInputChange={(val) => {
-                            setCaseSolution(val);
-                          }}
-                          onChg={() => {
-                            setCaseSolutionError(false);
-                          }}
-                          errorMessage={"Required"}
-                        ></CommonTextArea>
+                            Ubah Waktu
+                          </button>
+                        )}
                       </div>
-                    ) : (
-                      <>
-                        <div className="p-2">
-                          <div className="min-h-8 bg-form-strokedark p-1 text-white">
-                            {selectedCase.Solution}
-                          </div>
-                        </div>
-                      </>
-                    )}
-
-                    <div className="flex items-center justify-between p-2 text-white">
-                      <div>Progress</div>
-                      {parseInt(userLevel) <= 1 ? (
-                        <div
-                          onClick={() => {
-                            router.push(
-                              `/asset/${idAsset}/${selectedCase.ID_Request}`,
-                            );
-                          }}
-                        >
-                          <CiEdit />
-                        </div>
-                      ) : (
-                        <></>
-                      )}
-                    </div>
-                    <div className="p-2">
-                      <div className="rounded-lg border p-1">
+                      <div className="space-y-1">
                         <ProgressCard
-                          title={"Issued"}
+                          title="Issued"
                           name={selectedCase.Requestor}
                           dateString={formatDateTime(selectedCase.Time_Request)}
                           isActive={true}
                         />
                         <ProgressCard
-                          title={"Response"}
+                          title="Response"
                           name={selectedCase.Technician}
-                          dateString={formatDateTime(
-                            selectedCase.Time_Response,
-                          )}
-                          isActive={
-                            parseInt(selectedCase.Step) >= 2 ? true : false
-                          }
-                        />
-
-                        <ProgressCard
-                          title={"Completed"}
-                          name={selectedCase.Technician}
-                          dateString={formatDateTime(
-                            selectedCase.Time_Repair_Complete,
-                          )}
-                          isActive={
-                            parseInt(selectedCase.Step) >= 5 ? true : false
-                          }
+                          dateString={formatDateTime(selectedCase.Time_Response)}
+                          isActive={parseInt(selectedCase.Step) >= 2}
                         />
                         <ProgressCard
-                          title={"Checked"}
+                          title="Completed"
+                          name={selectedCase.Technician}
+                          dateString={formatDateTime(selectedCase.Time_Repair_Complete)}
+                          isActive={parseInt(selectedCase.Step) >= 5}
+                        />
+                        <ProgressCard
+                          title="Checked"
                           name={selectedCase.Tech_SPV_Name}
                           dateString={formatDateTime(selectedCase.Tech_SPV)}
-                          isActive={
-                            parseInt(selectedCase.Step) >= 6 ? true : false
-                          }
+                          isActive={parseInt(selectedCase.Step) >= 6}
                         />
-
                         <ProgressCard
-                          title={"Accepted"}
+                          title="Accepted"
                           name={selectedCase.Approver_Name}
                           dateString={formatDateTime(selectedCase.Prod_SPV)}
-                          isActive={
-                            parseInt(selectedCase.Step) >= 7 ? true : false
-                          }
+                          isActive={parseInt(selectedCase.Step) >= 7}
                         />
                       </div>
                     </div>
-                    <div className="p-2 text-white">Summary</div>
-                    <div className="p-2 ">
-                      <div className="rounded-lg border p-1">
+
+                    {/* Summary Durations */}
+                    <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
+                      <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-white block mb-2">
+                        Durasi Penanganan
+                      </span>
+                      <div className="space-y-1">
                         <ProgressSummary
-                          title={"Response Time"}
+                          title="Response Time"
                           hour={responseTime}
-                          isActive={
-                            parseInt(selectedCase.Step) >= 2 ? true : false
-                          }
+                          isActive={parseInt(selectedCase.Step) >= 2}
                         />
-
                         <ProgressSummary
-                          title={"Repair Time"}
+                          title="Repair Time"
                           hour={repairTime}
-                          isActive={
-                            parseInt(selectedCase.Step) >= 5 ? true : false
-                          }
+                          isActive={parseInt(selectedCase.Step) >= 5}
                         />
                       </div>
                     </div>
-                    {partList.length > 0 ? (
-                      <div>
-                        <div className="p-2 text-white">Spare Part</div>
-                        <div className="p-2">
-                          <div className="rounded-lg border border p-1">
-                            {partList.map((item, index) => {
-                              return (
-                                <div className="p-2 " key={index}>
-                                  <div className="flex justify-between">
-                                    <div className="text-white">
-                                      {item["description"]}
-                                    </div>
-                                    <div className="text-white">
-                                      {item["quantity"]}
-                                    </div>
-                                  </div>
-                                  <div className="text-xs text-white">
-                                    {item["dpm"]}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <></>
-                    )}
 
-                    {servisList.length > 0 ? (
-                      <div>
-                        <div className="p-2 text-white">Service Luar</div>
-                        <div className="p-2">
-                          <div className="rounded-lg border border p-1">
-                            {servisList.map((item, index) => {
-                              return (
-                                <div className="p-2 " key={index}>
-                                  <div className="flex justify-between">
-                                    <div className="text-white">
-                                      {item["item"]}
-                                    </div>
-                                    <div className="text-white">
-                                      {item["quantity"]}
-                                    </div>
-                                  </div>
-                                  <div className="text-xs text-white">
-                                    {item["id_register"]}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <></>
-                    )}
-
-                    {pmList.length > 0 ? (
-                      <>
-                        <div className="flex items-center justify-between">
-                          <div className="p-2 text-white">Checklist</div>
-
-                          {parseInt(selectedCase.Step) < 2 ||
-                          parseInt(selectedCase.Step) >= 6 ? (
-                            <></>
-                          ) : pmEditMode ? (
-                            <div className="p-2">
-                              {onloadPM ? (
-                                <div
-                                  className={`h-6 w-6 animate-spin rounded-full border-2 border-solid border-success border-t-transparent`}
-                                ></div>
-                              ) : (
-                                <div
-                                  className=" justify center flex h-8 w-8 cursor-default items-center  rounded-full p-2 text-xl text-white hover:bg-white hover:bg-opacity-20"
-                                  onClick={async () => {
-                                    setOnloadPM(true);
-                                    const idRequest =
-                                      localStorage.getItem(
-                                        "selected_idRequest",
-                                      );
-                                    console.log(pmTempList);
-                                    const apiUrl = `${API_URL}/updatepmlist`;
-                                    const response = await axios.post(apiUrl, {
-                                      idRequest: idRequest,
+                    {/* Checklist if PM */}
+                    {selectedCase.Maintenance_Type === "PM" && (
+                      <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-white">
+                            Checklist Perawatan Rutin
+                          </span>
+                          {parseInt(selectedCase.Step) >= 2 && parseInt(selectedCase.Step) <= 6 && (
+                            pmList.length === 0 ? (
+                              <button
+                                type="button"
+                                disabled={onloadAddChecklist}
+                                onClick={async () => {
+                                  setOnloadAddChecklist(true);
+                                  try {
+                                    const res = await axios.post("/api/addchecklist", {
+                                      idRequest: selectedCase.ID_Request,
+                                      idAsset: selectedCase.ID_Asset,
+                                    });
+                                    if (res.status === 200) {
+                                      NotifySuccess(res.data.response || "Checklist ditambahkan");
+                                      fetch_detail_service(selectedCase.ID_Request);
+                                    }
+                                  } catch (e) {
+                                    NotifyError("Gagal menambahkan checklist");
+                                  } finally {
+                                    setOnloadAddChecklist(false);
+                                  }
+                                }}
+                                className="flex items-center gap-1 rounded-lg bg-meta-3 px-2.5 py-1 text-xs font-semibold text-white shadow hover:bg-opacity-90"
+                              >
+                                <MdAdd className="text-sm" />
+                                <span>{onloadAddChecklist ? "..." : "Tambah Checklist"}</span>
+                              </button>
+                            ) : pmEditMode ? (
+                              <button
+                                type="button"
+                                disabled={onloadPM}
+                                onClick={async () => {
+                                  setOnloadPM(true);
+                                  try {
+                                    await axios.post("/api/updatepmlist", {
+                                      idRequest: selectedCase.ID_Request,
                                       pmList: JSON.stringify(pmTempList),
                                     });
-
-                                    if (response.status == 200) {
-                                      fetch_detail_service(idRequest);
-                                      setpmEditMode(false);
-                                    }
+                                    fetch_detail_service(selectedCase.ID_Request);
+                                    setpmEditMode(false);
+                                    NotifySuccess("Checklist disimpan");
+                                  } catch (e) {
+                                    NotifyError("Gagal menyimpan checklist");
+                                  } finally {
                                     setOnloadPM(false);
-                                  }}
-                                >
-                                  <TfiSave />
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <div className=" p-1">
-                              <div
-                                onClick={() => {
-                                  setpmEditMode(true);
+                                  }
                                 }}
-                                className=" justify center flex h-8 w-8 cursor-default items-center  rounded-full p-2 text-xl text-white hover:bg-white hover:bg-opacity-20"
+                                className="flex items-center gap-1 rounded-lg bg-success px-2.5 py-1 text-xs font-semibold text-white shadow hover:bg-opacity-90"
                               >
-                                <CiEdit />
-                              </div>
-                            </div>
+                                <TfiSave className="text-xs" />
+                                <span>Simpan</span>
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setpmEditMode(true)}
+                                className="flex items-center gap-1 rounded-lg bg-gray-100 dark:bg-meta-4 px-2.5 py-1 text-xs font-medium text-black dark:text-white hover:bg-gray-200"
+                              >
+                                <CiEdit className="text-sm" />
+                                <span>Edit Checklist</span>
+                              </button>
+                            )
                           )}
                         </div>
-                        <div className="p-2">
-                          <div className="rounded-lg border p-1 shadow-md">
-                            <table>
-                              {pmEditMode ? (
-                                <tbody>
-                                  {pmTempList.map((item, index) => {
-                                    return (
-                                      <tr className="" key={index}>
-                                        <td className=" p-2 align-top text-white">
+
+                        {pmList.length > 0 ? (
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-left text-xs">
+                              <thead>
+                                <tr className="border-b border-stroke/60 text-body dark:border-strokedark/60 dark:text-bodydark">
+                                  <th className="py-2 px-1 font-semibold">Kode</th>
+                                  <th className="py-2 px-2 font-semibold">Uraian</th>
+                                  <th className="py-2 px-1 text-center font-semibold">Status</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-stroke/40 dark:divide-strokedark/40">
+                                {pmEditMode
+                                  ? pmTempList.map((item, idx) => (
+                                      <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-meta-4/20">
+                                        <td className="py-2 px-1 font-mono text-black dark:text-white align-top">
                                           {item["code"]}
                                         </td>
-                                        <td className="p-2 text-left align-top text-white">
+                                        <td className="py-2 px-2 text-black dark:text-white">
                                           <div>{item["description"]}</div>
-
-                                          {item["widget"] == "T" ? (
-                                            <div
-                                              className="mt-2 w-[100px]
-                                      "
-                                            >
-                                              <CommonInput
-                                                input={item["value"]}
-                                                onInputChange={(val) => {
-                                                  const updatedPmList =
-                                                    pmTempList.map(
-                                                      (element) => {
-                                                        if (
-                                                          element.code ===
-                                                          item["code"]
-                                                        ) {
-                                                          return {
-                                                            ...element,
-                                                            value: val,
-                                                          }; // Toggle the checked value
-                                                        }
-                                                        return element;
-                                                      },
-                                                    );
-
-                                                  setpmTempList(updatedPmList);
-                                                }}
-                                              />
-                                            </div>
-                                          ) : (
-                                            <></>
+                                          {item["widget"] === "T" && (
+                                            <input
+                                              type="text"
+                                              value={item["value"] || ""}
+                                              onChange={(e) => {
+                                                const val = e.target.value;
+                                                setpmTempList((prev) =>
+                                                  prev.map((el) =>
+                                                    el.code === item["code"] ? { ...el, value: val } : el
+                                                  )
+                                                );
+                                              }}
+                                              className="mt-1.5 w-full rounded-lg border border-stroke px-2 py-1 text-xs dark:border-strokedark dark:bg-boxdark-2 text-black dark:text-white"
+                                            />
                                           )}
                                         </td>
-                                        <td className="flex-1 p-2">
-                                          {item["widget"] == "C" ? (
+                                        <td className="py-2 px-1 text-center align-top">
+                                          {item["widget"] === "C" && (
                                             <input
                                               type="checkbox"
-                                              checked={item["checked"]}
+                                              checked={!!item["checked"]}
                                               onChange={() => {
-                                                const updatedPmList =
-                                                  pmTempList.map((element) => {
-                                                    if (
-                                                      element.code ===
-                                                      item["code"]
-                                                    ) {
-                                                      return {
-                                                        ...element,
-                                                        checked:
-                                                          !element.checked,
-                                                      }; // Toggle the checked value
-                                                    }
-                                                    return element;
-                                                  });
-
-                                                setpmTempList(updatedPmList);
+                                                setpmTempList((prev) =>
+                                                  prev.map((el) =>
+                                                    el.code === item["code"] ? { ...el, checked: !el.checked } : el
+                                                  )
+                                                );
                                               }}
-                                              className="form-checkbox bg-gray-100 border-gray-300 h-5 w-5 rounded text-blue-600 focus:ring-blue-500"
+                                              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
                                             />
-                                          ) : (
-                                            <></>
                                           )}
                                         </td>
                                       </tr>
-                                    );
-                                  })}
-                                </tbody>
-                              ) : (
-                                <tbody>
-                                  {pmList.map((item, index) => {
-                                    return (
-                                      <tr className="" key={index}>
-                                        <td className="p-2 align-top text-white">
+                                    ))
+                                  : pmList.map((item, idx) => (
+                                      <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-meta-4/20">
+                                        <td className="py-2 px-1 font-mono text-black dark:text-white align-top">
                                           {item["code"]}
                                         </td>
-                                        <td className="p-2 text-left text-white">
+                                        <td className="py-2 px-2 text-black dark:text-white">
                                           {item["description"]}
                                         </td>
-                                        <td className="flex-1 p-2 align-top">
+                                        <td className="py-2 px-1 text-center align-top">
                                           {item["checked"] ? (
-                                            <FaCheckSquare className="text-success" />
+                                            <FaCheckSquare className="inline text-success text-sm" />
                                           ) : (
-                                            <div className="align-top text-white">
-                                              {item["value"]}
-                                            </div>
+                                            <span className="font-mono text-black dark:text-white">
+                                              {item["value"] || "-"}
+                                            </span>
                                           )}
                                         </td>
                                       </tr>
-                                    );
-                                  })}
-                                </tbody>
-                              )}
+                                    ))}
+                              </tbody>
                             </table>
                           </div>
-                        </div>
-                      </>
-                    ) : (
-                      <></>
+                        ) : (
+                          <div className="py-4 text-center text-xs text-body dark:text-bodydark italic">
+                            Belum ada checklist perawatan untuk tiket ini.
+                          </div>
+                        )}
+                      </div>
                     )}
 
-                    {galleryList.length > 0 ? (
-                      <div>
-                        <div className="ml-2">Gallery</div>
-                        <div className="p-2">
-                          <div className="">
-                            <div className=" flex w-full space-x-2 overflow-x-auto">
-                              {galleryList.map((item, index) => {
-                                return (
-                                  <div
-                                    className="relative h-40 w-60"
-                                    key={index}
-                                  >
-                                    <img
-                                      className="object-cover"
-                                      src={`${IMAGE_GALLERY}/${item["Image_Name"]}`} // Replace with your image path
-                                    />
-                                  </div>
-                                );
-                              })}
+                    {/* Spare Parts List */}
+                    {partList.length > 0 && (
+                      <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
+                        <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-white block mb-2">
+                          Spare Part Digunakan
+                        </span>
+                        <div className="divide-y divide-stroke/40 dark:divide-strokedark/40">
+                          {partList.map((item, idx) => (
+                            <div key={idx} className="py-2 flex items-center justify-between text-xs">
+                              <div>
+                                <span className="font-medium text-black dark:text-white block">
+                                  {item["description"]}
+                                </span>
+                                <span className="text-[10px] text-body dark:text-bodydark">
+                                  {item["dpm"] || "Internal"}
+                                </span>
+                              </div>
+                              <span className="rounded-md bg-gray-100 dark:bg-meta-4 px-2 py-0.5 font-bold text-black dark:text-white">
+                                {item["quantity"]} pcs
+                              </span>
                             </div>
-                          </div>
+                          ))}
                         </div>
                       </div>
-                    ) : (
-                      <></>
                     )}
-                  </div>
+
+                    {/* External Service List */}
+                    {servisList.length > 0 && (
+                      <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
+                        <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-white block mb-2">
+                          Servis Pihak Luar
+                        </span>
+                        <div className="divide-y divide-stroke/40 dark:divide-strokedark/40">
+                          {servisList.map((item, idx) => (
+                            <div key={idx} className="py-2 flex items-center justify-between text-xs">
+                              <div>
+                                <span className="font-medium text-black dark:text-white block">
+                                  {item["item"]}
+                                </span>
+                                <span className="text-[10px] text-body dark:text-bodydark">
+                                  {item["id_register"]}
+                                </span>
+                              </div>
+                              <span className="rounded-md bg-gray-100 dark:bg-meta-4 px-2 py-0.5 font-bold text-black dark:text-white">
+                                {item["quantity"]}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Gallery Images */}
+                    {galleryList.length > 0 && (
+                      <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
+                        <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-white block mb-2">
+                          Foto Dokumentasi
+                        </span>
+                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+                          {galleryList.map((item, idx) => (
+                            <div
+                              key={idx}
+                              className="relative h-28 w-36 shrink-0 overflow-hidden rounded-xl border border-stroke dark:border-strokedark"
+                            >
+                              <img
+                                alt="Gallery"
+                                className="h-full w-full object-cover"
+                                src={`${IMAGE_GALLERY}/${item["Image_Name"]}`}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
-            </div>
-          ) : (
-            <PageLoader />
-          )}
-        </div>
+            ) : (
+              /* ================= ASSET OVERVIEW & HISTORY VIEW ================= */
+              <div className="space-y-4 p-4">
+                {/* Hero Asset Card */}
+                <div className="overflow-hidden rounded-2xl border border-stroke bg-white shadow-sm dark:border-strokedark dark:bg-boxdark">
+                  {/* Asset Photo Banner */}
+                  <div className="relative h-52 w-full bg-gray-100 dark:bg-meta-4">
+                    {dataAsset.Image ? (
+                      <img
+                        alt="Asset"
+                        className="h-full w-full object-cover"
+                        src={`${IMAGE_ASSET}/${dataAsset.Image}`}
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-body dark:text-bodydark">
+                        <HiSparkles className="text-3xl opacity-30" />
+                        <span className="ml-2 text-sm opacity-50">Belum ada foto aset</span>
+                      </div>
+                    )}
+
+                    {/* Camera Trigger Buttons (Overlay Top Right) */}
+                    <div className="absolute top-3 right-3 flex items-center gap-2">
+                      <button
+                        type="button"
+                        title="Foto Aset"
+                        onClick={() => {
+                          setCameraResult("asset_image");
+                          setGlobalIdAsset(dataAsset.ID_Asset);
+                          router.push("/camera");
+                        }}
+                        className="flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-md hover:bg-black/70 shadow transition-colors"
+                      >
+                        <MdOutlinePhotoCamera className="text-lg" />
+                      </button>
+                      <button
+                        type="button"
+                        title="Foto User"
+                        onClick={() => {
+                          setCameraResult("asset_user");
+                          setGlobalIdAsset(dataAsset.ID_Asset);
+                          router.push("/camera");
+                        }}
+                        className="flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-md hover:bg-black/70 shadow transition-colors"
+                      >
+                        <MdOutlinePhotoCameraFront className="text-lg" />
+                      </button>
+                    </div>
+
+                    {/* Gradient Overlay for Readable Text */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                    {/* Asset Title Bottom Overlay */}
+                    <div className="absolute bottom-3 left-3 right-20 text-white">
+                      <div className="flex items-center gap-2">
+                        <span className="rounded-md bg-primary px-2 py-0.5 font-mono text-xs font-bold">
+                          {dataAsset.ID_Asset}
+                        </span>
+                        <span className="rounded-md bg-white/20 px-2 py-0.5 text-[10px] font-semibold backdrop-blur-sm">
+                          {dataAsset.Type}
+                        </span>
+                      </div>
+                      <h2 className="mt-1 text-base font-bold leading-tight drop-shadow">
+                        {dataAsset.Description || "Tanpa Deskripsi"}
+                      </h2>
+                      <p className="text-xs text-white/80">
+                        {dataAsset.Manufacture} {dataAsset.Model ? `• ${dataAsset.Model}` : ""}
+                      </p>
+                    </div>
+
+                    {/* User Avatar Badge (Bottom Right) */}
+                    <div className="absolute bottom-3 right-3">
+                      <div className="h-13 w-13 rounded-full border-2 border-white shadow-lg overflow-hidden bg-white dark:bg-boxdark flex items-center justify-center">
+                        {dataAsset.Profile_Image ? (
+                          <img
+                            alt="User"
+                            className="h-full w-full object-cover"
+                            src={`${IMAGE_USER}/${dataAsset.Profile_Image}`}
+                          />
+                        ) : (
+                          <HiOutlineUser className="text-2xl text-body dark:text-bodydark" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Asset Key Attributes & Status */}
+                  <div className="p-4 space-y-3">
+                    {/* Status Pill */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-body dark:text-bodydark">Status Kesiapan</span>
+                      <span
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                          dataAsset.Available === 1 && dataAsset.Reserve === 1
+                            ? "bg-warning/15 text-warning"
+                            : dataAsset.Available === 0 && dataAsset.Reserve === 1
+                            ? "bg-danger/15 text-danger"
+                            : "bg-success/15 text-success"
+                        }`}
+                      >
+                        {dataAsset.Available === 1 && dataAsset.Reserve === 1
+                          ? "Reserved for service"
+                          : dataAsset.Available === 0 && dataAsset.Reserve === 1
+                          ? "Dalam Pengerjaan"
+                          : "Siap Digunakan (Ready)"}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="flex items-center gap-2 rounded-xl bg-gray-50 dark:bg-meta-4/20 p-2.5">
+                        <HiUser className="text-base text-primary shrink-0" />
+                        <div className="min-w-0">
+                          <span className="block text-[10px] text-body dark:text-bodydark">Penanggung Jawab</span>
+                          <span className="font-semibold text-black dark:text-white truncate block">
+                            {dataAsset.User || "-"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 rounded-xl bg-gray-50 dark:bg-meta-4/20 p-2.5">
+                        <HiLocationMarker className="text-base text-meta-5 shrink-0" />
+                        <div className="min-w-0">
+                          <span className="block text-[10px] text-body dark:text-bodydark">Lokasi Unit</span>
+                          <span className="font-semibold text-black dark:text-white truncate block">
+                            {dataAsset.Location || "-"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {dataAsset.Type === "K" && dataAsset.Based === "KM" && (
+                        <div className="flex items-center gap-2 rounded-xl bg-gray-50 dark:bg-meta-4/20 p-2.5">
+                          <BsFillFuelPumpFill className="text-base text-warning shrink-0" />
+                          <div className="min-w-0">
+                            <span className="block text-[10px] text-body dark:text-bodydark">Bahan Bakar</span>
+                            <span className="font-semibold text-black dark:text-white truncate block">
+                              {lastSeen || "-"} ({ratio || "-"})
+                            </span>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2 rounded-xl bg-gray-50 dark:bg-meta-4/20 p-2.5">
+                        <FaCalendarAlt className="text-base text-meta-3 shrink-0" />
+                        <div className="min-w-0">
+                          <span className="block text-[10px] text-body dark:text-bodydark">Jadwal Servis Berikut</span>
+                          <span className="font-semibold text-black dark:text-white truncate block">
+                            {nextService || "-"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Triggers: Request Perbaikan & Request Perawatan */}
+                    <div className="flex items-center gap-2 pt-2 border-t border-stroke/60 dark:border-strokedark/60">
+                      {/* Request Perbaikan (Corrective) */}
+                      {openService !== 1 && parseInt(userLevel) === 4 && (
+                        <button
+                          type="button"
+                          onClick={() => setModalPerbaikan(true)}
+                          className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-danger py-2.5 px-3 text-xs font-semibold text-white shadow-sm hover:bg-opacity-90 active:scale-[0.99] transition-all"
+                        >
+                          <MdMedicalServices className="text-base" />
+                          <span>Lapor Kerusakan</span>
+                        </button>
+                      )}
+
+                      {/* Request Perawatan (Preventive) */}
+                      {openMaintenance !== 1 &&
+                        (parseInt(userLevel) <= 2 ||
+                          (dataAsset.Type === "K" && dataAsset.Based === "KM" && parseInt(userLevel) === 4)) && (
+                          <button
+                            type="button"
+                            disabled={onloadRequestPerawatan}
+                            onClick={() => {
+                              if (dataAsset.Type === "K") {
+                                setModalPerawatan(true);
+                              } else {
+                                create_maintenance(dataAsset.ID_Asset);
+                              }
+                            }}
+                            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-meta-3 py-2.5 px-3 text-xs font-semibold text-white shadow-sm hover:bg-opacity-90 active:scale-[0.99] transition-all"
+                          >
+                            <RiCalendarScheduleFill className="text-base" />
+                            <span>
+                              {onloadRequestPerawatan ? "Mengirim..." : "Jadwalkan Perawatan"}
+                            </span>
+                          </button>
+                        )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Riwayat Pengerjaan & Perbaikan */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-bold text-black dark:text-white">
+                        Riwayat Perbaikan & Servis
+                      </h3>
+                      <span className="text-[11px] text-body dark:text-bodydark">
+                        Total {dataService.length} catatan pengerjaan
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Search Bar */}
+                  <div className="relative">
+                    <CommonInput
+                      placeholder="Cari keluhan atau nomor tiket..."
+                      input={keyword}
+                      onInputChange={(val) => setKeyword(val)}
+                      onKeyChange={() => setKeywordError(false)}
+                      error={keywordError}
+                      type="text"
+                    >
+                      <HiSearch className="text-body dark:text-bodydark" />
+                    </CommonInput>
+                  </div>
+
+                  {/* List of Tickets */}
+                  <div className="space-y-2.5">
+                    {secondLoading ? (
+                      <div className="flex justify-center py-10">
+                        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                      </div>
+                    ) : filteredDataService.length === 0 ? (
+                      <div className="rounded-2xl border border-stroke bg-white p-8 text-center dark:border-strokedark dark:bg-boxdark">
+                        <span className="text-xs text-body dark:text-bodydark">
+                          Tidak ada riwayat perbaikan yang ditemukan.
+                        </span>
+                      </div>
+                    ) : (
+                      filteredDataService.map((item, index) => {
+                        const cardStatus = RepairStatus(item["Step"]);
+                        return (
+                          <div
+                            key={index}
+                            onClick={() => {
+                              setSwitchPage(true);
+                              fetch_detail_service(item["ID_Request"]);
+                              localStorage.setItem("selected_idRequest", item["ID_Request"]);
+                            }}
+                            className="group cursor-pointer rounded-2xl border border-stroke bg-white p-3.5 shadow-sm hover:border-primary hover:shadow dark:border-strokedark dark:bg-boxdark dark:hover:border-primary transition-all active:scale-[0.99]"
+                          >
+                            <div className="flex items-center justify-between mb-1.5">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-mono text-xs font-bold text-black dark:text-white">
+                                  {item["ID_Request"]}
+                                </span>
+                                {item["Maintenance_Type"] === "PM" && (
+                                  <span className="rounded-md bg-meta-3/15 px-1.5 py-0.5 text-[10px] font-semibold text-meta-3">
+                                    PM Rutin
+                                  </span>
+                                )}
+                              </div>
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold text-white ${
+                                  cardStatus.color || "bg-primary"
+                                }`}
+                              >
+                                {cardStatus.status}
+                              </span>
+                            </div>
+
+                            <p className="text-xs font-medium text-black dark:text-white line-clamp-2 mb-2">
+                              {item["Problem"]}
+                            </p>
+
+                            <div className="flex items-center justify-between border-t border-stroke/50 pt-2 text-[11px] text-body dark:border-strokedark/50 dark:text-bodydark">
+                              <div className="flex items-center gap-1">
+                                <HiOutlineUser className="text-xs" />
+                                <span>{item["Requestor"]}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <HiOutlineClock className="text-xs" />
+                                <span>{formatDateTime(item["Time_Request"])}</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+
+                    {showLoadMore && (
+                      <button
+                        type="button"
+                        onClick={() => setItemPerPage((prev) => prev + 5)}
+                        className="w-full rounded-xl border border-stroke bg-white py-2.5 text-center text-xs font-semibold text-primary shadow-sm hover:bg-gray-50 dark:border-strokedark dark:bg-boxdark dark:hover:bg-meta-4/30 transition-colors"
+                      >
+                        Muat Lebih Banyak...
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Modal Perbaikan (Corrective Request) */}
         <CustomModal
           isVisible={modalPerbaikan}
           isSmallWidth="sm"
-          onClose={() => {
-            setModalPerbaikan(false);
-          }}
+          onClose={() => setModalPerbaikan(false)}
         >
-          <CommonTextArea
-            placeholder={"Deskripsi permasalahan"}
-            input={inputRequestPerbaikan}
-            type={"text"}
-            error={inputRequestPerbaikanError}
-            errorMessage={"Required"}
-            onInputChange={(val) => {
-              setInputRequestPerbaikan(val);
-            }}
-            onChg={() => {
-              setInputRequestPerbaikanError(false);
-            }}
-          ></CommonTextArea>
-          <div className="mb-2"></div>
-          <CommonButtonFull
-            label={"Kirim"}
-            disabled={onloadRequestPerbaikan}
-            onload={onloadRequestPerbaikan}
-            onClick={async () => {
-              setOnloadRequestPerbaikan(true);
-              if (inputRequestPerbaikan == "") {
-                setInputRequestPerbaikanError(true);
-              } else {
+          <div className="space-y-4">
+            <div>
+              <h4 className="text-base font-bold text-black dark:text-white">
+                Permohonan Perbaikan
+              </h4>
+              <p className="text-xs text-body dark:text-bodydark">
+                Uraikan masalah atau gejala kerusakan yang terjadi pada aset.
+              </p>
+            </div>
+            <CommonTextArea
+              placeholder="Deskripsi kerusakan/gejala..."
+              input={inputRequestPerbaikan}
+              error={inputRequestPerbaikanError}
+              errorMessage="Deskripsi wajib diisi"
+              onInputChange={(val) => setInputRequestPerbaikan(val)}
+              onChg={() => setInputRequestPerbaikanError(false)}
+            />
+            <CommonButtonFull
+              label="Kirim Laporan Kerusakan"
+              disabled={onloadRequestPerbaikan}
+              onload={onloadRequestPerbaikan}
+              onClick={async () => {
+                if (!inputRequestPerbaikan.trim()) {
+                  setInputRequestPerbaikanError(true);
+                  return;
+                }
                 setInputRequestPerbaikanError(false);
-
-                const apiUrl = `${API_URL}/createservice`;
-                const response = await axios.post(apiUrl, {
-                  idAsset: idAsset,
-                  problem: inputRequestPerbaikan,
-                  uid: uid,
-                });
-
-                if (response.status == 200) {
-                  // console.log(response.data["detail"][0].ID_Asset);
-                  const result = response.data;
-                  if (result["error"] == 1) {
-                    NotifyError(result["message"]);
+                setOnloadRequestPerbaikan(true);
+                try {
+                  const res = await axios.post("/api/createservice", {
+                    idAsset: idAsset,
+                    problem: inputRequestPerbaikan,
+                    uid: uid,
+                  });
+                  if (res.data?.error === 1) {
+                    NotifyError(res.data.message);
                   } else {
+                    NotifySuccess(res.data.message || "Laporan terkirim");
                     setModalPerbaikan(false);
                     setInputRequestPerbaikan("");
-                    NotifySuccess(result["message"]);
                     fetch_data();
                     fetch_data_service();
                   }
+                } catch (e) {
+                  NotifyError("Gagal mengirim laporan kerusakan");
+                } finally {
+                  setOnloadRequestPerbaikan(false);
                 }
-              }
-              setOnloadRequestPerbaikan(false);
-            }}
-          />
+              }}
+            />
+          </div>
         </CustomModal>
 
+        {/* Modal Perawatan KM Kendaraan */}
         <CustomModal
           isVisible={modalPerawatan}
           isSmallWidth="sm"
-          onClose={() => {
-            setModalPerawatan(false);
-          }}
+          onClose={() => setModalPerawatan(false)}
         >
-          <CommonInput
-            placeholder={"Tuliskan KM saat ini"}
-            input={inputKM}
-            type={"number"}
-            error={inputKMError}
-            errorMessage={"Required"}
-            onInputChange={(val) => {
-              setInputKM(val);
-            }}
-            onChg={() => {
-              setInputKMError(false);
-            }}
-          ></CommonInput>
-          <div className="mb-2"></div>
-          <CommonButtonFull
-            label={"Kirim"}
-            disabled={onloadRequestPerawatan}
-            onload={onloadRequestPerawatan}
-            onClick={async () => {
-              setOnloadRequestPerawatan(true);
-              if (inputKM == "") {
-                setInputKMError(true);
-              } else {
+          <div className="space-y-4">
+            <div>
+              <h4 className="text-base font-bold text-black dark:text-white">
+                Jadwalkan Perawatan Kendaraan
+              </h4>
+              <p className="text-xs text-body dark:text-bodydark">
+                Masukkan angka odometer (KM) kendaraan saat ini.
+              </p>
+            </div>
+            <CommonInput
+              placeholder="Contoh: 45000"
+              input={inputKM}
+              type="number"
+              error={inputKMError}
+              errorMessage="KM saat ini wajib diisi"
+              onInputChange={(val) => setInputKM(val)}
+              onChg={() => setInputKMError(false)}
+            />
+            <CommonButtonFull
+              label="Kirim Pengajuan Perawatan"
+              disabled={onloadRequestPerawatan}
+              onload={onloadRequestPerawatan}
+              onClick={async () => {
+                if (!inputKM.trim()) {
+                  setInputKMError(true);
+                  return;
+                }
                 setInputKMError(false);
-                const apiUrl = `${API_URL}/createvehiclemaintenance`;
-                const response = await axios.post(apiUrl, {
-                  idAsset: idAsset,
-                  km: inputKM,
-                  uid: uid,
-                });
-
-                if (response.status == 200) {
-                  // console.log(response.data["detail"][0].ID_Asset);
-                  const result = response.data;
-                  if (result["error"] == 1) {
-                    NotifyError(result["message"]);
+                setOnloadRequestPerawatan(true);
+                try {
+                  const res = await axios.post("/api/createvehiclemaintenance", {
+                    idAsset: idAsset,
+                    km: inputKM,
+                    uid: uid,
+                  });
+                  if (res.data?.error === 1) {
+                    NotifyError(res.data.message);
                   } else {
+                    NotifySuccess(res.data.message || "Perawatan dijadwalkan");
                     setModalPerawatan(false);
                     setInputKM("");
-                    NotifySuccess(result["message"]);
                     fetch_data();
                     fetch_data_service();
                   }
+                } catch (e) {
+                  NotifyError("Gagal mengirim pengajuan perawatan");
+                } finally {
+                  setOnloadRequestPerawatan(false);
                 }
-                //kirim ke server
-              }
-              setOnloadRequestPerawatan(false);
-            }}
-          />
+              }}
+            />
+          </div>
         </CustomModal>
 
+        {/* Modal Terima Spare Part */}
         <CustomModal
           isVisible={modalReceivePart}
           isSmallWidth="sm"
-          onClose={() => {
-            setModalReceivePart(false);
-          }}
+          onClose={() => setModalReceivePart(false)}
         >
-          <div className="mb-2">Input tanggal / jam terima spare part</div>
-          <div className="flex flex-row justify-evenly">
-            <div className="w-full">
+          <div className="space-y-4">
+            <div>
+              <h4 className="text-base font-bold text-black dark:text-white">
+                Konfirmasi Kedatangan Spare Part
+              </h4>
+              <p className="text-xs text-body dark:text-bodydark">
+                Tentukan tanggal dan jam penerimaan suku cadang.
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
               <CommonInput
-                type={"date"}
+                type="date"
                 input={currentDate}
-                onInputChange={(val) => {
-                  setCurrentDate(val);
-                }}
+                onInputChange={(val) => setCurrentDate(val)}
                 error={currentDateError}
-                errorMessage={"Required"}
-                onChg={() => {
-                  setCurrentDateError(false);
-                }}
+                errorMessage="Wajib"
+                onChg={() => setCurrentDateError(false)}
               />
-            </div>
-            <div className="mr-2"></div>
-            <div className="w-full">
               <CommonInput
-                type={"time"}
+                type="time"
                 input={currentTime}
-                onInputChange={(val) => {
-                  setCurrentTime(val);
-                }}
+                onInputChange={(val) => setCurrentTime(val)}
                 error={currentTimeError}
-                errorMessage={"Required"}
-                onChg={() => {
-                  setCurrentTimeError(false);
-                }}
+                errorMessage="Wajib"
+                onChg={() => setCurrentTimeError(false)}
               />
             </div>
+            <CommonButtonFull
+              label="Simpan Konfirmasi"
+              onClick={() => {
+                let hasErr = false;
+                if (!currentDate) {
+                  setCurrentDateError(true);
+                  hasErr = true;
+                }
+                if (!currentTime) {
+                  setCurrentTimeError(true);
+                  hasErr = true;
+                }
+                if (!hasErr) {
+                  setReceiveDateTime(`${currentDate} ${currentTime}`);
+                  setModalReceivePart(false);
+                  setCaseLoaderCompleted(true);
+                  setUpdatedStep("receive_part");
+                }
+              }}
+            />
           </div>
-          <div className="mb-5"></div>
-          <CommonButtonFull
-            label={"Kirim"}
-            onClick={() => {
-              if (currentDate == "") {
-                setCurrentDateError(true);
-              } else {
-                setCurrentDateError(false);
-              }
-
-              if (currentTime == "") {
-                setCurrentTimeError(true);
-              } else {
-                setCurrentTimeError(false);
-              }
-
-              if (currentDate != "" && currentTime != "") {
-                const datetime = `${currentDate} ${currentTime}`;
-                setReceiveDateTime(datetime);
-                setModalReceivePart(false);
-                setCaseLoaderCompleted(true);
-                setUpdatedStep("receive_part");
-              }
-            }}
-          />
         </CustomModal>
       </div>
     </UserAuth>

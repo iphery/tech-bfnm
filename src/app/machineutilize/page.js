@@ -12,7 +12,7 @@ export default function Page() {
   const [selectedReport, setSelectedReport] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [perPage] = useState(20);
+  const [perPage] = useState(15);
 
   // Filter state
   const [month, setMonth] = useState("");
@@ -50,7 +50,7 @@ export default function Page() {
 
     setLoading(true);
     try {
-      const apiUrl = `${API_URL}/machineutilize?bulan=${activeMonth}&tahun=${activeYear}&per_page=${perPage}&page=${page}`;
+      const apiUrl = `/api/machineutilize?bulan=${activeMonth}&tahun=${activeYear}&per_page=${perPage}&page=${page}`;
       const response = await axios.get(apiUrl);
       if (response.status === 200) {
         setDataReport(response.data);

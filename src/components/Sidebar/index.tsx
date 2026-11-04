@@ -402,19 +402,24 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
         }`}
       >
         {/* <!-- SIDEBAR HEADER --> */}
-        <div className="flex items-center justify-between gap-2 px-6 py-5.5 lg:py-6.5">
-          <div className="flex flex-col items-center justify-center">
-            <Link href="/">
+        <div className="flex items-center justify-between gap-3 px-6 py-5 border-b border-slate-800">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-primary to-blue-500 shadow-md">
               <Image
-                width={52}
-                height={52}
+                width={26}
+                height={26}
                 src={"/logo/logo.png"}
                 alt="Logo"
                 priority
               />
-            </Link>
-            <div className="text-white">MITA</div>
-          </div>
+            </div>
+            <div>
+              <div className="text-base font-black tracking-wider text-white">MITA</div>
+              <div className="text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+                Maintenance Ops
+              </div>
+            </div>
+          </Link>
 
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}

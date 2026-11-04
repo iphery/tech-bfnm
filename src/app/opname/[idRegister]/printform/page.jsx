@@ -1,13 +1,11 @@
 "use client";
-import { API_URL } from "@/utils/constant";
 import axios from "axios";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import "@/css/print.css";
 import { formatDateLocal } from "@/utils/dateformat";
 
 export default function Page() {
-  const router = useRouter();
   const params = useParams();
 
   const [dataOpname, setDataOpname] = useState([]);
@@ -15,29 +13,27 @@ export default function Page() {
   const [endPeriod, setEndPeriod] = useState("");
 
   const fetch_data = async () => {
-    console.log(params.idRegister);
-    const apiUrl = `${API_URL}/getopnameprint`;
-    const response = await axios.post(apiUrl, {
-      idRegister: params.idRegister,
-    });
+    try {
+      const response = await axios.post("/api/getopnameprint", {
+        idRegister: params.idRegister,
+      });
 
-    if (response.status == 200) {
-      const array = response.data["response"][0];
-
-      const listOpname = array.result;
-      const parsedList = JSON.parse(listOpname);
-      const start = array.start_date;
-      const end = array.end_date;
-      setDataOpname(parsedList);
-      setStartPeriod(start);
-      setEndPeriod(end);
-      console.log(array);
+      if (response.status === 200 && response.data?.response?.[0]) {
+        const array = response.data["response"][0];
+        const listOpname = array.result;
+        const parsedList = typeof listOpname === "string" ? JSON.parse(listOpname) : (listOpname || []);
+        setDataOpname(parsedList);
+        setStartPeriod(array.start_date || "");
+        setEndPeriod(array.end_date || "");
+      }
+    } catch (err) {
+      console.error("Gagal memuat form print opname:", err);
     }
   };
 
   useEffect(() => {
     fetch_data();
-  }, []);
+  }, [params.idRegister]);
 
   return (
     <div>

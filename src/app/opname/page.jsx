@@ -1,243 +1,439 @@
 "use client";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import axios from "axios";
-import { useEffect, useState } from "react";
-import { API_URL } from "@/utils/constant";
-import UserAuth from "@/components/auth";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import { useRouter } from "next/navigation";
-import { BsCartPlus } from "react-icons/bs";
 import { useMediaQuery } from "react-responsive";
-import Loader from "@/components/common/Loader";
-import { PageLoader } from "@/components/loader";
-import { HiOutlineSearch } from "react-icons/hi";
+import DefaultLayout from "@/components/Layouts/DefaultLayout";
+import UserAuth from "@/components/auth";
 import { CommonInput } from "@/components/input";
-import { formatDate, formatDateTime, shortDate } from "@/utils/dateformat";
-import { AiOutlineDelete } from "react-icons/ai";
-import paginateData from "@/utils/pagination";
-import { CustomModal } from "@/components/modal";
 import { CommonButtonFull } from "@/components/button";
-import { NotifySuccess } from "@/utils/notify";
+import { PageCardLimited } from "@/components/card";
+import { PageLoader, CardSkeleton, TableSkeleton } from "@/components/loader";
+import { CustomModal } from "@/components/modal";
+import { formatDateTime, shortDate } from "@/utils/dateformat";
+import { NotifySuccess, NotifyError } from "@/utils/notify";
 
-export default function Page() {
+// Icons
+import {
+  HiArrowLeft,
+  HiOutlineMagnifyingGlass as HiOutlineSearch,
+  HiOutlinePlus,
+  HiOutlineClipboardDocumentCheck,
+  HiOutlineCalendar,
+  HiOutlineArrowRight,
+} from "react-icons/hi2";
+import { BsBoxSeam } from "react-icons/bs";
+
+export default function StockOpnamePage() {
   const router = useRouter();
   const isSmallScreen = useMediaQuery({ query: "(max-width: 640px)" });
+
   const [orderData, setOrderData] = useState([]);
   const [loader, setLoader] = useState(true);
   const [keyword, setKeyword] = useState("");
-  const [filteredList, setFilteredList] = useState([]);
   const [modalNew, setModalNew] = useState(false);
-  const [startDate, setStartDate] = useState(
-    new Date().toISOString().substring(0, 10),
-  );
-  const [endDate, setEndDate] = useState(
-    new Date().toISOString().substring(0, 10),
-  );
+  const [isClient, setIsClient] = useState(false);
 
+  // Pagination (15 items per page)
+  const pageSize = 15;
+  const [mobilePage, setMobilePage] = useState(1);
+  const [desktopPage, setDesktopPage] = useState(1);
+  const observerTarget = useRef(null);
+
+  const getFirstDate = () => {
+    const today = new Date();
+    return new Date(today.getFullYear(), today.getMonth(), 1).toISOString().substring(0, 10);
+  };
+
+  const [startDate, setStartDate] = useState(getFirstDate());
+  const [endDate, setEndDate] = useState(new Date().toISOString().substring(0, 10));
   const [ongenerate, setOngenerate] = useState(false);
 
   const fetch_data = async () => {
-    const apiUrl = `${API_URL}/stockopname`;
-    const response = await axios.post(apiUrl, {});
-
-    if (response.status == 200) {
-      // console.log(response.data["detail"][0].ID_Asset);
-      const list = response.data["response"];
-
-      setOrderData(list);
+    try {
+      const response = await axios.post("/api/stockopname");
+      if (response.status === 200) {
+        setOrderData(response.data.response || []);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
       setLoader(false);
     }
   };
 
   const create_new = async () => {
     setOngenerate(true);
-    const user = localStorage.getItem("info");
-    const parseUser = JSON.parse(user);
-    const apiUrl = `${API_URL}/generateopname`;
-    const response = await axios.post(apiUrl, {
-      start: startDate,
-      end: endDate,
-      uid: parseUser[0]["Uid"],
-    });
+    try {
+      const user = localStorage.getItem("info");
+      const parseUser = user ? JSON.parse(user) : [{}];
 
-    if (response.status == 200) {
-      // console.log(response.data["detail"][0].ID_Asset);
-      const message = response.data["response"];
-      setModalNew(false);
-      NotifySuccess(message);
-      fetch_data();
+      const res = await axios.post("/api/generateopname", {
+        start: startDate,
+        end: endDate,
+        uid: parseUser[0]?.Uid || "",
+      });
+
+      if (res.status === 200) {
+        setModalNew(false);
+        NotifySuccess(res.data.response || "Laporan Stock Opname berhasil digenerate");
+        fetch_data();
+      }
+    } catch (e) {
+      NotifyError("Gagal men-generate laporan opname");
+    } finally {
+      setOngenerate(false);
     }
-    setOngenerate(false);
   };
 
   useEffect(() => {
-    const start = new Date(startDate).toISOString().substring(0, 10);
-    const end = new Date(endDate).toISOString().substring(0, 10);
-    if (start > end) {
-      setEndDate(start);
+    if (startDate > endDate) {
+      setEndDate(startDate);
     }
-  }, [startDate]);
-
-  useEffect(() => {
-    const start = new Date(startDate).toISOString().substring(0, 10);
-    const end = new Date(endDate).toISOString().substring(0, 10);
-    if (end < start) {
-      setStartDate(end);
-    }
-  }, [endDate]);
+  }, [startDate, endDate]);
 
   useEffect(() => {
     fetch_data();
+    setIsClient(true);
   }, []);
 
+  const filteredList = orderData.filter((item) => {
+    const q = keyword.toLowerCase();
+    const rep = (item.id_report || "").toLowerCase();
+    const user = (item.Name || "").toLowerCase();
+    return rep.includes(q) || user.includes(q);
+  });
+
+  // Mobile Infinite Scroll (batches of 15)
+  const displayedMobile = filteredList.slice(0, mobilePage * pageSize);
+  const hasMoreMobile = displayedMobile.length < filteredList.length;
+
+  const handleObserver = useCallback(
+    (entries) => {
+      const [target] = entries;
+      if (target.isIntersecting && hasMoreMobile) {
+        setMobilePage((prev) => prev + 1);
+      }
+    },
+    [hasMoreMobile]
+  );
+
   useEffect(() => {
-    //if (!loading) {
-    const filterData = orderData.filter((item) => {
-      const register =
-        item["id_report"] &&
-        item["id_report"].toLowerCase().includes(keyword.toLowerCase());
+    const element = observerTarget.current;
+    if (!element) return;
+    const observer = new IntersectionObserver(handleObserver, { threshold: 0.1 });
+    observer.observe(element);
+    return () => observer.unobserve(element);
+  }, [handleObserver]);
 
-      return register;
-    });
-    const { data, pageCurrent, start, end } = paginateData(
-      filterData,
-      //keyword,
-      //currentPage,
-      15,
-    );
-    setFilteredList(filterData);
+  // Desktop Pagination (15 items per page)
+  const totalDesktopPages = Math.ceil(filteredList.length / pageSize) || 1;
+  const displayedDesktop = filteredList.slice(
+    (desktopPage - 1) * pageSize,
+    desktopPage * pageSize
+  );
 
-    //}
-  }, [orderData, keyword]);
+  if (!isClient) return null;
 
   return (
     <UserAuth>
-      <div className="min-h-screen  bg-boxdark-2">
-        {isSmallScreen ? (
-          <>
-            <div>in progerss</div>
-          </>
-        ) : (
-          <div className="relative">
-            <div className="absolute z-0 h-full w-full">
-              <DefaultLayout>
-                <div className="min-h-[calc(100vh-115px)] ">
-                  <div className="mb-3 flex items-center justify-between">
-                    <div className="text-lg text-white">Stock Opname</div>
-
-                    <div className="flex justify-end">
-                      <div
-                        onClick={() => {
-                          setModalNew(true);
-                        }}
-                        className="flex cursor-default items-center justify-center px-5  hover:text-white"
-                      >
-                        <BsCartPlus />
-                        <div className="ml-1">New Data</div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className=" w-full rounded-sm border border-strokedark bg-boxdark shadow-default">
-                    <div className="p-3">
-                      <div className="flex flex-row items-center">
-                        <div className="w-1/2">
-                          <CommonInput
-                            input={keyword}
-                            type={"text"}
-                            onInputChange={(val) => {
-                              setKeyword(val);
-                            }}
-                            placeholder={"Search"}
-                          >
-                            <HiOutlineSearch />
-                          </CommonInput>
-                        </div>
-                      </div>
-
-                      <div className="mb-5"></div>
-                      <div className="h-[calc(100vh-235px)] overflow-y-auto">
-                        <table className="w-full">
-                          <thead>
-                            <tr className="sticky top-0 bg-black">
-                              <th className="">No Report</th>
-                              <th className="">Period</th>
-                              <th className="">Status</th>
-                              <th className="">Created by</th>
-                              <th className="">Created at</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {filteredList.map((item, index) => {
-                              return (
-                                <tr
-                                  key={index}
-                                  className="cursor-default hover:bg-meta-10"
-                                  onClick={() => {
-                                    router.push(`/opname/${item["id_report"]}`);
-                                  }}
-                                >
-                                  <td className="p-1">{item["id_report"]}</td>
-                                  <td className="p-1 text-center">
-                                    {`${shortDate(item["start_date"])} ~ ${shortDate(item["end_date"])}`}
-                                  </td>
-                                  <td
-                                    className={`${item["status"] == 0 ? "text-red" : "text-success"} p-1 text-center`}
-                                  >
-                                    {item["status"] == 0 ? "Open" : "Close"}
-                                  </td>
-                                  <td>{item["Name"]}</td>
-                                  <td className="text-center">
-                                    {formatDateTime(item["created_at"])}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
+      <div className="min-h-screen bg-whiten text-body dark:bg-boxdark-2 dark:text-bodydark">
+        {loader ? (
+          <PageLoader />
+        ) : isSmallScreen ? (
+          /* ================= MOBILE VIEW ================= */
+          <div className="flex flex-col min-h-screen pb-20">
+            {/* Top Bar */}
+            <div className="sticky top-0 z-40 border-b border-stroke/60 bg-white/80 px-4 py-3 backdrop-blur-md dark:border-strokedark/60 dark:bg-boxdark/80">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => router.push("/parts")}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 text-black hover:bg-gray-200 dark:bg-meta-4 dark:text-white"
+                  >
+                    <HiArrowLeft className="text-lg" />
+                  </button>
+                  <div>
+                    <h1 className="text-base font-bold text-black dark:text-white leading-none">
+                      Stock Opname
+                    </h1>
+                    <span className="text-[11px] text-body dark:text-bodydark">
+                      {filteredList.length} audit tercatat
+                    </span>
                   </div>
                 </div>
-              </DefaultLayout>
+
+                <button
+                  type="button"
+                  onClick={() => setModalNew(true)}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white shadow-sm hover:bg-opacity-90 transition-all"
+                  title="Generate Opname Baru"
+                >
+                  <HiOutlinePlus className="text-lg" />
+                </button>
+              </div>
+
+              {/* Search Bar */}
+              <div className="relative">
+                <CommonInput
+                  input={keyword}
+                  type="text"
+                  onInputChange={(val) => {
+                    setKeyword(val);
+                    setMobilePage(1);
+                  }}
+                  placeholder="Cari ID laporan opname..."
+                >
+                  <HiOutlineSearch className="text-body dark:text-bodydark" />
+                </CommonInput>
+              </div>
             </div>
-            <CustomModal
-              isVisible={modalNew}
-              isSmallWidth={"sm"}
-              onClose={() => {
-                setModalNew(false);
-              }}
-            >
-              <div className="flex flex-row">
-                <div className="w-full">
-                  <div className="mb-2 text-sm">From</div>
-                  <CommonInput
-                    type={"date"}
-                    input={startDate}
-                    onInputChange={(val) => {
-                      setStartDate(val);
-                    }}
-                  ></CommonInput>
+
+            {/* List of Reports (15 items per batch with Infinite Scroll) */}
+            <div className="p-4 space-y-2.5">
+              {filteredList.length === 0 ? (
+                <div className="rounded-2xl border border-stroke bg-white p-8 text-center text-xs text-body dark:border-strokedark dark:bg-boxdark dark:text-bodydark">
+                  Tidak ada laporan stock opname yang cocok.
                 </div>
-                <div className="ml-2"></div>
-                <div className="w-full">
-                  <div className="mb-2 text-sm">To</div>
-                  <CommonInput
-                    type={"date"}
-                    input={endDate}
-                    onInputChange={(val) => {
-                      setEndDate(val);
-                    }}
-                  ></CommonInput>
+              ) : (
+                <>
+                  {displayedMobile.map((item, index) => (
+                    <div
+                      key={index}
+                      onClick={() => router.push(`/opname/${item.id_report}`)}
+                      className="group cursor-pointer rounded-2xl border border-stroke bg-white p-3.5 shadow-sm hover:border-primary hover:shadow dark:border-strokedark dark:bg-boxdark dark:hover:border-primary transition-all active:scale-[0.99]"
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="font-mono text-xs font-bold text-black dark:text-white">
+                          {item.id_report}
+                        </span>
+                        <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold text-primary">
+                          Opname
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 text-xs text-black dark:text-white font-medium mb-1.5">
+                        <HiOutlineCalendar className="text-primary" />
+                        <span>
+                          Periode: {shortDate(item.start_date)} s/d {shortDate(item.end_date)}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between border-t border-stroke/60 pt-2 text-[11px] text-body dark:border-strokedark/60 dark:text-bodydark">
+                        <span>Dibuat: {item.Name || "-"}</span>
+                        <span>{formatDateTime(item.created_at)}</span>
+                        <HiOutlineArrowRight className="text-xs group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Infinite scroll observer target */}
+                  <div ref={observerTarget} className="py-2 text-center text-xs text-body dark:text-bodydark">
+                    {hasMoreMobile && (
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                        <span>Memuat 15 laporan berikutnya...</span>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        ) : (
+          /* ================= DESKTOP VIEW ================= */
+          <DefaultLayout>
+            <div className="mx-auto max-w-7xl space-y-6">
+              {/* Header */}
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => router.push("/parts")}
+                    className="flex h-10 w-10 items-center justify-center rounded-xl border border-stroke bg-white text-black hover:bg-gray-50 dark:border-strokedark dark:bg-boxdark dark:text-white transition-all shadow-sm"
+                  >
+                    <HiArrowLeft className="text-xl" />
+                  </button>
+                  <div>
+                    <h1 className="text-xl font-bold text-black dark:text-white">
+                      Stock Opname Bengkel
+                    </h1>
+                    <p className="text-xs text-body dark:text-bodydark">
+                      Audit fisik berkala dan rekonsiliasi saldo aktual spare part
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setModalNew(true)}
+                  className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-white shadow hover:bg-opacity-90 active:scale-[0.99] transition-all"
+                >
+                  <HiOutlineClipboardDocumentCheck className="text-base" />
+                  <span>Generate Opname Baru</span>
+                </button>
+              </div>
+
+              {/* Table Card (15 items per page) */}
+              <PageCardLimited>
+                <div className="space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-4 border-b border-stroke pb-4 dark:border-strokedark">
+                    <div className="w-full sm:w-80">
+                      <CommonInput
+                        input={keyword}
+                        type="text"
+                        onInputChange={(val) => {
+                          setKeyword(val);
+                          setDesktopPage(1);
+                        }}
+                        placeholder="Cari ID laporan, pembuat..."
+                      >
+                        <HiOutlineSearch className="text-body dark:text-bodydark" />
+                      </CommonInput>
+                    </div>
+
+                    <span className="text-xs text-body dark:text-bodydark">
+                      Menampilkan {displayedDesktop.length} dari {filteredList.length} laporan opname
+                    </span>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full table-auto text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-stroke bg-gray-50 text-body dark:border-strokedark dark:bg-meta-4/20 dark:text-bodydark">
+                          <th className="py-3 px-4 font-semibold">ID Laporan</th>
+                          <th className="py-3 px-4 font-semibold">Periode Audit</th>
+                          <th className="py-3 px-4 font-semibold">Dibuat Oleh</th>
+                          <th className="py-3 px-4 font-semibold">Waktu Pembuatan</th>
+                          <th className="py-3 px-4 font-semibold text-center">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-stroke dark:divide-strokedark">
+                        {filteredList.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="py-8 text-center text-body dark:text-bodydark">
+                              Tidak ada laporan stock opname.
+                            </td>
+                          </tr>
+                        ) : (
+                          displayedDesktop.map((item, index) => (
+                            <tr
+                              key={index}
+                              onClick={() => router.push(`/opname/${item.id_report}`)}
+                              className="cursor-pointer hover:bg-gray-50 dark:hover:bg-meta-4/10 transition-colors"
+                            >
+                              <td className="py-3 px-4 font-mono font-bold text-black dark:text-white">
+                                {item.id_report}
+                              </td>
+                              <td className="py-3 px-4 text-black dark:text-white font-medium">
+                                {shortDate(item.start_date)} s/d {shortDate(item.end_date)}
+                              </td>
+                              <td className="py-3 px-4 text-black dark:text-white">
+                                {item.Name || "-"}
+                              </td>
+                              <td className="py-3 px-4 text-body dark:text-bodydark whitespace-nowrap">
+                                {formatDateTime(item.created_at)}
+                              </td>
+                              <td className="py-3 px-4 text-center">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    router.push(`/opname/${item.id_report}`);
+                                  }}
+                                  className="rounded-lg border border-stroke px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-primary hover:text-white dark:border-strokedark transition-colors"
+                                >
+                                  Buka Audit
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Desktop Pagination Controls (15 per page) */}
+                  {totalDesktopPages > 1 && (
+                    <div className="flex items-center justify-between border-t border-stroke pt-4 dark:border-strokedark text-xs">
+                      <span className="text-body dark:text-bodydark">
+                        Halaman {desktopPage} dari {totalDesktopPages}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          disabled={desktopPage === 1}
+                          onClick={() => setDesktopPage((p) => Math.max(1, p - 1))}
+                          className="rounded-lg border border-stroke px-3 py-1.5 font-semibold text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 disabled:opacity-40"
+                        >
+                          Sebelumnya
+                        </button>
+                        <button
+                          type="button"
+                          disabled={desktopPage === totalDesktopPages}
+                          onClick={() => setDesktopPage((p) => Math.min(totalDesktopPages, p + 1))}
+                          className="rounded-lg border border-stroke px-3 py-1.5 font-semibold text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 disabled:opacity-40"
+                        >
+                          Berikutnya
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </PageCardLimited>
+            </div>
+          </DefaultLayout>
+        )}
+
+        {/* Modal Generate Opname Baru */}
+        {modalNew && (
+          <CustomModal
+            isOpen={modalNew}
+            onClose={() => setModalNew(false)}
+            title="Generate Laporan Stock Opname"
+          >
+            <div className="space-y-4 text-xs">
+              <p className="text-body dark:text-bodydark">
+                Sistem akan menghitung otomatis saldo awal, total mutasi masuk, mutasi keluar, dan saldo akhir seluruh item aktif pada rentang tanggal yang dipilih.
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block font-semibold text-black dark:text-white">
+                    Tanggal Mulai *
+                  </label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full rounded-xl border border-stroke bg-gray-50 px-3 py-2 text-xs text-black focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block font-semibold text-black dark:text-white">
+                    Tanggal Akhir *
+                  </label>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full rounded-xl border border-stroke bg-gray-50 px-3 py-2 text-xs text-black focus:border-primary focus:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white"
+                  />
                 </div>
               </div>
-              <div className="mb-5"></div>
-              <CommonButtonFull
-                onClick={create_new}
-                onload={ongenerate}
-                disabled={ongenerate}
-                label={"Generate"}
-              ></CommonButtonFull>
-            </CustomModal>
-          </div>
+
+              <div className="pt-2">
+                <CommonButtonFull
+                  label="Generate Laporan"
+                  onload={ongenerate}
+                  disabled={ongenerate}
+                  onClick={create_new}
+                />
+              </div>
+            </div>
+          </CustomModal>
         )}
       </div>
     </UserAuth>

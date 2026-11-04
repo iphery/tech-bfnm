@@ -1,48 +1,54 @@
 "use client";
-import React, { useContext, useEffect, useState } from "react";
-import { AppContext } from "../appcontext";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 import { useMediaQuery } from "react-responsive";
-import { IMAGE_ASSET, API_URL } from "@/utils/constant";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import UserAuth from "@/components/auth";
-import { Appbar } from "@/components/appbar";
 import { CommonInput } from "@/components/input";
-import { HiOutlineSearch } from "react-icons/hi";
-import { useRouter } from "next/navigation";
-import { TableContent, TableHeader } from "@/components/table";
-import { GoChevronRight } from "react-icons/go";
-import paginateData from "@/utils/pagination";
-import { BsCartPlus } from "react-icons/bs";
-import { PageLoader } from "@/components/loader";
-import { PageCardLimited } from "@/components/card";
-import { useProvider } from "@/app/appcontext";
-import { MdAdd, MdAddToPhotos } from "react-icons/md";
-import { CustomModal } from "@/components/modal";
-import { FaBullseye } from "react-icons/fa";
 import { CommonButtonFull } from "@/components/button";
-import { NotifySuccess } from "@/utils/notify";
+import { PageCardLimited } from "@/components/card";
+import { PageLoader } from "@/components/loader";
+import { CustomModal } from "@/components/modal";
+import { NotifySuccess, NotifyError } from "@/utils/notify";
+import { useProvider } from "@/app/appcontext";
+
+// Icons
+import {
+  HiOutlineSearch,
+  HiOutlinePlus,
+  HiOutlineCube,
+  HiOutlineLocationMarker,
+  HiOutlineTag,
+  HiOutlineArrowRight,
+  HiArrowLeft,
+} from "react-icons/hi";
+import {
+  HiOutlineWrenchScrewdriver,
+  HiOutlineArrowDownTray,
+  HiOutlineArrowUpTray,
+  HiOutlineDocumentText,
+} from "react-icons/hi2";
+import { BsCartPlus, BsBoxSeam } from "react-icons/bs";
+import { MdAddToPhotos } from "react-icons/md";
 
 export default function ListPart() {
   const router = useRouter();
   const [isClient, setIsClient] = useState(false);
-
   const isSmallScreen = useMediaQuery({ query: "(max-width: 640px)" });
 
   const [detailData, setDetailData] = useState([]);
-  const [countData, setCountData] = useState(0);
-  const [keyword, setKeyword] = useState("");
-  const [keywordError, setKeywordError] = useState(false);
-  const [filteredList, setFilteredList] = useState([]);
-  const [loader, setLoader] = useState(true);
-
-  const { filteredPartList, setFilteredPartList } = useProvider();
-  const { partKeyword, setPartKeyword } = useProvider();
-
-  //const [lastPage, setLastPage] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [modalNewPart, setModalNewPart] = useState(false);
+  const [keyword, setKeyword] = useState("");
+
+  // Pagination & infinite scroll (15 items per page)
+  const [page, setPage] = useState(1);
+  const [desktopPage, setDesktopPage] = useState(1);
+  const pageSize = 15;
+  const [displayedParts, setDisplayedParts] = useState([]);
+  const [hasMore, setHasMore] = useState(true);
+  const observerTarget = useRef(null);
 
   const [inputNewData, setInputNewData] = useState({
     description: "",
@@ -62,414 +68,596 @@ export default function ListPart() {
 
   const [onloadNew, setOnloadNew] = useState(false);
 
+  const [userLevel, setUserLevel] = useState("");
+
   const fetch_data = async () => {
-    const apiUrl = `${API_URL}/stocklist?page=${currentPage}`;
-    const response = await axios.post(apiUrl, { keyword: keyword });
-
-    if (response.status == 200) {
-      const array = response.data["response"];
-      // const current_page = response.data["response"]["current_page"];
-      //const last_page = response.data["response"]["last_page"];
-      setDetailData(array);
-      //setFilteredList(array);
-      // setLastPage(last_page);
-
-      // console.log(array);
+    try {
+      const response = await axios.post("/api/stocklist");
+      if (response.status === 200) {
+        const array = response.data["response"] || [];
+        setDetailData(array);
+      }
+    } catch (e) {
+      console.error("fetch_data stocklist error:", e);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-    setLoader(false);
-  };
-
-  const next_page = () => {
-    if (currentPage < lastPage) {
-      let nextPage = currentPage + 1;
-      setCurrentPage(nextPage);
-    }
-    console.log(currentPage);
-  };
-
-  const prev_page = () => {
-    if (currentPage > 1) {
-      let nextPage = currentPage - 1;
-      setCurrentPage(nextPage);
-    }
-  };
-
-  const onPageChange = () => {
-    let nextPage = currentPage + 1;
-    console.log("ini" + nextPage);
-    setCurrentPage(nextPage);
-  };
-
-  const onKeywordChange = (event) => {
-    setKeyword(event.target.value);
-    setCurrentPage(1); // Reset to the first page on keyword change
   };
 
   useEffect(() => {
+    const user = localStorage.getItem("info");
+    if (user) {
+      try {
+        const parseUser = JSON.parse(user);
+        setUserLevel(parseUser[0]?.Level ?? "");
+      } catch (err) {
+        console.error(err);
+      }
+    }
     fetch_data();
-  }, []);
-
-  useEffect(() => {
-    //if (!loading) {
-
-    const filterData = detailData.filter((item) => {
-      const description =
-        item["description"] &&
-        item["description"].toLowerCase().includes(partKeyword.toLowerCase());
-      const code =
-        item["vendor_code"] &&
-        item["vendor_code"].toLowerCase().includes(partKeyword.toLowerCase());
-
-      return description || code;
-    });
-    const { data, pageCurrent, start, end } = paginateData(
-      filterData,
-      //keyword,
-      currentPage,
-      15,
-    );
-
-    setFilteredPartList(filterData);
-
-    //}
-  }, [detailData, partKeyword, currentPage]);
-
-  useEffect(() => {
     setIsClient(true);
   }, []);
 
-  if (!isClient) {
-    return null;
+  // Filtered parts based on keyword
+  const filteredList = detailData.filter((item) => {
+    const q = keyword.toLowerCase();
+    const desc = (item["description"] || "").toLowerCase();
+    const code = (item["vendor_code"] || "").toLowerCase();
+    const loc = (item["location"] || "").toLowerCase();
+    const rem = (item["remark"] || "").toLowerCase();
+    return desc.includes(q) || code.includes(q) || loc.includes(q) || rem.includes(q);
+  });
+
+  // Handle pagination / infinite scrolling
+  useEffect(() => {
+    const nextList = filteredList.slice(0, page * pageSize);
+    setDisplayedParts(nextList);
+    setHasMore(nextList.length < filteredList.length);
+  }, [detailData, keyword, page]);
+
+  // Infinite Scroll Observer for Mobile
+  const handleObserver = useCallback(
+    (entries) => {
+      const [target] = entries;
+      if (target.isIntersecting && hasMore && !loading) {
+        setPage((prev) => prev + 1);
+      }
+    },
+    [hasMore, loading]
+  );
+
+  useEffect(() => {
+    const element = observerTarget.current;
+    if (!element) return;
+    const observer = new IntersectionObserver(handleObserver, { threshold: 0.2 });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [handleObserver, isSmallScreen]);
+
+  if (!isClient) return null;
+
+  if (userLevel !== "" && parseInt(userLevel) > 2) {
+    return (
+      <UserAuth>
+        <div className="flex min-h-screen flex-col items-center justify-center p-6 text-center bg-whiten dark:bg-boxdark-2 text-black dark:text-white">
+          <div className="rounded-2xl border border-stroke bg-white p-8 shadow-sm dark:border-strokedark dark:bg-boxdark max-w-md">
+            <BsBoxSeam className="mx-auto text-4xl text-warning mb-3" />
+            <h2 className="text-lg font-bold mb-1">Akses Khusus Tim Pemeliharaan</h2>
+            <p className="text-xs text-body dark:text-bodydark mb-5 leading-relaxed">
+              Menu inventaris dan suku cadang hanya dapat diakses oleh teknisi dan tim pemeliharaan (Role Level 2).
+            </p>
+            <button
+              type="button"
+              onClick={() => router.push("/")}
+              className="rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-white shadow hover:bg-opacity-90"
+            >
+              Kembali ke Beranda
+            </button>
+          </div>
+        </div>
+      </UserAuth>
+    );
   }
 
   return (
     <UserAuth>
-      <div className="min-h-screen  bg-boxdark-2">
+      <div className="min-h-screen bg-whiten text-body dark:bg-boxdark-2 dark:text-bodydark">
         {isSmallScreen ? (
-          <>
-            <div>in progerss</div>
-          </>
-        ) : (
-          <div className="relative">
-            <div className="absolute z-0 h-full w-full">
-              <DefaultLayout>
-                <div className="flex min-h-[calc(100vh-115px)] flex-col">
-                  <div className="mb-3 flex items-center justify-center">
-                    <div className="text-lg text-white">Inventory</div>
+          /* ================= MOBILE VIEW ================= */
+          <div className="flex flex-col min-h-screen pb-20">
+            {/* Top Bar */}
+            <div className="sticky top-0 z-40 border-b border-stroke/60 bg-white/80 px-4 py-3 backdrop-blur-md dark:border-strokedark/60 dark:bg-boxdark/80">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => router.push("/")}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 text-black hover:bg-gray-200 dark:bg-meta-4 dark:text-white"
+                  >
+                    <HiArrowLeft className="text-lg" />
+                  </button>
+                  <div>
+                    <h1 className="text-base font-bold text-black dark:text-white leading-none">
+                      Suku Cadang & Stok
+                    </h1>
+                    <span className="text-[11px] text-body dark:text-bodydark">
+                      {detailData.length} item terdaftar
+                    </span>
+                  </div>
+                </div>
 
-                    <div className="w-full">
-                      <div className="flex justify-end text-warning">
-                        <div className="flex flex-row">
-                          <div
-                            className="flex cursor-default items-center justify-center px-5  hover:text-white"
-                            onClick={() => {
-                              setModalNewPart(true);
-                            }}
-                          >
-                            <MdAddToPhotos />
-                            <div className="ml-1 ">New Part</div>
-                          </div>
-                          <div
-                            className="flex cursor-default items-center justify-center px-5  hover:text-white"
-                            onClick={() => {
-                              router.push("/partsout");
-                            }}
-                          >
-                            <BsCartPlus />
-                            <div className="ml-1 ">Stock Out</div>
-                          </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setModalNewPart(true)}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white shadow-sm hover:bg-opacity-90 transition-all"
+                    title="Tambah Part Baru"
+                  >
+                    <HiOutlinePlus className="text-lg" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => router.push("/partsout")}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-warning/15 text-warning hover:bg-warning/25 transition-all"
+                    title="Stock Out"
+                  >
+                    <BsCartPlus className="text-lg" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Search Bar */}
+              <div className="relative">
+                <CommonInput
+                  input={keyword}
+                  type="text"
+                  onInputChange={(val) => {
+                    setKeyword(val);
+                    setPage(1);
+                  }}
+                  placeholder="Cari suku cadang, part no, lokasi..."
+                >
+                  <HiOutlineSearch className="text-body dark:text-bodydark" />
+                </CommonInput>
+              </div>
+            </div>
+
+            {/* Quick Filter & Shortcuts */}
+            <div className="flex items-center gap-2 px-4 py-2 overflow-x-auto scrollbar-none text-xs">
+              <button
+                type="button"
+                onClick={() => router.push("/partsin")}
+                className="flex shrink-0 items-center gap-1.5 rounded-full border border-stroke bg-white px-3 py-1.5 font-medium text-black shadow-sm dark:border-strokedark dark:bg-boxdark dark:text-white"
+              >
+                <HiOutlineArrowDownTray className="text-success" />
+                <span>Stock In</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push("/partsout")}
+                className="flex shrink-0 items-center gap-1.5 rounded-full border border-stroke bg-white px-3 py-1.5 font-medium text-black shadow-sm dark:border-strokedark dark:bg-boxdark dark:text-white"
+              >
+                <HiOutlineArrowUpTray className="text-warning" />
+                <span>Stock Out</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push("/partsorder")}
+                className="flex shrink-0 items-center gap-1.5 rounded-full border border-stroke bg-white px-3 py-1.5 font-medium text-black shadow-sm dark:border-strokedark dark:bg-boxdark dark:text-white"
+              >
+                <HiOutlineDocumentText className="text-primary" />
+                <span>PO Order</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push("/partstransaction")}
+                className="flex shrink-0 items-center gap-1.5 rounded-full border border-stroke bg-white px-3 py-1.5 font-medium text-black shadow-sm dark:border-strokedark dark:bg-boxdark dark:text-white"
+              >
+                <BsBoxSeam className="text-meta-5" />
+                <span>Mutasi Stok</span>
+              </button>
+            </div>
+
+            {/* List of Spare Part Cards */}
+            <div className="p-4 space-y-2.5">
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-16 gap-3">
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                  <span className="text-xs text-body dark:text-bodydark">Memuat katalog suku cadang...</span>
+                </div>
+              ) : displayedParts.length === 0 ? (
+                <div className="rounded-2xl border border-stroke bg-white p-8 text-center dark:border-strokedark dark:bg-boxdark">
+                  <BsBoxSeam className="mx-auto text-3xl opacity-20 mb-2" />
+                  <span className="text-xs text-body dark:text-bodydark">
+                    Tidak ada suku cadang yang cocok dengan pencarian.
+                  </span>
+                </div>
+              ) : (
+                displayedParts.map((item, index) => {
+                  const available = Number(item["available_quantity"] || 0);
+                  return (
+                    <div
+                      key={index}
+                      onClick={() => router.push(`/parts/${item["id_part"]}`)}
+                      className="group cursor-pointer rounded-2xl border border-stroke bg-white p-3.5 shadow-sm hover:border-primary hover:shadow dark:border-strokedark dark:bg-boxdark dark:hover:border-primary transition-all active:scale-[0.99]"
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-1.5">
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-sm font-bold text-black dark:text-white leading-tight truncate">
+                            {item["description"]}
+                          </h3>
+                          {item["vendor_code"] && (
+                            <span className="font-mono text-[11px] text-body dark:text-bodydark">
+                              Part No: {item["vendor_code"]}
+                            </span>
+                          )}
                         </div>
+                        <span
+                          className={`rounded-full px-2.5 py-0.5 text-xs font-bold shrink-0 ${
+                            available > 0
+                              ? "bg-success/15 text-success"
+                              : "bg-danger/15 text-danger"
+                          }`}
+                        >
+                          {available} {item["unit"] || "pcs"}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between border-t border-stroke/60 pt-2 text-[11px] text-body dark:border-strokedark/60 dark:text-bodydark">
+                        <div className="flex items-center gap-1">
+                          <HiOutlineLocationMarker className="text-xs text-primary" />
+                          <span>{item["location"] || "Lokasi -"}</span>
+                        </div>
+                        {item["remark"] && (
+                          <span className="truncate max-w-[150px] italic opacity-80">
+                            {item["remark"]}
+                          </span>
+                        )}
+                        <HiOutlineArrowRight className="text-xs group-hover:translate-x-1 transition-transform" />
                       </div>
                     </div>
+                  );
+                })
+              )}
+
+              {/* Infinite Scroll Trigger */}
+              <div ref={observerTarget} className="py-2 text-center">
+                {hasMore && !loading && (
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent mx-auto" />
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* ================= DESKTOP VIEW ================= */
+          <DefaultLayout>
+            <div className="mx-auto max-w-7xl space-y-6">
+              {/* Header & Quick Action Buttons */}
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <h1 className="text-xl font-bold text-black dark:text-white">
+                    Manajemen Stok & Suku Cadang
+                  </h1>
+                  <p className="text-xs text-body dark:text-bodydark">
+                    Katalog inventory suku cadang dan pemantauan pergerakan stok barang
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setModalNewPart(true)}
+                    className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-white shadow hover:bg-opacity-90 active:scale-[0.99] transition-all"
+                  >
+                    <MdAddToPhotos className="text-base" />
+                    <span>Tambah Part Baru</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => router.push("/partsin")}
+                    className="flex items-center gap-2 rounded-xl border border-stroke bg-white px-4 py-2.5 text-xs font-semibold text-black hover:bg-gray-50 dark:border-strokedark dark:bg-boxdark dark:text-white dark:hover:bg-meta-4/20 transition-all shadow-sm"
+                  >
+                    <HiOutlineArrowDownTray className="text-success text-base" />
+                    <span>Stock In</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => router.push("/partsout")}
+                    className="flex items-center gap-2 rounded-xl border border-stroke bg-white px-4 py-2.5 text-xs font-semibold text-black hover:bg-gray-50 dark:border-strokedark dark:bg-boxdark dark:text-white dark:hover:bg-meta-4/20 transition-all shadow-sm"
+                  >
+                    <BsCartPlus className="text-warning text-base" />
+                    <span>Stock Out</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => router.push("/partsorder")}
+                    className="flex items-center gap-2 rounded-xl border border-stroke bg-white px-4 py-2.5 text-xs font-semibold text-black hover:bg-gray-50 dark:border-strokedark dark:bg-boxdark dark:text-white dark:hover:bg-meta-4/20 transition-all shadow-sm"
+                  >
+                    <HiOutlineDocumentText className="text-primary text-base" />
+                    <span>PO Order</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => router.push("/partstransaction")}
+                    className="flex items-center gap-2 rounded-xl border border-stroke bg-white px-4 py-2.5 text-xs font-semibold text-black hover:bg-gray-50 dark:border-strokedark dark:bg-boxdark dark:text-white dark:hover:bg-meta-4/20 transition-all shadow-sm"
+                  >
+                    <BsBoxSeam className="text-meta-5 text-base" />
+                    <span>Mutasi Stok</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Data Table Card */}
+              <PageCardLimited>
+                <div className="space-y-4">
+                  {/* Search Bar & Summary */}
+                  <div className="flex flex-wrap items-center justify-between gap-4 border-b border-stroke pb-4 dark:border-strokedark">
+                    <div className="w-full sm:w-80">
+                      <CommonInput
+                        input={keyword}
+                        type="text"
+                        onInputChange={(val) => {
+                          setKeyword(val);
+                          setPage(1);
+                          setDesktopPage(1);
+                        }}
+                        placeholder="Cari deskripsi, kode part, lokasi..."
+                      >
+                        <HiOutlineSearch className="text-body dark:text-bodydark" />
+                      </CommonInput>
+                    </div>
+
+                    <span className="text-xs text-body dark:text-bodydark">
+                      Menampilkan {filteredList.length} total suku cadang
+                    </span>
                   </div>
-                  <PageCardLimited>
-                    <div className="p-5">
-                      <div className="flex flex-row items-center">
-                        <div className="w-1/2">
-                          <CommonInput
-                            input={partKeyword}
-                            type={"text"}
-                            onInputChange={(val) => {
-                              //setKeyword(val);
-                              //  fetch_data();
-                              setPartKeyword(val);
-                              setCurrentPage(1);
-                            }}
-                            onKeyChange={() => {
-                              setKeywordError(false);
-                            }}
-                            placeholder={"Search"}
-                          >
-                            <HiOutlineSearch />
-                          </CommonInput>
-                        </div>
-                      </div>
 
-                      <div className="mb-5"></div>
-
-                      <div className="h-[calc(100vh-280px)] overflow-y-auto">
-                        <table className="w-full">
-                          <thead>
-                            <tr className="sticky top-0 bg-black text-white">
-                              <th>Deskripsi</th>
-                              <th>Part No</th>
-                              <th>Remark</th>
-                              <th>Quantity</th>
-                              <th>Unit</th>
-
-                              <th>Lokasi Simpan</th>
-                            </tr>
-                          </thead>
-                          <tbody className=" ">
-                            {!loading ? (
-                              filteredPartList.map((item, index) => {
-                                return (
-                                  <tr
-                                    key={index}
-                                    className={`cursor-default text-white    hover:bg-secondary hover:text-black`}
-                                    onClick={() => {
+                  {/* Table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full table-auto text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-stroke bg-gray-50 text-body dark:border-strokedark dark:bg-meta-4/20 dark:text-bodydark">
+                          <th className="py-3 px-4 font-semibold">Deskripsi Suku Cadang</th>
+                          <th className="py-3 px-4 font-semibold">Part No / Detail</th>
+                          <th className="py-3 px-4 font-semibold">Remark</th>
+                          <th className="py-3 px-4 font-semibold text-center">Stok Tersedia</th>
+                          <th className="py-3 px-4 font-semibold">Satuan</th>
+                          <th className="py-3 px-4 font-semibold">Lokasi Simpan</th>
+                          <th className="py-3 px-4 font-semibold text-center">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-stroke dark:divide-strokedark">
+                        {loading ? (
+                          <tr>
+                            <td colSpan={7} className="py-8 text-center text-body dark:text-bodydark">
+                              Memuat data inventory...
+                            </td>
+                          </tr>
+                        ) : filteredList.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="py-8 text-center text-body dark:text-bodydark">
+                              Tidak ada suku cadang yang sesuai kriteria pencarian.
+                            </td>
+                          </tr>
+                        ) : (
+                          filteredList
+                            .slice((desktopPage - 1) * pageSize, desktopPage * pageSize)
+                            .map((item, index) => {
+                            const available = Number(item["available_quantity"] || 0);
+                            return (
+                              <tr
+                                key={index}
+                                onClick={() => router.push(`/parts/${item["id_part"]}`)}
+                                className="cursor-pointer hover:bg-gray-50 dark:hover:bg-meta-4/10 transition-colors"
+                              >
+                                <td className="py-3 px-4 font-semibold text-black dark:text-white">
+                                  {item["description"]}
+                                </td>
+                                <td className="py-3 px-4 font-mono text-body dark:text-bodydark">
+                                  {item["vendor_code"] || "-"}
+                                </td>
+                                <td className="py-3 px-4 text-body dark:text-bodydark">
+                                  {item["remark"] || "-"}
+                                </td>
+                                <td className="py-3 px-4 text-center">
+                                  <span
+                                    className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                                      available > 0
+                                        ? "bg-success/15 text-success"
+                                        : "bg-danger/15 text-danger"
+                                    }`}
+                                  >
+                                    {available}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-4 text-body dark:text-bodydark">
+                                  {item["unit"] || "pcs"}
+                                </td>
+                                <td className="py-3 px-4 text-body dark:text-bodydark">
+                                  {item["location"] || "-"}
+                                </td>
+                                <td className="py-3 px-4 text-center">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
                                       router.push(`/parts/${item["id_part"]}`);
                                     }}
+                                    className="rounded-lg border border-stroke px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-primary hover:text-white dark:border-strokedark transition-colors"
                                   >
-                                    <td className="p-2 align-top">
-                                      {item["description"]}
-                                    </td>
-                                    <td className=" p-2 align-top">
-                                      {item["vendor_code"]}
-                                    </td>
-                                    <td className="p-2 align-top">
-                                      {item["remark"]}
-                                    </td>
-                                    <td className="p-2 align-top">
-                                      {item["available_quantity"]}
-                                    </td>
-                                    <td className="p-2 align-top">
-                                      {item["unit"]}
-                                    </td>
-                                    <td className="p-2 align-top">
-                                      {item["location"]}
-                                    </td>
-                                  </tr>
-                                );
-                              })
-                            ) : (
-                              <></>
-                            )}
-                          </tbody>
-                        </table>
+                                    Detail Stok
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Desktop Pagination Controls (15 items per page) */}
+                  {Math.ceil(filteredList.length / pageSize) > 1 && (
+                    <div className="flex items-center justify-between border-t border-stroke pt-4 dark:border-strokedark text-xs">
+                      <span className="text-body dark:text-bodydark">
+                        Halaman {desktopPage} dari {Math.ceil(filteredList.length / pageSize)}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          disabled={desktopPage === 1}
+                          onClick={() => setDesktopPage((p) => Math.max(1, p - 1))}
+                          className="rounded-lg border border-stroke px-3 py-1.5 font-semibold text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 disabled:opacity-40"
+                        >
+                          Sebelumnya
+                        </button>
+                        <button
+                          type="button"
+                          disabled={desktopPage === Math.ceil(filteredList.length / pageSize)}
+                          onClick={() => setDesktopPage((p) => Math.min(Math.ceil(filteredList.length / pageSize), p + 1))}
+                          className="rounded-lg border border-stroke px-3 py-1.5 font-semibold text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 disabled:opacity-40"
+                        >
+                          Berikutnya
+                        </button>
                       </div>
                     </div>
-                  </PageCardLimited>
+                  )}
                 </div>
-              </DefaultLayout>
+              </PageCardLimited>
             </div>
-            <CustomModal
-              isVisible={modalNewPart}
-              isSmallWidth="sm"
-              onClose={() => {
-                setModalNewPart(false);
-              }}
-            >
-              <div className="mb-2"></div>
-              <CommonInput
-                placeholder={"Enter description"}
-                input={inputNewData.description}
-                onInputChange={(val) => {
-                  setInputNewData((prevState) => ({
-                    ...prevState,
-                    description: val,
-                  }));
-                }}
-                error={inputNewDataError.descriptionError}
-                errorMessage={"Required"}
-                onChg={() => {
-                  setInputNewDataError((prevState) => ({
-                    ...prevState,
-                    descriptionError: false,
-                  }));
-                }}
-              ></CommonInput>
-              <div className="mb-2"></div>
-              <CommonInput
-                placeholder={"Enter detail"}
-                input={inputNewData.vendor_code}
-                onInputChange={(val) => {
-                  setInputNewData((prevState) => ({
-                    ...prevState,
-                    vendor_code: val,
-                  }));
-                }}
-                error={inputNewDataError.codeError}
-                errorMessage={"Required"}
-                onChg={() => {
-                  setInputNewDataError((prevState) => ({
-                    ...prevState,
-                    codeError: false,
-                  }));
-                }}
-              ></CommonInput>
-              <div className="mb-2"></div>
-              <CommonInput
-                placeholder={"Enter unit"}
-                input={inputNewData.unit}
-                onInputChange={(val) => {
-                  setInputNewData((prevState) => ({
-                    ...prevState,
-                    unit: val,
-                  }));
-                }}
-                error={inputNewDataError.unitError}
-                errorMessage={"Required"}
-                onChg={() => {
-                  setInputNewDataError((prevState) => ({
-                    ...prevState,
-                    unitError: false,
-                  }));
-                }}
-              ></CommonInput>
-              <div className="mb-2"></div>
-              <CommonInput
-                placeholder={"Enter remark"}
-                input={inputNewData.remark}
-                onInputChange={(val) => {
-                  setInputNewData((prevState) => ({
-                    ...prevState,
-                    remark: val,
-                  }));
-                }}
-                error={inputNewDataError.remarkError}
-                errorMessage={"Required"}
-                onChg={() => {
-                  setInputNewDataError((prevState) => ({
-                    ...prevState,
-                    remarkError: false,
-                  }));
-                }}
-              ></CommonInput>
-              <div className="mb-2"></div>
-
-              <CommonInput
-                placeholder={"Enter location"}
-                input={inputNewData.location}
-                onInputChange={(val) => {
-                  setInputNewData((prevState) => ({
-                    ...prevState,
-                    location: val,
-                  }));
-                }}
-                error={inputNewDataError.locationError}
-                errorMessage={"Required"}
-                onChg={() => {
-                  setInputNewDataError((prevState) => ({
-                    ...prevState,
-                    locationError: false,
-                  }));
-                }}
-              ></CommonInput>
-
-              <div className="mb-5"></div>
-              <CommonButtonFull
-                label={"Create New"}
-                onload={onloadNew}
-                disabled={onloadNew}
-                onClick={async () => {
-                  setOnloadNew(true);
-                  const error = [0, 0, 0, 0, 0];
-                  if (inputNewData.description == "") {
-                    setInputNewDataError((prevState) => ({
-                      ...prevState,
-                      descriptionError: true,
-                    }));
-                    error[0] = 1;
-                  } else {
-                    setInputNewDataError((prevState) => ({
-                      ...prevState,
-                      descriptionError: false,
-                    }));
-                    error[0] = 0;
-                  }
-
-                  if (inputNewData.vendor_code == "") {
-                    setInputNewDataError((prevState) => ({
-                      ...prevState,
-                      codeError: true,
-                    }));
-                    error[1] = 1;
-                  } else {
-                    setInputNewDataError((prevState) => ({
-                      ...prevState,
-                      codeError: false,
-                    }));
-                    error[1] = 0;
-                  }
-
-                  if (inputNewData.unit == "") {
-                    setInputNewDataError((prevState) => ({
-                      ...prevState,
-                      unitError: true,
-                    }));
-                    error[2] = 1;
-                  } else {
-                    setInputNewDataError((prevState) => ({
-                      ...prevState,
-                      unitError: false,
-                    }));
-                    error[2] = 0;
-                  }
-
-                  if (inputNewData.remark == "") {
-                    setInputNewDataError((prevState) => ({
-                      ...prevState,
-                      remarkError: true,
-                    }));
-                    error[3] = 1;
-                  } else {
-                    setInputNewDataError((prevState) => ({
-                      ...prevState,
-                      remarkError: false,
-                    }));
-                    error[3] = 0;
-                  }
-
-                  if (inputNewData.location == "") {
-                    setInputNewDataError((prevState) => ({
-                      ...prevState,
-                      locationError: true,
-                    }));
-                    error[4] = 1;
-                  } else {
-                    setInputNewDataError((prevState) => ({
-                      ...prevState,
-                      locationError: false,
-                    }));
-                    error[4] = 0;
-                  }
-
-                  const sum_error = error.reduce(
-                    (accum, current) => accum + current,
-                    0,
-                  );
-                  if (sum_error == 0) {
-                    console.log(inputNewData);
-
-                    const apiUrl = `${API_URL}/newpart`;
-                    const response = await axios.post(apiUrl, {
-                      data: inputNewData,
-                    });
-
-                    if (response.status == 200) {
-                      const result = response.data["response"];
-                      NotifySuccess(result);
-                      setModalNewPart(false);
-                    }
-                  }
-                  setOnloadNew(false);
-                }}
-              ></CommonButtonFull>
-            </CustomModal>
-          </div>
+          </DefaultLayout>
         )}
+
+        {/* Modal New Part */}
+        <CustomModal
+          isVisible={modalNewPart}
+          isSmallWidth="sm"
+          onClose={() => setModalNewPart(false)}
+        >
+          <div className="space-y-4">
+            <div>
+              <h4 className="text-base font-bold text-black dark:text-white">
+                Registrasi Part Baru
+              </h4>
+              <p className="text-xs text-body dark:text-bodydark">
+                Lengkapi rincian suku cadang untuk dimasukkan ke dalam katalog master.
+              </p>
+            </div>
+
+            <CommonInput
+              placeholder="Deskripsi / Nama Part"
+              input={inputNewData.description}
+              onInputChange={(val) =>
+                setInputNewData((prev) => ({ ...prev, description: val }))
+              }
+              error={inputNewDataError.descriptionError}
+              errorMessage="Deskripsi wajib diisi"
+              onChg={() =>
+                setInputNewDataError((prev) => ({ ...prev, descriptionError: false }))
+              }
+            />
+
+            <CommonInput
+              placeholder="Part Number / Detail Vendor"
+              input={inputNewData.vendor_code}
+              onInputChange={(val) =>
+                setInputNewData((prev) => ({ ...prev, vendor_code: val }))
+              }
+              error={inputNewDataError.codeError}
+              errorMessage="Part Number wajib diisi"
+              onChg={() =>
+                setInputNewDataError((prev) => ({ ...prev, codeError: false }))
+              }
+            />
+
+            <div className="grid grid-cols-2 gap-2">
+              <CommonInput
+                placeholder="Satuan (Pcs, Box, Ltr)"
+                input={inputNewData.unit}
+                onInputChange={(val) =>
+                  setInputNewData((prev) => ({ ...prev, unit: val }))
+                }
+                error={inputNewDataError.unitError}
+                errorMessage="Wajib"
+                onChg={() =>
+                  setInputNewDataError((prev) => ({ ...prev, unitError: false }))
+                }
+              />
+              <CommonInput
+                placeholder="Lokasi Rak / Gudang"
+                input={inputNewData.location}
+                onInputChange={(val) =>
+                  setInputNewData((prev) => ({ ...prev, location: val }))
+                }
+                error={inputNewDataError.locationError}
+                errorMessage="Wajib"
+                onChg={() =>
+                  setInputNewDataError((prev) => ({ ...prev, locationError: false }))
+                }
+              />
+            </div>
+
+            <CommonInput
+              placeholder="Catatan / Remark"
+              input={inputNewData.remark}
+              onInputChange={(val) =>
+                setInputNewData((prev) => ({ ...prev, remark: val }))
+              }
+              error={inputNewDataError.remarkError}
+              errorMessage="Catatan wajib diisi"
+              onChg={() =>
+                setInputNewDataError((prev) => ({ ...prev, remarkError: false }))
+              }
+            />
+
+            <CommonButtonFull
+              label="Simpan Part Baru"
+              onload={onloadNew}
+              disabled={onloadNew}
+              onClick={async () => {
+                let hasErr = false;
+                const errState = {
+                  descriptionError: !inputNewData.description.trim(),
+                  codeError: !inputNewData.vendor_code.trim(),
+                  unitError: !inputNewData.unit.trim(),
+                  locationError: !inputNewData.location.trim(),
+                  remarkError: !inputNewData.remark.trim(),
+                };
+                if (Object.values(errState).some(Boolean)) {
+                  setInputNewDataError(errState);
+                  return;
+                }
+
+                setOnloadNew(true);
+                try {
+                  const res = await axios.post("/api/newpart", {
+                    data: inputNewData,
+                  });
+                  if (res.status === 200) {
+                    NotifySuccess(res.data.response || "Part berhasil ditambahkan");
+                    setModalNewPart(false);
+                    setInputNewData({
+                      description: "",
+                      vendor_code: "",
+                      unit: "",
+                      location: "",
+                      remark: "",
+                    });
+                    fetch_data();
+                  }
+                } catch (e) {
+                  NotifyError("Gagal menyimpan part baru");
+                } finally {
+                  setOnloadNew(false);
+                }
+              }}
+            />
+          </div>
+        </CustomModal>
       </div>
     </UserAuth>
   );
