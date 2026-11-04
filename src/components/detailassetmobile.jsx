@@ -10,7 +10,7 @@ import { PageLoader } from "./loader";
 import { CustomModal } from "./modal";
 import { ProgressCard, ProgressSummary } from "@/components/card";
 import { useProvider } from "@/app/appcontext";
-import { formatDateTime, getCurrentDate, getCurrentTime } from "@/utils/dateformat";
+import { formatDateTime, formatDateLocal, getCurrentDate, getCurrentTime } from "@/utils/dateformat";
 import paginateData from "@/utils/pagination";
 import { NotifyError, NotifySuccess } from "@/utils/notify";
 import { RepairStatus } from "@/utils/repairstatus";
@@ -30,6 +30,8 @@ import {
   HiOutlineClock,
   HiOutlineWrenchScrewdriver,
   HiSparkles,
+  HiOutlineChartBar,
+  HiOutlineCalendar,
 } from "react-icons/hi2";
 import {
   MdOutlineClose,
@@ -40,7 +42,7 @@ import {
   MdAdd,
 } from "react-icons/md";
 import { FaCalendarAlt, FaCheckSquare } from "react-icons/fa";
-import { BsFillFuelPumpFill, BsFire } from "react-icons/bs";
+import { BsFillFuelPumpFill, BsFire, BsBoxSeam } from "react-icons/bs";
 import { RiCalendarScheduleFill, RiDeleteBin2Line } from "react-icons/ri";
 import { LuRefreshCw } from "react-icons/lu";
 import { CiEdit } from "react-icons/ci";
@@ -118,6 +120,30 @@ export default function DetailAssetMobile({ idAsset }) {
   const [currentDateError, setCurrentDateError] = useState(false);
   const [currentTimeError, setCurrentTimeError] = useState(false);
   const [modalReceivePart, setModalReceivePart] = useState(false);
+
+  const [partsUsage, setPartsUsage] = useState({
+    monthly_breakdown: [],
+    routine_needs: [],
+    summary: {},
+  });
+  const [loadingPartsUsage, setLoadingPartsUsage] = useState(true);
+  const [selectedUsageMonth, setSelectedUsageMonth] = useState("ALL");
+
+  const fetch_parts_usage = async () => {
+    try {
+      setLoadingPartsUsage(true);
+      const response = await axios.post("/api/assetpartsusage", {
+        idAsset: idAsset,
+      });
+      if (response.status === 200) {
+        setPartsUsage(response.data);
+      }
+    } catch (e) {
+      console.error("fetch_parts_usage error:", e);
+    } finally {
+      setLoadingPartsUsage(false);
+    }
+  };
 
   const fetch_data = async () => {
     try {
@@ -208,6 +234,7 @@ export default function DetailAssetMobile({ idAsset }) {
   useEffect(() => {
     if (dataAsset?.ID_Asset) {
       fetch_data_service();
+      fetch_parts_usage();
     }
   }, [dataAsset]);
 
@@ -1157,6 +1184,195 @@ export default function DetailAssetMobile({ idAsset }) {
                             </span>
                           </button>
                         )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pemakaian Suku Cadang & Perkiraan Kebutuhan Mesin (Mobile) */}
+                <div className="space-y-3">
+                  {/* Card 1: Perkiraan Kebutuhan Suku Cadang Rutin Mesin */}
+                  <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
+                    <div className="flex items-center justify-between border-b border-stroke/60 pb-2.5 dark:border-strokedark/60 mb-3">
+                      <div>
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-black dark:text-white flex items-center gap-1.5">
+                          <HiOutlineWrenchScrewdriver className="text-primary text-base" />
+                          Kebutuhan Part Rutin Mesin
+                        </h3>
+                        <p className="text-[10px] text-body dark:text-bodydark">
+                          Estimasi part rutin untuk unit ini
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                          {partsUsage.routine_needs?.length || 0} part rutin
+                        </span>
+                      </div>
+                    </div>
+
+                    {partsUsage.routine_needs?.length === 0 ? (
+                      <div className="py-4 text-center text-xs text-body dark:text-bodydark">
+                        Belum ada riwayat pemakaian suku cadang pada unit ini.
+                      </div>
+                    ) : (
+                      <div className="space-y-2.5">
+                        {partsUsage.routine_needs.map((part, pIdx) => {
+                          const isWarehouseReady = Number(part.available || 0) >= Number(part.recommended_monthly_stock || 1);
+                          return (
+                            <div
+                              key={pIdx}
+                              onClick={() => router.push(`/parts/${part.id_part}`)}
+                              className="cursor-pointer rounded-xl bg-gray-50 p-2.5 dark:bg-meta-4/20 border border-stroke/40 dark:border-strokedark/40 transition-all active:scale-[0.99]"
+                            >
+                              <div className="flex items-start justify-between gap-1.5 mb-1.5">
+                                <div className="min-w-0">
+                                  <span className="font-mono text-[10px] font-bold text-primary block truncate">
+                                    {part.vendor_code || part.id_part}
+                                  </span>
+                                  <span className="font-semibold text-xs text-black dark:text-white truncate block">
+                                    {part.description}
+                                  </span>
+                                </div>
+                                <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary shrink-0">
+                                  {part.frequency_label}
+                                </span>
+                              </div>
+
+                              <div className="grid grid-cols-3 gap-1 text-center py-1.5 border-y border-stroke/40 dark:border-strokedark/40 my-1.5">
+                                <div>
+                                  <span className="block text-[8px] text-body dark:text-bodydark">Total Terpakai</span>
+                                  <span className="font-mono font-bold text-[11px] text-black dark:text-white">
+                                    {part.total_qty} {part.unit}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="block text-[8px] text-body dark:text-bodydark">Laju / Bln</span>
+                                  <span className="font-mono font-bold text-[11px] text-meta-5">
+                                    ~{part.monthly_rate}
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="block text-[8px] text-body dark:text-bodydark">Kebutuhan / Bln</span>
+                                  <span className="font-mono font-bold text-[11px] text-primary">
+                                    {part.recommended_monthly_stock} {part.unit}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between text-[10px] pt-1">
+                                <span className="text-body dark:text-bodydark">
+                                  Rak: <span className="font-semibold text-black dark:text-white">{part.location || "-"}</span>
+                                </span>
+                                <span className={`rounded-full px-2 py-0.5 font-bold ${
+                                  isWarehouseReady ? "bg-success/15 text-success" : "bg-danger/15 text-danger"
+                                }`}>
+                                  Stok Gudang: {part.available} {part.unit}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Card 2: Riwayat Pemakaian Part per Bulan */}
+                  <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
+                    <div className="flex items-center justify-between border-b border-stroke/60 pb-2.5 dark:border-strokedark/60 mb-3">
+                      <div>
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-black dark:text-white flex items-center gap-1.5">
+                          <HiOutlineCalendar className="text-meta-5 text-base" />
+                          Pemakaian Part per Bulan
+                        </h3>
+                        <p className="text-[10px] text-body dark:text-bodydark">
+                          Penggantian suku cadang menurut bulan
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Horizontal Scroll Month Pills */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none mb-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedUsageMonth("ALL")}
+                        className={`shrink-0 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+                          selectedUsageMonth === "ALL"
+                            ? "bg-primary text-white shadow-sm"
+                            : "bg-gray-100 text-body hover:bg-gray-200 dark:bg-meta-4/40 dark:text-bodydark"
+                        }`}
+                      >
+                        Semua Bulan
+                      </button>
+                      {partsUsage.monthly_breakdown?.map((m) => (
+                        <button
+                          key={m.month_key}
+                          type="button"
+                          onClick={() => setSelectedUsageMonth(m.month_key)}
+                          className={`shrink-0 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+                            selectedUsageMonth === m.month_key
+                              ? "bg-primary text-white shadow-sm"
+                              : "bg-gray-100 text-body hover:bg-gray-200 dark:bg-meta-4/40 dark:text-bodydark"
+                          }`}
+                        >
+                          {m.month_label} ({m.total_qty})
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* List of parts for selected month */}
+                    <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                      {(() => {
+                        const displayedParts = selectedUsageMonth === "ALL"
+                          ? partsUsage.monthly_breakdown?.flatMap((m) =>
+                              m.parts.map((p) => ({ ...p, month_label: m.month_label }))
+                            ) || []
+                          : (partsUsage.monthly_breakdown?.find((m) => m.month_key === selectedUsageMonth)?.parts || []).map((p) => ({
+                              ...p,
+                              month_label: partsUsage.monthly_breakdown.find((m) => m.month_key === selectedUsageMonth)?.month_label,
+                            }));
+
+                        if (displayedParts.length === 0) {
+                          return (
+                            <div className="py-6 text-center text-xs text-body dark:text-bodydark">
+                              Tidak ada catatan pemakaian part pada periode ini.
+                            </div>
+                          );
+                        }
+
+                        return displayedParts.map((item, idx) => (
+                          <div
+                            key={idx}
+                            className="rounded-xl border border-stroke/60 bg-gray-50/50 p-2.5 dark:border-strokedark/60 dark:bg-meta-4/10 text-xs"
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="font-semibold text-black dark:text-white">
+                                {formatDateLocal(item.date)}
+                              </span>
+                              <span className="font-bold text-warning font-mono">
+                                -{item.qty} {item.unit || "pcs"}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-[11px] mb-1">
+                              <span
+                                onClick={() => router.push(`/parts/${item.id_part}`)}
+                                className="font-mono font-bold text-primary hover:underline cursor-pointer"
+                              >
+                                {item.vendor_code || item.id_part}
+                              </span>
+                              <span className="text-body dark:text-bodydark font-mono">
+                                #{item.id_for}
+                              </span>
+                            </div>
+                            <p className="font-medium text-black dark:text-white truncate text-[11px]">
+                              {item.description}
+                            </p>
+                            {item.subject && (
+                              <p className="text-[10px] text-body dark:text-bodydark italic truncate mt-0.5">
+                                {item.subject}
+                              </p>
+                            )}
+                          </div>
+                        ));
+                      })()}
                     </div>
                   </div>
                 </div>

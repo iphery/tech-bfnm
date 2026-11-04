@@ -26,8 +26,17 @@ import {
   HiArrowLeft,
   HiSparkles,
 } from "react-icons/hi";
+import {
+  HiOutlineWrenchScrewdriver,
+  HiOutlineCube,
+  HiOutlineCalendar,
+  HiOutlineArrowTrendingUp,
+  HiOutlineCheckCircle,
+  HiOutlineChartBar,
+} from "react-icons/hi2";
 import { FaPlus, FaCheckSquare } from "react-icons/fa";
 import { MdCheckBox, MdCheckBoxOutlineBlank } from "react-icons/md";
+import { BsBoxSeam, BsGearWideConnected } from "react-icons/bs";
 import { RepairStatus } from "@/utils/repairstatus";
 
 export default function DetailAssetWeb({ idAsset }) {
@@ -57,6 +66,30 @@ export default function DetailAssetWeb({ idAsset }) {
   const [partList, setPartList] = useState([]);
   const [transactionStock, setTransactionStock] = useState([]);
   const [userLevel, setUserLevel] = useState("");
+
+  const [partsUsage, setPartsUsage] = useState({
+    monthly_breakdown: [],
+    routine_needs: [],
+    summary: {},
+  });
+  const [loadingPartsUsage, setLoadingPartsUsage] = useState(true);
+  const [selectedUsageMonth, setSelectedUsageMonth] = useState("ALL");
+
+  const fetch_parts_usage = async () => {
+    try {
+      setLoadingPartsUsage(true);
+      const response = await axios.post("/api/assetpartsusage", {
+        idAsset: idAsset,
+      });
+      if (response.status === 200) {
+        setPartsUsage(response.data);
+      }
+    } catch (e) {
+      console.error("fetch_parts_usage error:", e);
+    } finally {
+      setLoadingPartsUsage(false);
+    }
+  };
 
   const fetch_data = async () => {
     try {
@@ -119,6 +152,7 @@ export default function DetailAssetWeb({ idAsset }) {
   useEffect(() => {
     if (dataAsset?.ID_Asset) {
       fetch_data_service();
+      fetch_parts_usage();
     }
   }, [dataAsset]);
 
@@ -359,6 +393,248 @@ export default function DetailAssetWeb({ idAsset }) {
                 slides={[{ src: `${IMAGE_USER}/${dataAsset.Profile_Image}` }]}
               />
             )}
+
+            {/* Pemakaian Suku Cadang & Perkiraan Kebutuhan Mesin */}
+            <PageCard>
+              <div className="space-y-6">
+                {/* Section Header */}
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-stroke pb-4 dark:border-strokedark">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-meta-5/10 text-meta-5">
+                        <HiOutlineWrenchScrewdriver className="text-lg" />
+                      </div>
+                      <h3 className="text-base font-bold text-black dark:text-white">
+                        Pemakaian Suku Cadang & Perkiraan Kebutuhan Mesin
+                      </h3>
+                    </div>
+                    <p className="text-xs text-body dark:text-bodydark mt-1">
+                      Analisis konsumsi suku cadang per bulan dan estimasi kebutuhan komponen rutin untuk mesin ini
+                    </p>
+                  </div>
+
+                  {/* Quick Summary Badges */}
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <div className="rounded-xl bg-gray-50 dark:bg-meta-4/20 px-3 py-1.5 border border-stroke/50 dark:border-strokedark/50">
+                      <span className="text-[10px] text-body dark:text-bodydark block">Total Terpasang</span>
+                      <span className="font-bold text-black dark:text-white">
+                        {partsUsage.summary?.total_parts_replaced || 0} unit part
+                      </span>
+                    </div>
+                    <div className="rounded-xl bg-gray-50 dark:bg-meta-4/20 px-3 py-1.5 border border-stroke/50 dark:border-strokedark/50">
+                      <span className="text-[10px] text-body dark:text-bodydark block">Variasi Part</span>
+                      <span className="font-bold text-black dark:text-white">
+                        {partsUsage.summary?.distinct_parts_count || 0} jenis suku cadang
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sub-section 1: Perkiraan Kebutuhan Rutin Mesin Ini */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-black dark:text-white flex items-center gap-1.5">
+                      <BsBoxSeam className="text-primary text-sm" />
+                      Perkiraan Kebutuhan Suku Cadang Rutin Mesin Ini
+                    </h4>
+                    <span className="text-[11px] text-body dark:text-bodydark">
+                      Dihitung otomatis dari siklus & frekuensi penggantian
+                    </span>
+                  </div>
+
+                  {partsUsage.routine_needs?.length === 0 ? (
+                    <div className="rounded-xl border border-stroke bg-gray-50 p-6 text-center text-xs text-body dark:border-strokedark dark:bg-meta-4/10 dark:text-bodydark">
+                      Belum ada riwayat penggantian suku cadang pada unit mesin ini.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {partsUsage.routine_needs.map((part, pIdx) => {
+                        const isWarehouseReady = Number(part.available || 0) >= Number(part.recommended_monthly_stock || 1);
+                        return (
+                          <div
+                            key={pIdx}
+                            onClick={() => router.push(`/parts/${part.id_part}`)}
+                            className="group cursor-pointer rounded-2xl border border-stroke bg-white p-3.5 shadow-sm hover:border-primary hover:shadow dark:border-strokedark dark:bg-boxdark dark:hover:border-primary transition-all"
+                          >
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <div>
+                                <span className="font-mono text-[10px] font-bold text-primary group-hover:underline">
+                                  {part.vendor_code || part.id_part}
+                                </span>
+                                <h5 className="text-xs font-bold text-black dark:text-white line-clamp-1 leading-snug">
+                                  {part.description}
+                                </h5>
+                              </div>
+                              <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary shrink-0">
+                                {part.frequency_label}
+                              </span>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-1.5 border-t border-stroke/60 pt-2.5 dark:border-strokedark/60 text-center">
+                              <div className="rounded-lg bg-gray-50 dark:bg-meta-4/20 p-1.5">
+                                <span className="block text-[9px] text-body dark:text-bodydark">Total Dipakai</span>
+                                <span className="font-mono text-xs font-bold text-black dark:text-white">
+                                  {part.total_qty} {part.unit}
+                                </span>
+                                <span className="block text-[8px] text-body dark:text-bodydark">({part.times_used}x ganti)</span>
+                              </div>
+
+                              <div className="rounded-lg bg-gray-50 dark:bg-meta-4/20 p-1.5">
+                                <span className="block text-[9px] text-body dark:text-bodydark">Laju / Bulan</span>
+                                <span className="font-mono text-xs font-bold text-meta-5">
+                                  ~{part.monthly_rate}
+                                </span>
+                                <span className="block text-[8px] text-body dark:text-bodydark">{part.unit}/bln</span>
+                              </div>
+
+                              <div className="rounded-lg bg-gray-50 dark:bg-meta-4/20 p-1.5">
+                                <span className="block text-[9px] text-body dark:text-bodydark">Estimasi / Bln</span>
+                                <span className="font-mono text-xs font-bold text-primary">
+                                  {part.recommended_monthly_stock} {part.unit}
+                                </span>
+                                <span className="block text-[8px] text-body dark:text-bodydark">kebutuhan</span>
+                              </div>
+                            </div>
+
+                            <div className="mt-2.5 flex items-center justify-between text-[11px] pt-2 border-t border-stroke/40 dark:border-strokedark/40">
+                              <span className="text-body dark:text-bodydark">
+                                Lokasi: <span className="font-semibold text-black dark:text-white">{part.location || "-"}</span>
+                              </span>
+                              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                isWarehouseReady ? "bg-success/15 text-success" : "bg-danger/15 text-danger"
+                              }`}>
+                                Gudang: {part.available} {part.unit}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Sub-section 2: Riwayat Pemakaian Part per Bulan */}
+                <div className="border-t border-stroke pt-4 dark:border-strokedark">
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                    <div>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-black dark:text-white flex items-center gap-1.5">
+                        <HiOutlineCalendar className="text-meta-5 text-sm" />
+                        Riwayat Pemakaian Part per Bulan
+                      </h4>
+                      <span className="text-[11px] text-body dark:text-bodydark">
+                        Rincian penggantian komponen suku cadang pada unit mesin ini
+                      </span>
+                    </div>
+
+                    {/* Month Pills Filter */}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedUsageMonth("ALL")}
+                        className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+                          selectedUsageMonth === "ALL"
+                            ? "bg-primary text-white shadow-sm"
+                            : "bg-gray-100 text-body hover:bg-gray-200 dark:bg-meta-4/40 dark:text-bodydark dark:hover:bg-meta-4"
+                        }`}
+                      >
+                        Semua Bulan
+                      </button>
+                      {partsUsage.monthly_breakdown?.map((m) => (
+                        <button
+                          key={m.month_key}
+                          type="button"
+                          onClick={() => setSelectedUsageMonth(m.month_key)}
+                          className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all ${
+                            selectedUsageMonth === m.month_key
+                              ? "bg-primary text-white shadow-sm"
+                              : "bg-gray-100 text-body hover:bg-gray-200 dark:bg-meta-4/40 dark:text-bodydark dark:hover:bg-meta-4"
+                          }`}
+                        >
+                          {m.month_label} ({m.total_qty})
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Table of Monthly Parts Consumed */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full table-auto text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-stroke bg-gray-50 text-body dark:border-strokedark dark:bg-meta-4/20 dark:text-bodydark">
+                          <th className="py-2.5 px-3 font-semibold">Tanggal</th>
+                          <th className="py-2.5 px-3 font-semibold">Bulan</th>
+                          <th className="py-2.5 px-3 font-semibold">Part Number</th>
+                          <th className="py-2.5 px-3 font-semibold">Nama Suku Cadang</th>
+                          <th className="py-2.5 px-3 font-semibold text-center">Jumlah (Qty)</th>
+                          <th className="py-2.5 px-3 font-semibold">Lokasi Rak</th>
+                          <th className="py-2.5 px-3 font-semibold">No. Tiket</th>
+                          <th className="py-2.5 px-3 font-semibold">Keterangan Perbaikan</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-stroke dark:divide-strokedark">
+                        {(() => {
+                          const displayedParts = selectedUsageMonth === "ALL"
+                            ? partsUsage.monthly_breakdown?.flatMap((m) =>
+                                m.parts.map((p) => ({ ...p, month_label: m.month_label }))
+                              ) || []
+                            : (partsUsage.monthly_breakdown?.find((m) => m.month_key === selectedUsageMonth)?.parts || []).map((p) => ({
+                                ...p,
+                                month_label: partsUsage.monthly_breakdown.find((m) => m.month_key === selectedUsageMonth)?.month_label,
+                              }));
+
+                          if (displayedParts.length === 0) {
+                            return (
+                              <tr>
+                                <td colSpan={8} className="py-6 text-center text-body dark:text-bodydark">
+                                  Tidak ada data pemakaian part untuk periode ini.
+                                </td>
+                              </tr>
+                            );
+                          }
+
+                          return displayedParts.map((item, idx) => (
+                            <tr
+                              key={idx}
+                              className="hover:bg-gray-50 dark:hover:bg-meta-4/10 transition-colors"
+                            >
+                              <td className="py-2.5 px-3 whitespace-nowrap text-black dark:text-white font-medium">
+                                {formatDateLocal(item.date)}
+                              </td>
+                              <td className="py-2.5 px-3 whitespace-nowrap text-body dark:text-bodydark font-semibold">
+                                {item.month_label}
+                              </td>
+                              <td className="py-2.5 px-3 font-mono font-bold text-primary">
+                                <span
+                                  onClick={() => router.push(`/parts/${item.id_part}`)}
+                                  className="cursor-pointer hover:underline"
+                                >
+                                  {item.vendor_code || item.id_part}
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-3 font-semibold text-black dark:text-white">
+                                {item.description}
+                              </td>
+                              <td className="py-2.5 px-3 text-center font-bold text-warning">
+                                -{item.qty} {item.unit || "pcs"}
+                              </td>
+                              <td className="py-2.5 px-3 text-body dark:text-bodydark">
+                                {item.location || "-"}
+                              </td>
+                              <td className="py-2.5 px-3 font-mono text-body dark:text-bodydark">
+                                #{item.id_for}
+                              </td>
+                              <td className="py-2.5 px-3 text-body dark:text-bodydark max-w-xs truncate">
+                                {item.subject || "-"}
+                              </td>
+                            </tr>
+                          ));
+                        })()}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </PageCard>
 
             {/* Service History Table Card */}
             <PageCardLimited>

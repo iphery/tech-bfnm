@@ -20,8 +20,262 @@ import {
   HiOutlineLocationMarker,
   HiOutlineTag,
 } from "react-icons/hi";
-import { HiOutlineArrowDownTray, HiOutlineArrowUpTray } from "react-icons/hi2";
-import { BsBoxSeam } from "react-icons/bs";
+import {
+  HiOutlineArrowDownTray,
+  HiOutlineArrowUpTray,
+  HiOutlineChartBar,
+  HiOutlineBuildingOffice2,
+  HiOutlineArrowTrendingUp,
+  HiOutlineExclamationTriangle,
+  HiOutlineCheckCircle,
+  HiOutlineWrenchScrewdriver,
+} from "react-icons/hi2";
+import { BsBoxSeam, BsShieldCheck, BsExclamationCircle } from "react-icons/bs";
+
+// Visual Trend Chart & Decision Component
+function AnalyticsDashboard({ analytics, unit = "pcs", isMobile = false }) {
+  if (!analytics) return null;
+
+  const maxVal = Math.max(
+    ...(analytics.monthly_trend?.map((m) => m.consumed) || [0]),
+    1
+  );
+
+  const statusConfig = {
+    AMAN: {
+      bg: "bg-success/10 text-success border-success/30",
+      pill: "bg-success text-white",
+      label: "Stok Aman",
+      desc: "Stok mencukupi untuk kebutuhan 1 bulan ke depan.",
+    },
+    DEFISIT: {
+      bg: "bg-warning/10 text-warning border-warning/30",
+      pill: "bg-warning text-white",
+      label: "Perlu Restock",
+      desc: `Disarankan restock +${analytics.suggested_reorder} ${unit} agar aman.`,
+    },
+    KRITIS: {
+      bg: "bg-danger/10 text-danger border-danger/30",
+      pill: "bg-danger text-white",
+      label: "Kritis / Kurang",
+      desc: `Stok kritis! Segera order minimal +${analytics.suggested_reorder} ${unit}.`,
+    },
+  };
+
+  const currentStatus = statusConfig[analytics.status] || statusConfig.AMAN;
+
+  return (
+    <div className="space-y-4">
+      {/* KPI Metric Cards */}
+      <div className={`grid ${isMobile ? "grid-cols-2" : "grid-cols-2 lg:grid-cols-4"} gap-3`}>
+        {/* Metric 1: Pemakaian Bulan Ini */}
+        <div className="rounded-2xl border border-stroke bg-white p-3.5 shadow-sm dark:border-strokedark dark:bg-boxdark">
+          <div className="flex items-center justify-between text-body dark:text-bodydark mb-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Bulan Ini</span>
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <HiOutlineArrowTrendingUp className="text-sm" />
+            </div>
+          </div>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-xl font-extrabold text-black dark:text-white">
+              {analytics.current_month_usage}
+            </span>
+            <span className="text-xs font-semibold text-body dark:text-bodydark">{unit}</span>
+          </div>
+          <span className="mt-1 block text-[10px] text-body dark:text-bodydark">
+            Pemakaian bulan berjalan
+          </span>
+        </div>
+
+        {/* Metric 2: Rata-rata Pemakaian (AMC) */}
+        <div className="rounded-2xl border border-stroke bg-white p-3.5 shadow-sm dark:border-strokedark dark:bg-boxdark">
+          <div className="flex items-center justify-between text-body dark:text-bodydark mb-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Rata-rata (AMC)</span>
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-meta-5/10 text-meta-5">
+              <HiOutlineChartBar className="text-sm" />
+            </div>
+          </div>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-xl font-extrabold text-black dark:text-white">
+              {analytics.amc}
+            </span>
+            <span className="text-xs font-semibold text-body dark:text-bodydark">{unit}/bln</span>
+          </div>
+          <span className="mt-1 block text-[10px] text-body dark:text-bodydark">
+            Rata-rata 6 bulan terakhir
+          </span>
+        </div>
+
+        {/* Metric 3: Estimasi Kebutuhan Sebulan */}
+        <div className="rounded-2xl border border-stroke bg-white p-3.5 shadow-sm dark:border-strokedark dark:bg-boxdark">
+          <div className="flex items-center justify-between text-body dark:text-bodydark mb-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Kebutuhan / Bln</span>
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-meta-3/10 text-meta-3">
+              <BsBoxSeam className="text-sm" />
+            </div>
+          </div>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-xl font-extrabold text-black dark:text-white">
+              {analytics.recommended_monthly_need}
+            </span>
+            <span className="text-xs font-semibold text-body dark:text-bodydark">{unit}</span>
+          </div>
+          <span className="mt-1 block text-[10px] text-body dark:text-bodydark">
+            Estimasi buffer operasional
+          </span>
+        </div>
+
+        {/* Metric 4: Rekomendasi Restock */}
+        <div className={`rounded-2xl border p-3.5 shadow-sm ${currentStatus.bg}`}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider">Keputusan Stok</span>
+            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${currentStatus.pill}`}>
+              {currentStatus.label}
+            </span>
+          </div>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-xl font-extrabold text-black dark:text-white">
+              {analytics.suggested_reorder > 0 ? `+${analytics.suggested_reorder}` : "Cukup"}
+            </span>
+            {analytics.suggested_reorder > 0 && (
+              <span className="text-xs font-semibold">{unit}</span>
+            )}
+          </div>
+          <span className="mt-1 block text-[10px] line-clamp-1 opacity-90">
+            {currentStatus.desc}
+          </span>
+        </div>
+      </div>
+
+      {/* Visual Chart: 6-Month Trend & Machine List (Combined or Grid) */}
+      <div className={`grid ${isMobile ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-12"} gap-4`}>
+        {/* Trend Bar Chart */}
+        <div className={`rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark ${isMobile ? "" : "lg:col-span-7"}`}>
+          <div className="flex items-center justify-between mb-4 border-b border-stroke/60 pb-2.5 dark:border-strokedark/60">
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-black dark:text-white flex items-center gap-1.5">
+                <HiOutlineChartBar className="text-primary text-base" />
+                Tren Pemakaian 6 Bulan Terakhir
+              </h3>
+              <p className="text-[11px] text-body dark:text-bodydark">
+                Frekuensi dan kuantitas barang keluar setiap bulan
+              </p>
+            </div>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-gray-100 dark:bg-meta-4 text-body dark:text-bodydark">
+              Max: {maxVal} {unit}
+            </span>
+          </div>
+
+          {/* Bar Chart Container */}
+          <div className="h-44 flex items-end justify-between gap-2 pt-6 pb-2 px-1">
+            {analytics.monthly_trend?.map((item, idx) => {
+              const heightPct = Math.max(Math.round((item.consumed / maxVal) * 100), item.consumed > 0 ? 8 : 3);
+              const isLatest = idx === analytics.monthly_trend.length - 1;
+
+              return (
+                <div key={idx} className="flex-1 flex flex-col items-center h-full justify-end group">
+                  {/* Tooltip / Value on Top */}
+                  <div className="mb-1.5 flex flex-col items-center transition-all group-hover:scale-110">
+                    <span className={`text-[11px] font-extrabold ${item.consumed > 0 ? "text-black dark:text-white" : "text-gray-400 dark:text-gray-600"}`}>
+                      {item.consumed}
+                    </span>
+                  </div>
+
+                  {/* The Bar */}
+                  <div className="w-full max-w-[36px] bg-gray-100 dark:bg-meta-4/40 rounded-t-lg overflow-hidden flex items-end h-28 p-0.5">
+                    <div
+                      style={{ height: `${heightPct}%` }}
+                      className={`w-full rounded-t-md transition-all duration-500 ${
+                        isLatest
+                          ? "bg-gradient-to-t from-primary to-primary/80 shadow-md shadow-primary/30"
+                          : item.consumed > 0
+                          ? "bg-gradient-to-t from-primary/70 to-primary/50 group-hover:from-primary group-hover:to-primary/80"
+                          : "bg-gray-200 dark:bg-meta-4/60"
+                      }`}
+                    />
+                  </div>
+
+                  {/* Label Month & Tx Count */}
+                  <div className="mt-2 text-center w-full">
+                    <span className={`block text-[10px] font-bold truncate ${isLatest ? "text-primary" : "text-black dark:text-white"}`}>
+                      {item.month_label}
+                    </span>
+                    <span className="block text-[9px] text-body dark:text-bodydark truncate">
+                      {item.tx_count > 0 ? `${item.tx_count}x ganti` : "-"}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Machine Distribution List */}
+        <div className={`rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark ${isMobile ? "" : "lg:col-span-5"}`}>
+          <div className="flex items-center justify-between mb-3 border-b border-stroke/60 pb-2.5 dark:border-strokedark/60">
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-black dark:text-white flex items-center gap-1.5">
+                <HiOutlineWrenchScrewdriver className="text-meta-5 text-base" />
+                Dipakai di Mesin Mana Saja?
+              </h3>
+              <p className="text-[11px] text-body dark:text-bodydark">
+                Distribusi pemakaian suku cadang pada unit mesin
+              </p>
+            </div>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-meta-5/10 text-meta-5">
+              {analytics.machines_used?.length || 0} Mesin
+            </span>
+          </div>
+
+          <div className="space-y-2 max-h-[190px] overflow-y-auto pr-1">
+            {!analytics.machines_used || analytics.machines_used.length === 0 ? (
+              <div className="py-8 text-center text-xs text-body dark:text-bodydark">
+                Belum ada riwayat penggantian part pada mesin.
+              </div>
+            ) : (
+              analytics.machines_used.map((mach, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between rounded-xl bg-gray-50 p-2.5 text-xs dark:bg-meta-4/20 border border-stroke/40 dark:border-strokedark/40"
+                >
+                  <div className="min-w-0 pr-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-mono text-[11px] font-bold text-primary">
+                        {mach.id_asset}
+                      </span>
+                      {mach.asset_model && (
+                        <span className="text-[10px] text-body dark:text-bodydark truncate">
+                          • {mach.asset_model}
+                        </span>
+                      )}
+                    </div>
+                    <span className="block font-semibold text-black dark:text-white truncate text-[11px]">
+                      {mach.asset_name || "Pemakaian Umum / Tiket"}
+                    </span>
+                    {mach.last_used_date && (
+                      <span className="block text-[10px] text-body dark:text-bodydark">
+                        Terakhir: {formatDateLocal(mach.last_used_date)}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="text-right shrink-0">
+                    <span className="block font-mono font-bold text-black dark:text-white">
+                      {mach.total_qty} {unit}
+                    </span>
+                    <span className="block text-[10px] text-meta-3 font-semibold">
+                      {mach.times_used}x ganti
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function DetailPart({ params }) {
   const router = useRouter();
@@ -30,6 +284,7 @@ export default function DetailPart({ params }) {
   const [loader, setLoader] = useState(true);
   const [isClient, setIsClient] = useState(false);
   const [detailData, setDetailData] = useState({});
+  const [analytics, setAnalytics] = useState(null);
   const [stockData, setStockData] = useState([]);
 
   const getFirstDate = () => {
@@ -48,6 +303,7 @@ export default function DetailPart({ params }) {
       const response = await axios.post("/api/getpartdetail", { idPart: params.idPart });
       if (response.status === 200 && response.data?.response?.length > 0) {
         setDetailData(response.data.response[0]);
+        setAnalytics(response.data.analytics || null);
       }
     } catch (e) {
       console.error(e);
@@ -227,6 +483,15 @@ export default function DetailPart({ params }) {
                   )}
                 </div>
               </div>
+
+              {/* Monthly Analytics, Chart & Machine Usage */}
+              {analytics && (
+                <AnalyticsDashboard
+                  analytics={analytics}
+                  unit={detailData["unit"] || "pcs"}
+                  isMobile={true}
+                />
+              )}
 
               {/* Date Filter */}
               <div className="rounded-2xl border border-stroke bg-white p-3 shadow-sm dark:border-strokedark dark:bg-boxdark">
@@ -426,6 +691,15 @@ export default function DetailPart({ params }) {
                   )}
                 </div>
               </PageCard>
+
+              {/* Monthly Analytics, Chart & Machine Usage */}
+              {analytics && (
+                <AnalyticsDashboard
+                  analytics={analytics}
+                  unit={detailData["unit"] || "pcs"}
+                  isMobile={false}
+                />
+              )}
 
               {/* Stock Card (Kartu Stok) Table Card */}
               <PageCard>
