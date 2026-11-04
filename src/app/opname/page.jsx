@@ -8,7 +8,7 @@ import UserAuth from "@/components/auth";
 import { CommonInput } from "@/components/input";
 import { CommonButtonFull } from "@/components/button";
 import { PageCardLimited } from "@/components/card";
-import { PageLoader, CardSkeleton, TableSkeleton } from "@/components/loader";
+import { CardSkeleton, TableSkeleton } from "@/components/loader";
 import { CustomModal } from "@/components/modal";
 import { formatDateTime, shortDate } from "@/utils/dateformat";
 import { NotifySuccess, NotifyError } from "@/utils/notify";
@@ -30,15 +30,20 @@ export default function StockOpnamePage() {
 
   const [orderData, setOrderData] = useState([]);
   const [loader, setLoader] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [modalNew, setModalNew] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
-  // Pagination (15 items per page)
+  // Server Pagination (15 items per page)
   const pageSize = 15;
   const [mobilePage, setMobilePage] = useState(1);
   const [desktopPage, setDesktopPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasMoreMobile, setHasMoreMobile] = useState(false);
   const observerTarget = useRef(null);
+  const searchTimeoutRef = useRef(null);
 
   const getFirstDate = () => {
     const today = new Date();
@@ -49,16 +54,43 @@ export default function StockOpnamePage() {
   const [endDate, setEndDate] = useState(new Date().toISOString().substring(0, 10));
   const [ongenerate, setOngenerate] = useState(false);
 
-  const fetch_data = async () => {
+  // Server-Side Fetch
+  const fetch_data = async (targetPage = 1, searchKeyword = keyword, isAppend = false) => {
+    if (isAppend) {
+      setLoadingMore(true);
+    } else {
+      setLoader(true);
+    }
+
     try {
-      const response = await axios.post("/api/stockopname");
+      const response = await axios.post("/api/stockopname", {
+        page: targetPage,
+        per_page: pageSize,
+        search: searchKeyword,
+        paginate: true,
+      });
+
       if (response.status === 200) {
-        setOrderData(response.data.response || []);
+        const array = response.data.response || [];
+        const pagination = response.data.pagination || {};
+
+        if (isAppend) {
+          setOrderData((prev) => [...prev, ...array]);
+        } else {
+          setOrderData(array);
+        }
+
+        setMobilePage(targetPage);
+        setDesktopPage(targetPage);
+        setTotalPages(pagination.total_pages || 1);
+        setTotalCount(pagination.total || 0);
+        setHasMoreMobile(Boolean(pagination.has_more));
       }
     } catch (e) {
       console.error(e);
     } finally {
       setLoader(false);
+      setLoadingMore(false);
     }
   };
 
@@ -77,7 +109,7 @@ export default function StockOpnamePage() {
       if (res.status === 200) {
         setModalNew(false);
         NotifySuccess(res.data.response || "Laporan Stock Opname berhasil digenerate");
-        fetch_data();
+        fetch_data(1, keyword, false);
       }
     } catch (e) {
       NotifyError("Gagal men-generate laporan opname");
@@ -93,29 +125,27 @@ export default function StockOpnamePage() {
   }, [startDate, endDate]);
 
   useEffect(() => {
-    fetch_data();
+    fetch_data(1, "", false);
     setIsClient(true);
   }, []);
 
-  const filteredList = orderData.filter((item) => {
-    const q = keyword.toLowerCase();
-    const rep = (item.id_report || "").toLowerCase();
-    const user = (item.Name || "").toLowerCase();
-    return rep.includes(q) || user.includes(q);
-  });
+  const handleSearchChange = (val) => {
+    setKeyword(val);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => {
+      fetch_data(1, val, false);
+    }, 400);
+  };
 
   // Mobile Infinite Scroll (batches of 15)
-  const displayedMobile = filteredList.slice(0, mobilePage * pageSize);
-  const hasMoreMobile = displayedMobile.length < filteredList.length;
-
   const handleObserver = useCallback(
     (entries) => {
       const [target] = entries;
-      if (target.isIntersecting && hasMoreMobile) {
-        setMobilePage((prev) => prev + 1);
+      if (target.isIntersecting && hasMoreMobile && !loader && !loadingMore) {
+        fetch_data(mobilePage + 1, keyword, true);
       }
     },
-    [hasMoreMobile]
+    [hasMoreMobile, loader, loadingMore, mobilePage, keyword]
   );
 
   useEffect(() => {
@@ -126,21 +156,12 @@ export default function StockOpnamePage() {
     return () => observer.unobserve(element);
   }, [handleObserver]);
 
-  // Desktop Pagination (15 items per page)
-  const totalDesktopPages = Math.ceil(filteredList.length / pageSize) || 1;
-  const displayedDesktop = filteredList.slice(
-    (desktopPage - 1) * pageSize,
-    desktopPage * pageSize
-  );
-
   if (!isClient) return null;
 
   return (
     <UserAuth>
       <div className="min-h-screen bg-whiten text-body dark:bg-boxdark-2 dark:text-bodydark">
-        {loader ? (
-          <PageLoader />
-        ) : isSmallScreen ? (
+        {isSmallScreen ? (
           /* ================= MOBILE VIEW ================= */
           <div className="flex flex-col min-h-screen pb-20">
             {/* Top Bar */}
@@ -159,7 +180,7 @@ export default function StockOpnamePage() {
                       Stock Opname
                     </h1>
                     <span className="text-[11px] text-body dark:text-bodydark">
-                      {filteredList.length} audit tercatat
+                      {totalCount} audit tercatat
                     </span>
                   </div>
                 </div>
@@ -179,37 +200,37 @@ export default function StockOpnamePage() {
                 <CommonInput
                   input={keyword}
                   type="text"
-                  onInputChange={(val) => {
-                    setKeyword(val);
-                    setMobilePage(1);
-                  }}
-                  placeholder="Cari ID laporan opname..."
+                  onInputChange={handleSearchChange}
+                  placeholder="Cari ID laporan, pembuat..."
                 >
                   <HiOutlineSearch className="text-body dark:text-bodydark" />
                 </CommonInput>
               </div>
             </div>
 
-            {/* List of Reports (15 items per batch with Infinite Scroll) */}
+            {/* List of Opname Reports */}
             <div className="p-4 space-y-2.5">
-              {filteredList.length === 0 ? (
+              {loader && orderData.length === 0 ? (
+                <CardSkeleton count={5} />
+              ) : orderData.length === 0 ? (
                 <div className="rounded-2xl border border-stroke bg-white p-8 text-center text-xs text-body dark:border-strokedark dark:bg-boxdark dark:text-bodydark">
-                  Tidak ada laporan stock opname yang cocok.
+                  <BsBoxSeam className="mx-auto text-3xl opacity-20 mb-2" />
+                  Tidak ada laporan stock opname.
                 </div>
               ) : (
                 <>
-                  {displayedMobile.map((item, index) => (
+                  {orderData.map((item, index) => (
                     <div
                       key={index}
                       onClick={() => router.push(`/opname/${item.id_report}`)}
                       className="group cursor-pointer rounded-2xl border border-stroke bg-white p-3.5 shadow-sm hover:border-primary hover:shadow dark:border-strokedark dark:bg-boxdark dark:hover:border-primary transition-all active:scale-[0.99]"
                     >
-                      <div className="flex items-center justify-between mb-1.5">
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
                         <span className="font-mono text-xs font-bold text-black dark:text-white">
                           {item.id_report}
                         </span>
-                        <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold text-primary">
-                          Opname
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary dark:bg-primary/20">
+                          Audit Selesai
                         </span>
                       </div>
 
@@ -230,9 +251,9 @@ export default function StockOpnamePage() {
 
                   {/* Infinite scroll observer target */}
                   <div ref={observerTarget} className="py-2 text-center text-xs text-body dark:text-bodydark">
-                    {hasMoreMobile && (
+                    {loadingMore && (
                       <div className="flex items-center justify-center gap-2">
-                        <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
                         <span>Memuat 15 laporan berikutnya...</span>
                       </div>
                     )}
@@ -283,10 +304,7 @@ export default function StockOpnamePage() {
                       <CommonInput
                         input={keyword}
                         type="text"
-                        onInputChange={(val) => {
-                          setKeyword(val);
-                          setDesktopPage(1);
-                        }}
+                        onInputChange={handleSearchChange}
                         placeholder="Cari ID laporan, pembuat..."
                       >
                         <HiOutlineSearch className="text-body dark:text-bodydark" />
@@ -294,7 +312,7 @@ export default function StockOpnamePage() {
                     </div>
 
                     <span className="text-xs text-body dark:text-bodydark">
-                      Menampilkan {displayedDesktop.length} dari {filteredList.length} laporan opname
+                      Menampilkan {orderData.length} dari {totalCount} laporan opname
                     </span>
                   </div>
 
@@ -310,14 +328,20 @@ export default function StockOpnamePage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-stroke dark:divide-strokedark">
-                        {filteredList.length === 0 ? (
+                        {loader && orderData.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="p-0">
+                              <TableSkeleton rows={8} cols={5} />
+                            </td>
+                          </tr>
+                        ) : orderData.length === 0 ? (
                           <tr>
                             <td colSpan={5} className="py-8 text-center text-body dark:text-bodydark">
                               Tidak ada laporan stock opname.
                             </td>
                           </tr>
                         ) : (
-                          displayedDesktop.map((item, index) => (
+                          orderData.map((item, index) => (
                             <tr
                               key={index}
                               onClick={() => router.push(`/opname/${item.id_report}`)}
@@ -354,28 +378,31 @@ export default function StockOpnamePage() {
                     </table>
                   </div>
 
-                  {/* Desktop Pagination Controls (15 per page) */}
-                  {totalDesktopPages > 1 && (
+                  {/* Desktop Server-Side Pagination Controls (15 per page) */}
+                  {totalPages > 1 && (
                     <div className="flex items-center justify-between border-t border-stroke pt-4 dark:border-strokedark text-xs">
                       <span className="text-body dark:text-bodydark">
-                        Halaman {desktopPage} dari {totalDesktopPages}
+                        Halaman {desktopPage} dari {totalPages} (Total {totalCount} laporan)
                       </span>
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          disabled={desktopPage === 1}
-                          onClick={() => setDesktopPage((p) => Math.max(1, p - 1))}
-                          className="rounded-lg border border-stroke px-3 py-1.5 font-semibold text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 disabled:opacity-40"
+                          disabled={desktopPage <= 1 || loader}
+                          onClick={() => fetch_data(desktopPage - 1, keyword, false)}
+                          className="rounded-lg border border-stroke px-3 py-1.5 font-semibold text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 disabled:opacity-40 transition"
                         >
                           Sebelumnya
                         </button>
+                        <span className="px-2 font-medium">
+                          {desktopPage} / {totalPages}
+                        </span>
                         <button
                           type="button"
-                          disabled={desktopPage === totalDesktopPages}
-                          onClick={() => setDesktopPage((p) => Math.min(totalDesktopPages, p + 1))}
-                          className="rounded-lg border border-stroke px-3 py-1.5 font-semibold text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 disabled:opacity-40"
+                          disabled={desktopPage >= totalPages || loader}
+                          onClick={() => fetch_data(desktopPage + 1, keyword, false)}
+                          className="rounded-lg border border-stroke px-3 py-1.5 font-semibold text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 disabled:opacity-40 transition"
                         >
-                          Berikutnya
+                          Selanjutnya
                         </button>
                       </div>
                     </div>

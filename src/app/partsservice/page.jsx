@@ -7,17 +7,18 @@ import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import UserAuth from "@/components/auth";
 import { CommonInput } from "@/components/input";
 import { PageCardLimited } from "@/components/card";
-import { PageLoader } from "@/components/loader";
+import { CardSkeleton, TableSkeleton } from "@/components/loader";
 import { formatDate } from "@/utils/dateformat";
 
 // Icons
 import {
   HiArrowLeft,
-  HiOutlineSearch,
+  HiOutlineMagnifyingGlass as HiOutlineSearch,
   HiOutlinePlus,
   HiOutlineWrenchScrewdriver,
   HiOutlineArrowRight,
 } from "react-icons/hi2";
+import { BsBoxSeam } from "react-icons/bs";
 
 export default function PartService() {
   const router = useRouter();
@@ -25,52 +26,80 @@ export default function PartService() {
 
   const [orderData, setOrderData] = useState([]);
   const [loader, setLoader] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [keyword, setKeyword] = useState("");
   const [isClient, setIsClient] = useState(false);
 
-  // Pagination (15 items per page)
+  // Server Pagination (15 items per page)
   const pageSize = 15;
   const [mobilePage, setMobilePage] = useState(1);
   const [desktopPage, setDesktopPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasMoreMobile, setHasMoreMobile] = useState(false);
   const observerTarget = useRef(null);
+  const searchTimeoutRef = useRef(null);
 
-  const fetch_data = async () => {
+  const fetch_data = async (targetPage = 1, searchKeyword = keyword, isAppend = false) => {
+    if (isAppend) {
+      setLoadingMore(true);
+    } else {
+      setLoader(true);
+    }
+
     try {
-      const response = await axios.post("/api/getservice");
+      const response = await axios.post("/api/getservice", {
+        page: targetPage,
+        per_page: pageSize,
+        search: searchKeyword,
+        paginate: true,
+      });
+
       if (response.status === 200) {
-        setOrderData(response.data.response || []);
+        const array = response.data.response || [];
+        const pagination = response.data.pagination || {};
+
+        if (isAppend) {
+          setOrderData((prev) => [...prev, ...array]);
+        } else {
+          setOrderData(array);
+        }
+
+        setMobilePage(targetPage);
+        setDesktopPage(targetPage);
+        setTotalPages(pagination.total_pages || 1);
+        setTotalCount(pagination.total || 0);
+        setHasMoreMobile(Boolean(pagination.has_more));
       }
     } catch (e) {
       console.error(e);
     } finally {
       setLoader(false);
+      setLoadingMore(false);
     }
   };
 
   useEffect(() => {
-    fetch_data();
+    fetch_data(1, "", false);
     setIsClient(true);
   }, []);
 
-  const filteredList = orderData.filter((item) => {
-    const q = keyword.toLowerCase();
-    const reg = (item.id_register || "").toLowerCase();
-    const req = (item.requestor || item.Name || "").toLowerCase();
-    return reg.includes(q) || req.includes(q);
-  });
-
-  // Mobile Infinite Scroll (15 per batch)
-  const displayedMobile = filteredList.slice(0, mobilePage * pageSize);
-  const hasMoreMobile = displayedMobile.length < filteredList.length;
+  const handleSearchChange = (val) => {
+    setKeyword(val);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => {
+      fetch_data(1, val, false);
+    }, 400);
+  };
 
   const handleObserver = useCallback(
     (entries) => {
       const [target] = entries;
-      if (target.isIntersecting && hasMoreMobile) {
-        setMobilePage((prev) => prev + 1);
+      if (target.isIntersecting && hasMoreMobile && !loader && !loadingMore) {
+        fetch_data(mobilePage + 1, keyword, true);
       }
     },
-    [hasMoreMobile]
+    [hasMoreMobile, loader, loadingMore, mobilePage, keyword]
   );
 
   useEffect(() => {
@@ -81,21 +110,12 @@ export default function PartService() {
     return () => observer.unobserve(element);
   }, [handleObserver]);
 
-  // Desktop Pagination (15 per page)
-  const totalDesktopPages = Math.ceil(filteredList.length / pageSize) || 1;
-  const displayedDesktop = filteredList.slice(
-    (desktopPage - 1) * pageSize,
-    desktopPage * pageSize
-  );
-
   if (!isClient) return null;
 
   return (
     <UserAuth>
       <div className="min-h-screen bg-whiten text-body dark:bg-boxdark-2 dark:text-bodydark">
-        {loader ? (
-          <PageLoader />
-        ) : isSmallScreen ? (
+        {isSmallScreen ? (
           /* ================= MOBILE VIEW ================= */
           <div className="flex flex-col min-h-screen pb-20">
             {/* Top Bar */}
@@ -114,7 +134,7 @@ export default function PartService() {
                       Order Service Luar
                     </h1>
                     <span className="text-[11px] text-body dark:text-bodydark">
-                      {filteredList.length} order tercatat
+                      {totalCount} order tercatat
                     </span>
                   </div>
                 </div>
@@ -123,7 +143,7 @@ export default function PartService() {
                   type="button"
                   onClick={() => router.push("/new_service")}
                   className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white shadow-sm hover:bg-opacity-90 transition-all"
-                  title="Buat Order Baru"
+                  title="Buat Order Service Baru"
                 >
                   <HiOutlinePlus className="text-lg" />
                 </button>
@@ -134,26 +154,26 @@ export default function PartService() {
                 <CommonInput
                   input={keyword}
                   type="text"
-                  onInputChange={(val) => {
-                    setKeyword(val);
-                    setMobilePage(1);
-                  }}
-                  placeholder="Cari ID order atau pemohon..."
+                  onInputChange={handleSearchChange}
+                  placeholder="Cari ID order, pemohon..."
                 >
                   <HiOutlineSearch className="text-body dark:text-bodydark" />
                 </CommonInput>
               </div>
             </div>
 
-            {/* List of Services (15 items per batch) */}
+            {/* List of Services */}
             <div className="p-4 space-y-2.5">
-              {filteredList.length === 0 ? (
+              {loader && orderData.length === 0 ? (
+                <CardSkeleton count={5} />
+              ) : orderData.length === 0 ? (
                 <div className="rounded-2xl border border-stroke bg-white p-8 text-center text-xs text-body dark:border-strokedark dark:bg-boxdark dark:text-bodydark">
-                  Tidak ada order service luar yang cocok.
+                  <BsBoxSeam className="mx-auto text-3xl opacity-20 mb-2" />
+                  Tidak ada data order service.
                 </div>
               ) : (
                 <>
-                  {displayedMobile.map((item, index) => {
+                  {orderData.map((item, index) => {
                     const isOpen = item.status === 0;
                     return (
                       <div
@@ -161,12 +181,17 @@ export default function PartService() {
                         onClick={() => router.push(`/partsservice/${item.id_register}`)}
                         className="group cursor-pointer rounded-2xl border border-stroke bg-white p-3.5 shadow-sm hover:border-primary hover:shadow dark:border-strokedark dark:bg-boxdark dark:hover:border-primary transition-all active:scale-[0.99]"
                       >
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="font-mono text-xs font-bold text-black dark:text-white">
-                            {item.id_register}
-                          </span>
+                        <div className="flex items-start justify-between gap-2 mb-1.5">
+                          <div className="min-w-0 flex-1">
+                            <span className="font-mono text-xs font-bold text-black dark:text-white block truncate">
+                              {item.id_register}
+                            </span>
+                            <span className="text-[11px] text-body dark:text-bodydark">
+                              Pemohon: {item.requestor || item.Name || "-"}
+                            </span>
+                          </div>
                           <span
-                            className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                            className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
                               isOpen
                                 ? "bg-warning/15 text-warning"
                                 : "bg-success/15 text-success"
@@ -176,15 +201,8 @@ export default function PartService() {
                           </span>
                         </div>
 
-                        <div className="text-xs text-black dark:text-white font-medium mb-1">
-                          Pemohon:{" "}
-                          <span className="font-semibold text-primary">
-                            {item.requestor || item.Name || "-"}
-                          </span>
-                        </div>
-
                         <div className="flex items-center justify-between border-t border-stroke/60 pt-2 text-[11px] text-body dark:border-strokedark/60 dark:text-bodydark">
-                          <span>Status: {isOpen ? "Sedang Dikerjakan" : "Diterima / Closed"}</span>
+                          <span>Dibuat: {item.requestor || item.Name || "-"}</span>
                           <span>{formatDate(item.date_issued || item.date)}</span>
                           <HiOutlineArrowRight className="text-xs group-hover:translate-x-1 transition-transform" />
                         </div>
@@ -194,9 +212,9 @@ export default function PartService() {
 
                   {/* Infinite scroll observer target */}
                   <div ref={observerTarget} className="py-2 text-center text-xs text-body dark:text-bodydark">
-                    {hasMoreMobile && (
+                    {loadingMore && (
                       <div className="flex items-center justify-center gap-2">
-                        <div className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
                         <span>Memuat 15 order berikutnya...</span>
                       </div>
                     )}
@@ -247,10 +265,7 @@ export default function PartService() {
                       <CommonInput
                         input={keyword}
                         type="text"
-                        onInputChange={(val) => {
-                          setKeyword(val);
-                          setDesktopPage(1);
-                        }}
+                        onInputChange={handleSearchChange}
                         placeholder="Cari ID order, pemohon..."
                       >
                         <HiOutlineSearch className="text-body dark:text-bodydark" />
@@ -258,7 +273,7 @@ export default function PartService() {
                     </div>
 
                     <span className="text-xs text-body dark:text-bodydark">
-                      Menampilkan {displayedDesktop.length} dari {filteredList.length} order service
+                      Menampilkan {orderData.length} dari {totalCount} order service
                     </span>
                   </div>
 
@@ -274,14 +289,20 @@ export default function PartService() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-stroke dark:divide-strokedark">
-                        {filteredList.length === 0 ? (
+                        {loader && orderData.length === 0 ? (
+                          <tr>
+                            <td colSpan={5} className="p-0">
+                              <TableSkeleton rows={8} cols={5} />
+                            </td>
+                          </tr>
+                        ) : orderData.length === 0 ? (
                           <tr>
                             <td colSpan={5} className="py-8 text-center text-body dark:text-bodydark">
                               Tidak ada data order service.
                             </td>
                           </tr>
                         ) : (
-                          displayedDesktop.map((item, index) => {
+                          orderData.map((item, index) => {
                             const isOpen = item.status === 0;
                             return (
                               <tr
@@ -329,28 +350,31 @@ export default function PartService() {
                     </table>
                   </div>
 
-                  {/* Desktop Pagination Controls (15 items per page) */}
-                  {totalDesktopPages > 1 && (
+                  {/* Desktop Server-Side Pagination Controls (15 items per page) */}
+                  {totalPages > 1 && (
                     <div className="flex items-center justify-between border-t border-stroke pt-4 dark:border-strokedark text-xs">
                       <span className="text-body dark:text-bodydark">
-                        Halaman {desktopPage} dari {totalDesktopPages}
+                        Halaman {desktopPage} dari {totalPages} (Total {totalCount} order service)
                       </span>
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          disabled={desktopPage === 1}
-                          onClick={() => setDesktopPage((p) => Math.max(1, p - 1))}
-                          className="rounded-lg border border-stroke px-3 py-1.5 font-semibold text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 disabled:opacity-40"
+                          disabled={desktopPage <= 1 || loader}
+                          onClick={() => fetch_data(desktopPage - 1, keyword, false)}
+                          className="rounded-lg border border-stroke px-3 py-1.5 font-semibold text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 disabled:opacity-40 transition"
                         >
                           Sebelumnya
                         </button>
+                        <span className="px-2 font-medium">
+                          {desktopPage} / {totalPages}
+                        </span>
                         <button
                           type="button"
-                          disabled={desktopPage === totalDesktopPages}
-                          onClick={() => setDesktopPage((p) => Math.min(totalDesktopPages, p + 1))}
-                          className="rounded-lg border border-stroke px-3 py-1.5 font-semibold text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 disabled:opacity-40"
+                          disabled={desktopPage >= totalPages || loader}
+                          onClick={() => fetch_data(desktopPage + 1, keyword, false)}
+                          className="rounded-lg border border-stroke px-3 py-1.5 font-semibold text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 disabled:opacity-40 transition"
                         >
-                          Berikutnya
+                          Selanjutnya
                         </button>
                       </div>
                     </div>

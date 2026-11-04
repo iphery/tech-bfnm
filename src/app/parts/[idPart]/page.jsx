@@ -7,7 +7,7 @@ import UserAuth from "@/components/auth";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import { PageCard } from "@/components/card";
 import { CommonInput } from "@/components/input";
-import { PageLoader } from "@/components/loader";
+import { PageLoader, DetailSkeleton } from "@/components/loader";
 import { formatDateLocal } from "@/utils/dateformat";
 import { NotifyError, NotifySuccess } from "@/utils/notify";
 
@@ -122,9 +122,7 @@ export default function DetailPart({ params }) {
   return (
     <UserAuth>
       <div className="min-h-screen bg-whiten text-body dark:bg-boxdark-2 dark:text-bodydark">
-        {loader ? (
-          <PageLoader />
-        ) : isSmallScreen ? (
+        {isSmallScreen ? (
           /* ================= MOBILE VIEW ================= */
           <div className="flex flex-col min-h-screen pb-20">
             {/* Top Bar */}
@@ -147,8 +145,11 @@ export default function DetailPart({ params }) {
               <div className="w-9" />
             </div>
 
-            <div className="p-4 space-y-4">
-              {/* Part Overview Card */}
+            {loader ? (
+              <DetailSkeleton />
+            ) : (
+              <div className="p-4 space-y-4">
+                {/* Part Overview Card */}
               <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
                 <div className="flex items-start justify-between gap-2 mb-3">
                   <div>
@@ -304,11 +305,15 @@ export default function DetailPart({ params }) {
                 )}
               </div>
             </div>
-          </div>
-        ) : (
+          )}
+        </div>
+      ) : (
           /* ================= DESKTOP VIEW ================= */
           <DefaultLayout>
-            <div className="mx-auto max-w-7xl space-y-6">
+            {loader ? (
+              <DetailSkeleton />
+            ) : (
+              <div className="mx-auto max-w-7xl space-y-6">
               {/* Header */}
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
@@ -522,6 +527,7 @@ export default function DetailPart({ params }) {
                 </div>
               </PageCard>
             </div>
+          )}
           </DefaultLayout>
         )}
       </div>

@@ -29,12 +29,8 @@ const ECommerce: React.FC = () => {
   const [waitingPart, setWaitingPart] = useState(0);
   const [openOrder, setOpenOrder] = useState(0);
 
-  const {
-    dataMaintenance,
-    dataOutstanding,
-    outCount,
-    mainCount,
-  } = useProvider();
+  const { dataMaintenance, dataOutstanding, outCount, mainCount } =
+    useProvider();
 
   const fetch_data = async () => {
     try {
@@ -79,19 +75,20 @@ const ECommerce: React.FC = () => {
       {/* Main Grid: Chart + Sidebar Panels */}
       <div className="grid grid-cols-12 gap-6">
         {/* Left Column: Trend Chart & Recent Breakdown Tickets */}
-        <div className="col-span-12 xl:col-span-8 space-y-6">
+        <div className="col-span-12 space-y-6 xl:col-span-8">
           <ChartOne series={series} inMonth={inMonth} inYear={inYear} />
 
           {/* Outstanding Breakdown Jobs (CM) Table */}
           <div className="rounded-2xl border border-slate-200/80 bg-white/90 p-6 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-boxdark/90">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h3 className="text-base font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                <h3 className="flex items-center gap-2 text-base font-bold text-slate-800 dark:text-white">
                   <span className="h-2.5 w-2.5 rounded-full bg-amber-500"></span>
                   Antrean Perbaikan Berjalan (CM)
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Daftar tiket breakdown mesin & kendaraan yang membutuhkan tindakan
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                  Daftar tiket breakdown mesin & kendaraan yang membutuhkan
+                  tindakan
                 </p>
               </div>
 
@@ -104,7 +101,7 @@ const ECommerce: React.FC = () => {
             </div>
 
             {dataOutstanding.length === 0 ? (
-              <div className="py-8 text-center text-sm text-slate-400 border border-dashed border-slate-200 rounded-xl dark:border-slate-700">
+              <div className="rounded-xl border border-dashed border-slate-200 py-8 text-center text-sm text-slate-400 dark:border-slate-700">
                 Semua aset dalam kondisi normal, tidak ada perbaikan aktif.
               </div>
             ) : (
@@ -121,66 +118,73 @@ const ECommerce: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                    {dataOutstanding.slice(0, 5).map((item, index) => {
-                      const title =
-                        item["Type"] === "K" ? item["Class"] : item["Description"];
-                      const isKendaraan = item["Type"] === "K";
+                    {dataOutstanding
+                      .slice(0, 5)
+                      .map((item: any, index: number) => {
+                        const title =
+                          item["Type"] === "K"
+                            ? item["Class"]
+                            : item["Description"];
+                        const isKendaraan = item["Type"] === "K";
 
-                      return (
-                        <tr
-                          key={index}
-                          className="hover:bg-slate-50/80 dark:hover:bg-boxdark-2/50 transition-colors"
-                        >
-                          <td className="py-3.5 pr-3 font-bold text-slate-800 dark:text-white">
-                            <div className="flex items-center gap-2.5">
-                              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-boxdark-2 dark:text-slate-300">
-                                <MdOutlinePrecisionManufacturing className="h-4 w-4" />
+                        return (
+                          <tr
+                            key={index}
+                            className="transition-colors hover:bg-slate-50/80 dark:hover:bg-boxdark-2/50"
+                          >
+                            <td className="py-3.5 pr-3 font-bold text-slate-800 dark:text-white">
+                              <div className="flex items-center gap-2.5">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600 dark:bg-boxdark-2 dark:text-slate-300">
+                                  <MdOutlinePrecisionManufacturing className="h-4 w-4" />
+                                </div>
+                                <span className="max-w-[180px] truncate">
+                                  {title || "-"}
+                                </span>
                               </div>
-                              <span className="truncate max-w-[180px]">{title || "-"}</span>
-                            </div>
-                          </td>
-                          <td className="py-3.5 pr-3">
-                            <span
-                              className={`rounded px-2 py-0.5 text-[10px] font-bold ${
-                                isKendaraan
-                                  ? "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
-                                  : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
-                              }`}
-                            >
-                              {isKendaraan ? "Kendaraan" : "Mesin"}
-                            </span>
-                          </td>
-                          <td className="py-3.5 pr-3 text-slate-600 dark:text-slate-300">
-                            <div className="flex items-center gap-1.5">
-                              <LiaUser className="h-3.5 w-3.5 text-slate-400" />
-                              <span>{item["Requestor"] || "-"}</span>
-                            </div>
-                          </td>
-                          <td className="py-3.5 pr-3 text-slate-500 dark:text-slate-400">
-                            <div className="flex items-center gap-1 text-[11px]">
-                              <MdOutlineAccessTime className="h-3 w-3" />
-                              <span>
-                                {shortDate(item["Time_Request"])} {formatTime(item["Time_Request"])}
+                            </td>
+                            <td className="py-3.5 pr-3">
+                              <span
+                                className={`rounded px-2 py-0.5 text-[10px] font-bold ${
+                                  isKendaraan
+                                    ? "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300"
+                                    : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
+                                }`}
+                              >
+                                {isKendaraan ? "Kendaraan" : "Mesin"}
                               </span>
-                            </div>
-                          </td>
-                          <td className="py-3.5 pr-3">
-                            <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40">
-                              <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse"></span>
-                              Step {item["Step"] || 1}
-                            </span>
-                          </td>
-                          <td className="py-3.5 text-right">
-                            <Link
-                              href={`/asset/${item["ID_Asset"]}`}
-                              className="rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-primary hover:text-white transition dark:bg-boxdark-2 dark:text-slate-300"
-                            >
-                              Detail →
-                            </Link>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                            </td>
+                            <td className="py-3.5 pr-3 text-slate-600 dark:text-slate-300">
+                              <div className="flex items-center gap-1.5">
+                                <LiaUser className="h-3.5 w-3.5 text-slate-400" />
+                                <span>{item["Requestor"] || "-"}</span>
+                              </div>
+                            </td>
+                            <td className="py-3.5 pr-3 text-slate-500 dark:text-slate-400">
+                              <div className="flex items-center gap-1 text-[11px]">
+                                <MdOutlineAccessTime className="h-3 w-3" />
+                                <span>
+                                  {shortDate(item["Time_Request"])}{" "}
+                                  {formatTime(item["Time_Request"])}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="py-3.5 pr-3">
+                              <span className="inline-flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-600 dark:border-rose-900/40 dark:bg-rose-950/40 dark:text-rose-400">
+                                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-rose-500"></span>
+                                Step {item["Step"] || 1}
+                              </span>
+                            </td>
+                            <td className="py-3.5 text-right">
+                              <Link
+                                href={`/asset/${item["ID_Asset"]}`}
+                                className="rounded-lg bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700 transition hover:bg-primary hover:text-white dark:bg-boxdark-2 dark:text-slate-300"
+                              >
+                                Detail →
+                              </Link>
+                            </td>
+                          </tr>
+                        );
+                      })}
                   </tbody>
                 </table>
               </div>
@@ -189,7 +193,7 @@ const ECommerce: React.FC = () => {
         </div>
 
         {/* Right Column: Preventive Maintenance & Quick Shortcuts */}
-        <div className="col-span-12 xl:col-span-4 space-y-6">
+        <div className="col-span-12 space-y-6 xl:col-span-4">
           {/* Quick Operations Actions */}
           <div className="rounded-2xl border border-slate-200/80 bg-gradient-to-br from-slate-900 to-slate-800 p-5 text-white shadow-md">
             <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300">
@@ -202,34 +206,42 @@ const ECommerce: React.FC = () => {
             <div className="mt-4 grid grid-cols-2 gap-2.5">
               <Link
                 href="/new_asset"
-                className="flex flex-col items-center justify-center rounded-xl bg-white/10 p-3 text-center transition hover:bg-white/20 border border-white/10"
+                className="flex flex-col items-center justify-center rounded-xl border border-white/10 bg-white/10 p-3 text-center transition hover:bg-white/20"
               >
                 <MdOutlineAddBox className="h-6 w-6 text-emerald-400" />
-                <span className="mt-1.5 text-xs font-semibold">Tambah Aset</span>
+                <span className="mt-1.5 text-xs font-semibold">
+                  Tambah Aset
+                </span>
               </Link>
 
               <Link
                 href="/scanner"
-                className="flex flex-col items-center justify-center rounded-xl bg-white/10 p-3 text-center transition hover:bg-white/20 border border-white/10"
+                className="flex flex-col items-center justify-center rounded-xl border border-white/10 bg-white/10 p-3 text-center transition hover:bg-white/20"
               >
                 <MdOutlineQrCodeScanner className="h-6 w-6 text-sky-400" />
-                <span className="mt-1.5 text-xs font-semibold">Scan QR Barcode</span>
+                <span className="mt-1.5 text-xs font-semibold">
+                  Scan QR Barcode
+                </span>
               </Link>
 
               <Link
                 href="/machineutilize"
-                className="flex flex-col items-center justify-center rounded-xl bg-white/10 p-3 text-center transition hover:bg-white/20 border border-white/10"
+                className="flex flex-col items-center justify-center rounded-xl border border-white/10 bg-white/10 p-3 text-center transition hover:bg-white/20"
               >
                 <MdOutlinePrecisionManufacturing className="h-6 w-6 text-amber-400" />
-                <span className="mt-1.5 text-xs font-semibold">Utilisasi Mesin</span>
+                <span className="mt-1.5 text-xs font-semibold">
+                  Utilisasi Mesin
+                </span>
               </Link>
 
               <Link
                 href="/partstransaction"
-                className="flex flex-col items-center justify-center rounded-xl bg-white/10 p-3 text-center transition hover:bg-white/20 border border-white/10"
+                className="flex flex-col items-center justify-center rounded-xl border border-white/10 bg-white/10 p-3 text-center transition hover:bg-white/20"
               >
                 <MdOutlineShoppingBag className="h-6 w-6 text-purple-400" />
-                <span className="mt-1.5 text-xs font-semibold">Transaksi Part</span>
+                <span className="mt-1.5 text-xs font-semibold">
+                  Transaksi Part
+                </span>
               </Link>
             </div>
           </div>
@@ -238,11 +250,13 @@ const ECommerce: React.FC = () => {
           <div className="rounded-2xl border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-boxdark/90">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                <h3 className="flex items-center gap-2 text-sm font-bold text-slate-800 dark:text-white">
                   <span className="h-2.5 w-2.5 rounded-full bg-sky-500"></span>
                   Jadwal Servis Berkala (PM)
                 </h3>
-                <span className="text-xs text-slate-400">Total {mainCount} jadwal</span>
+                <span className="text-xs text-slate-400">
+                  Total {mainCount} jadwal
+                </span>
               </div>
 
               <Link
@@ -254,7 +268,7 @@ const ECommerce: React.FC = () => {
             </div>
 
             {dataMaintenance.length === 0 ? (
-              <div className="py-6 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-xl dark:border-slate-700">
+              <div className="rounded-xl border border-dashed border-slate-200 py-6 text-center text-xs text-slate-400 dark:border-slate-700">
                 Tidak ada jadwal PM aktif saat ini.
               </div>
             ) : (
@@ -269,7 +283,10 @@ const ECommerce: React.FC = () => {
                       className="group flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/60 p-3 transition hover:border-sky-300 hover:bg-white dark:border-slate-800 dark:bg-boxdark-2/60 dark:hover:border-sky-800"
                     >
                       <div className="min-w-0 flex-1 pr-3">
-                        <h4 className="truncate text-xs font-bold text-slate-800 dark:text-white" title={title}>
+                        <h4
+                          className="truncate text-xs font-bold text-slate-800 dark:text-white"
+                          title={title}
+                        >
                           {title || "Aset Tanpa Nama"}
                         </h4>
                         <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
@@ -278,13 +295,15 @@ const ECommerce: React.FC = () => {
                             {shortDate(item["Time_Request"])}
                           </span>
                           <span>•</span>
-                          <span className="truncate">{item["Requestor"] || "Tim"}</span>
+                          <span className="truncate">
+                            {item["Requestor"] || "Tim"}
+                          </span>
                         </div>
                       </div>
 
                       <Link
                         href={`/asset/${item["ID_Asset"]}`}
-                        className="rounded-lg bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 shadow-sm border border-slate-200 hover:bg-primary hover:text-white transition dark:bg-boxdark dark:border-slate-700 dark:text-slate-200"
+                        className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-700 shadow-sm transition hover:bg-primary hover:text-white dark:border-slate-700 dark:bg-boxdark dark:text-slate-200"
                       >
                         Cek
                       </Link>

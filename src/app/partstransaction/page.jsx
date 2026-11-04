@@ -7,7 +7,7 @@ import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import UserAuth from "@/components/auth";
 import { CommonInput } from "@/components/input";
 import { PageCardLimited } from "@/components/card";
-import { PageLoader } from "@/components/loader";
+import { CardSkeleton, TableSkeleton } from "@/components/loader";
 import { formatDate } from "@/utils/dateformat";
 
 // Icons
@@ -29,58 +29,80 @@ export default function PageTransaction() {
 
   const [detailData, setDetailData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [keyword, setKeyword] = useState("");
 
-  // Infinite Scroll for mobile (15 items per page)
+  // Server pagination (15 items per page)
+  const pageSize = 15;
   const [page, setPage] = useState(1);
   const [desktopPage, setDesktopPage] = useState(1);
-  const pageSize = 15;
-  const [displayedData, setDisplayedData] = useState([]);
-  const [hasMore, setHasMore] = useState(true);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
   const observerTarget = useRef(null);
+  const searchTimeoutRef = useRef(null);
 
-  const fetch_data = async () => {
+  // Server-Side Fetch
+  const fetch_data = async (targetPage = 1, searchKeyword = keyword, isAppend = false) => {
+    if (isAppend) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
+
     try {
-      const response = await axios.post("/api/gettransaction");
+      const response = await axios.post("/api/gettransaction", {
+        page: targetPage,
+        per_page: pageSize,
+        search: searchKeyword,
+        paginate: true,
+      });
+
       if (response.status === 200) {
-        setDetailData(response.data.response || []);
+        const array = response.data.response || [];
+        const pagination = response.data.pagination || {};
+
+        if (isAppend) {
+          setDetailData((prev) => [...prev, ...array]);
+        } else {
+          setDetailData(array);
+        }
+
+        setPage(targetPage);
+        setDesktopPage(targetPage);
+        setTotalPages(pagination.total_pages || 1);
+        setTotalCount(pagination.total || 0);
+        setHasMore(Boolean(pagination.has_more));
       }
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
   useEffect(() => {
-    fetch_data();
+    fetch_data(1, "", false);
     setIsClient(true);
   }, []);
 
-  const filteredList = detailData.filter((item) => {
-    const q = keyword.toLowerCase();
-    const desc = (item.description || "").toLowerCase();
-    const code = (item.vendor_code || "").toLowerCase();
-    const subj = (item.subject || "").toLowerCase();
-    const asset = (item.id_asset || "").toLowerCase();
-    const req = (item.id_for || "").toLowerCase();
-    return desc.includes(q) || code.includes(q) || subj.includes(q) || asset.includes(q) || req.includes(q);
-  });
-
-  useEffect(() => {
-    const nextList = filteredList.slice(0, page * pageSize);
-    setDisplayedData(nextList);
-    setHasMore(nextList.length < filteredList.length);
-  }, [detailData, keyword, page]);
+  const handleSearchChange = (val) => {
+    setKeyword(val);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => {
+      fetch_data(1, val, false);
+    }, 400);
+  };
 
   const handleObserver = useCallback(
     (entries) => {
       const [target] = entries;
-      if (target.isIntersecting && hasMore && !loading) {
-        setPage((prev) => prev + 1);
+      if (target.isIntersecting && hasMore && !loading && !loadingMore) {
+        fetch_data(page + 1, keyword, true);
       }
     },
-    [hasMore, loading]
+    [hasMore, loading, loadingMore, page, keyword]
   );
 
   useEffect(() => {
@@ -96,9 +118,7 @@ export default function PageTransaction() {
   return (
     <UserAuth>
       <div className="min-h-screen bg-whiten text-body dark:bg-boxdark-2 dark:text-bodydark">
-        {loading ? (
-          <PageLoader />
-        ) : isSmallScreen ? (
+        {isSmallScreen ? (
           /* ================= MOBILE VIEW ================= */
           <div className="flex flex-col min-h-screen pb-20">
             {/* Top Bar */}
@@ -117,7 +137,7 @@ export default function PageTransaction() {
                       Mutasi & Transaksi Stok
                     </h1>
                     <span className="text-[11px] text-body dark:text-bodydark">
-                      {detailData.length} catatan transaksi
+                      {totalCount} catatan transaksi
                     </span>
                   </div>
                 </div>
@@ -128,10 +148,7 @@ export default function PageTransaction() {
                 <CommonInput
                   input={keyword}
                   type="text"
-                  onInputChange={(val) => {
-                    setKeyword(val);
-                    setPage(1);
-                  }}
+                  onInputChange={handleSearchChange}
                   placeholder="Cari part, keterangan, nomor tiket..."
                 >
                   <HiOutlineSearch className="text-body dark:text-bodydark" />
@@ -141,12 +158,14 @@ export default function PageTransaction() {
 
             {/* List of Transactions */}
             <div className="p-4 space-y-2.5">
-              {displayedData.length === 0 ? (
+              {loading && detailData.length === 0 ? (
+                <CardSkeleton count={5} />
+              ) : detailData.length === 0 ? (
                 <div className="rounded-2xl border border-stroke bg-white p-8 text-center text-xs text-body dark:border-strokedark dark:bg-boxdark dark:text-bodydark">
                   Tidak ada transaksi mutasi yang cocok.
                 </div>
               ) : (
-                displayedData.map((item, index) => {
+                detailData.map((item, index) => {
                   const isIncoming = Number(item.qty || 0) > 0;
                   return (
                     <div
@@ -190,7 +209,7 @@ export default function PageTransaction() {
               )}
 
               <div ref={observerTarget} className="py-2 text-center">
-                {hasMore && !loading && (
+                {loadingMore && (
                   <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent mx-auto" />
                 )}
               </div>
@@ -221,7 +240,7 @@ export default function PageTransaction() {
                 </div>
               </div>
 
-              {/* Data Table Card */}
+              {/* Table Card (15 items per page) */}
               <PageCardLimited>
                 <div className="space-y-4">
                   <div className="flex flex-wrap items-center justify-between gap-4 border-b border-stroke pb-4 dark:border-strokedark">
@@ -229,19 +248,15 @@ export default function PageTransaction() {
                       <CommonInput
                         input={keyword}
                         type="text"
-                        onInputChange={(val) => {
-                          setKeyword(val);
-                          setPage(1);
-                          setDesktopPage(1);
-                        }}
-                        placeholder="Cari part, keterangan, aset..."
+                        onInputChange={handleSearchChange}
+                        placeholder="Cari transaksi, part, tiket..."
                       >
                         <HiOutlineSearch className="text-body dark:text-bodydark" />
                       </CommonInput>
                     </div>
 
                     <span className="text-xs text-body dark:text-bodydark">
-                      Menampilkan {filteredList.length} transaksi
+                      Menampilkan {detailData.length} dari {totalCount} transaksi
                     </span>
                   </div>
 
@@ -260,16 +275,20 @@ export default function PageTransaction() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-stroke dark:divide-strokedark">
-                        {filteredList.length === 0 ? (
+                        {loading && detailData.length === 0 ? (
+                          <tr>
+                            <td colSpan={8} className="p-0">
+                              <TableSkeleton rows={8} cols={8} />
+                            </td>
+                          </tr>
+                        ) : detailData.length === 0 ? (
                           <tr>
                             <td colSpan={8} className="py-8 text-center text-body dark:text-bodydark">
                               Tidak ada riwayat mutasi stok.
                             </td>
                           </tr>
                         ) : (
-                          filteredList
-                            .slice((desktopPage - 1) * pageSize, desktopPage * pageSize)
-                            .map((item, index) => {
+                          detailData.map((item, index) => {
                             const isIncoming = Number(item.qty || 0) > 0;
                             return (
                               <tr
@@ -319,28 +338,31 @@ export default function PageTransaction() {
                     </table>
                   </div>
 
-                  {/* Desktop Pagination Controls (15 items per page) */}
-                  {Math.ceil(filteredList.length / pageSize) > 1 && (
+                  {/* Desktop Server-Side Pagination Controls (15 per page) */}
+                  {totalPages > 1 && (
                     <div className="flex items-center justify-between border-t border-stroke pt-4 dark:border-strokedark text-xs">
                       <span className="text-body dark:text-bodydark">
-                        Halaman {desktopPage} dari {Math.ceil(filteredList.length / pageSize)}
+                        Halaman {desktopPage} dari {totalPages} (Total {totalCount} transaksi)
                       </span>
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          disabled={desktopPage === 1}
-                          onClick={() => setDesktopPage((p) => Math.max(1, p - 1))}
-                          className="rounded-lg border border-stroke px-3 py-1.5 font-semibold text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 disabled:opacity-40"
+                          disabled={desktopPage <= 1 || loading}
+                          onClick={() => fetch_data(desktopPage - 1, keyword, false)}
+                          className="rounded-lg border border-stroke px-3 py-1.5 font-semibold text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 disabled:opacity-40 transition"
                         >
                           Sebelumnya
                         </button>
+                        <span className="px-2 font-medium">
+                          {desktopPage} / {totalPages}
+                        </span>
                         <button
                           type="button"
-                          disabled={desktopPage === Math.ceil(filteredList.length / pageSize)}
-                          onClick={() => setDesktopPage((p) => Math.min(Math.ceil(filteredList.length / pageSize), p + 1))}
-                          className="rounded-lg border border-stroke px-3 py-1.5 font-semibold text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 disabled:opacity-40"
+                          disabled={desktopPage >= totalPages || loading}
+                          onClick={() => fetch_data(desktopPage + 1, keyword, false)}
+                          className="rounded-lg border border-stroke px-3 py-1.5 font-semibold text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 disabled:opacity-40 transition"
                         >
-                          Berikutnya
+                          Selanjutnya
                         </button>
                       </div>
                     </div>

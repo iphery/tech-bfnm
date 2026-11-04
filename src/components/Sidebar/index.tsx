@@ -104,6 +104,7 @@ const menuGroups = [
         consumer: "private",
         children: [
           { label: "List", route: "/parts" },
+          { label: "Usage Summary", route: "/partsusage" },
           { label: "Transaction", route: "/partstransaction" },
           { label: "Order", route: "/partsorder" },
           { label: "Service", route: "/partsservice" },

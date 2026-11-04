@@ -8,7 +8,7 @@ import UserAuth from "@/components/auth";
 import { CommonInput } from "@/components/input";
 import { CommonButtonFull } from "@/components/button";
 import { PageCardLimited } from "@/components/card";
-import { PageLoader } from "@/components/loader";
+import { PageLoader, CardSkeleton, TableSkeleton } from "@/components/loader";
 import { CustomModal } from "@/components/modal";
 import { NotifySuccess, NotifyError } from "@/utils/notify";
 import { useProvider } from "@/app/appcontext";
@@ -28,6 +28,7 @@ import {
   HiOutlineArrowDownTray,
   HiOutlineArrowUpTray,
   HiOutlineDocumentText,
+  HiOutlineChartBar,
 } from "react-icons/hi2";
 import { BsCartPlus, BsBoxSeam } from "react-icons/bs";
 import { MdAddToPhotos } from "react-icons/md";
@@ -37,18 +38,21 @@ export default function ListPart() {
   const [isClient, setIsClient] = useState(false);
   const isSmallScreen = useMediaQuery({ query: "(max-width: 640px)" });
 
-  const [detailData, setDetailData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [modalNewPart, setModalNewPart] = useState(false);
   const [keyword, setKeyword] = useState("");
 
-  // Pagination & infinite scroll (15 items per page)
+  // Server-side pagination (15 items per page)
   const [page, setPage] = useState(1);
   const [desktopPage, setDesktopPage] = useState(1);
   const pageSize = 15;
   const [displayedParts, setDisplayedParts] = useState([]);
-  const [hasMore, setHasMore] = useState(true);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
   const observerTarget = useRef(null);
+  const searchTimeoutRef = useRef(null);
 
   const [inputNewData, setInputNewData] = useState({
     description: "",
@@ -67,20 +71,45 @@ export default function ListPart() {
   });
 
   const [onloadNew, setOnloadNew] = useState(false);
-
   const [userLevel, setUserLevel] = useState("");
 
-  const fetch_data = async () => {
+  // True Server-Side Fetch
+  const fetch_data = async (targetPage = 1, searchKeyword = keyword, isAppend = false) => {
+    if (isAppend) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
+
     try {
-      const response = await axios.post("/api/stocklist");
+      const response = await axios.post("/api/stocklist", {
+        page: targetPage,
+        per_page: pageSize,
+        search: searchKeyword,
+        paginate: true,
+      });
+
       if (response.status === 200) {
         const array = response.data["response"] || [];
-        setDetailData(array);
+        const pagination = response.data["pagination"] || {};
+
+        if (isAppend) {
+          setDisplayedParts((prev) => [...prev, ...array]);
+        } else {
+          setDisplayedParts(array);
+        }
+
+        setPage(targetPage);
+        setDesktopPage(targetPage);
+        setTotalPages(pagination.total_pages || 1);
+        setTotalCount(pagination.total || 0);
+        setHasMore(Boolean(pagination.has_more));
       }
     } catch (e) {
       console.error("fetch_data stocklist error:", e);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -94,36 +123,28 @@ export default function ListPart() {
         console.error(err);
       }
     }
-    fetch_data();
+    fetch_data(1, "", false);
     setIsClient(true);
   }, []);
 
-  // Filtered parts based on keyword
-  const filteredList = detailData.filter((item) => {
-    const q = keyword.toLowerCase();
-    const desc = (item["description"] || "").toLowerCase();
-    const code = (item["vendor_code"] || "").toLowerCase();
-    const loc = (item["location"] || "").toLowerCase();
-    const rem = (item["remark"] || "").toLowerCase();
-    return desc.includes(q) || code.includes(q) || loc.includes(q) || rem.includes(q);
-  });
-
-  // Handle pagination / infinite scrolling
-  useEffect(() => {
-    const nextList = filteredList.slice(0, page * pageSize);
-    setDisplayedParts(nextList);
-    setHasMore(nextList.length < filteredList.length);
-  }, [detailData, keyword, page]);
+  // Handle Search with debounce
+  const handleSearchChange = (val) => {
+    setKeyword(val);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => {
+      fetch_data(1, val, false);
+    }, 400);
+  };
 
   // Infinite Scroll Observer for Mobile
   const handleObserver = useCallback(
     (entries) => {
       const [target] = entries;
-      if (target.isIntersecting && hasMore && !loading) {
-        setPage((prev) => prev + 1);
+      if (target.isIntersecting && hasMore && !loading && !loadingMore) {
+        fetch_data(page + 1, keyword, true);
       }
     },
-    [hasMore, loading]
+    [hasMore, loading, loadingMore, page, keyword]
   );
 
   useEffect(() => {
@@ -181,7 +202,7 @@ export default function ListPart() {
                       Suku Cadang & Stok
                     </h1>
                     <span className="text-[11px] text-body dark:text-bodydark">
-                      {detailData.length} item terdaftar
+                      {totalCount} item terdaftar
                     </span>
                   </div>
                 </div>
@@ -211,10 +232,7 @@ export default function ListPart() {
                 <CommonInput
                   input={keyword}
                   type="text"
-                  onInputChange={(val) => {
-                    setKeyword(val);
-                    setPage(1);
-                  }}
+                  onInputChange={handleSearchChange}
                   placeholder="Cari suku cadang, part no, lokasi..."
                 >
                   <HiOutlineSearch className="text-body dark:text-bodydark" />
@@ -224,6 +242,14 @@ export default function ListPart() {
 
             {/* Quick Filter & Shortcuts */}
             <div className="flex items-center gap-2 px-4 py-2 overflow-x-auto scrollbar-none text-xs">
+              <button
+                type="button"
+                onClick={() => router.push("/partsusage")}
+                className="flex shrink-0 items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 font-semibold text-primary shadow-sm dark:bg-primary/20 dark:text-primary"
+              >
+                <HiOutlineChartBar className="text-primary text-sm" />
+                <span>Summary Penggunaan</span>
+              </button>
               <button
                 type="button"
                 onClick={() => router.push("/partsin")}
@@ -260,11 +286,8 @@ export default function ListPart() {
 
             {/* List of Spare Part Cards */}
             <div className="p-4 space-y-2.5">
-              {loading ? (
-                <div className="flex flex-col items-center justify-center py-16 gap-3">
-                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                  <span className="text-xs text-body dark:text-bodydark">Memuat katalog suku cadang...</span>
-                </div>
+              {loading && displayedParts.length === 0 ? (
+                <CardSkeleton count={5} />
               ) : displayedParts.length === 0 ? (
                 <div className="rounded-2xl border border-stroke bg-white p-8 text-center dark:border-strokedark dark:bg-boxdark">
                   <BsBoxSeam className="mx-auto text-3xl opacity-20 mb-2" />
@@ -322,7 +345,7 @@ export default function ListPart() {
 
               {/* Infinite Scroll Trigger */}
               <div ref={observerTarget} className="py-2 text-center">
-                {hasMore && !loading && (
+                {loadingMore && (
                   <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent mx-auto" />
                 )}
               </div>
@@ -388,6 +411,15 @@ export default function ListPart() {
                     <BsBoxSeam className="text-meta-5 text-base" />
                     <span>Mutasi Stok</span>
                   </button>
+
+                  <button
+                    type="button"
+                    onClick={() => router.push("/partsusage")}
+                    className="flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/10 px-4 py-2.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-all shadow-sm"
+                  >
+                    <HiOutlineChartBar className="text-primary text-base" />
+                    <span>Summary Penggunaan</span>
+                  </button>
                 </div>
               </div>
 
@@ -400,11 +432,7 @@ export default function ListPart() {
                       <CommonInput
                         input={keyword}
                         type="text"
-                        onInputChange={(val) => {
-                          setKeyword(val);
-                          setPage(1);
-                          setDesktopPage(1);
-                        }}
+                        onInputChange={handleSearchChange}
                         placeholder="Cari deskripsi, kode part, lokasi..."
                       >
                         <HiOutlineSearch className="text-body dark:text-bodydark" />
@@ -412,7 +440,7 @@ export default function ListPart() {
                     </div>
 
                     <span className="text-xs text-body dark:text-bodydark">
-                      Menampilkan {filteredList.length} total suku cadang
+                      Menampilkan {displayedParts.length} dari {totalCount} total suku cadang
                     </span>
                   </div>
 
@@ -431,22 +459,20 @@ export default function ListPart() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-stroke dark:divide-strokedark">
-                        {loading ? (
+                        {loading && displayedParts.length === 0 ? (
                           <tr>
-                            <td colSpan={7} className="py-8 text-center text-body dark:text-bodydark">
-                              Memuat data inventory...
+                            <td colSpan={7} className="p-0">
+                              <TableSkeleton rows={8} cols={7} />
                             </td>
                           </tr>
-                        ) : filteredList.length === 0 ? (
+                        ) : displayedParts.length === 0 ? (
                           <tr>
                             <td colSpan={7} className="py-8 text-center text-body dark:text-bodydark">
                               Tidak ada suku cadang yang sesuai kriteria pencarian.
                             </td>
                           </tr>
                         ) : (
-                          filteredList
-                            .slice((desktopPage - 1) * pageSize, desktopPage * pageSize)
-                            .map((item, index) => {
+                          displayedParts.map((item, index) => {
                             const available = Number(item["available_quantity"] || 0);
                             return (
                               <tr
@@ -500,28 +526,31 @@ export default function ListPart() {
                     </table>
                   </div>
 
-                  {/* Desktop Pagination Controls (15 items per page) */}
-                  {Math.ceil(filteredList.length / pageSize) > 1 && (
+                  {/* Desktop Server-Side Pagination Controls (15 items per page) */}
+                  {totalPages > 1 && (
                     <div className="flex items-center justify-between border-t border-stroke pt-4 dark:border-strokedark text-xs">
                       <span className="text-body dark:text-bodydark">
-                        Halaman {desktopPage} dari {Math.ceil(filteredList.length / pageSize)}
+                        Halaman {desktopPage} dari {totalPages} (Total {totalCount} item)
                       </span>
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          disabled={desktopPage === 1}
-                          onClick={() => setDesktopPage((p) => Math.max(1, p - 1))}
-                          className="rounded-lg border border-stroke px-3 py-1.5 font-semibold text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 disabled:opacity-40"
+                          disabled={desktopPage <= 1 || loading}
+                          onClick={() => fetch_data(desktopPage - 1, keyword, false)}
+                          className="rounded-lg border border-stroke px-3 py-1.5 font-semibold text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 disabled:opacity-40 transition"
                         >
                           Sebelumnya
                         </button>
+                        <span className="px-2 font-medium">
+                          {desktopPage} / {totalPages}
+                        </span>
                         <button
                           type="button"
-                          disabled={desktopPage === Math.ceil(filteredList.length / pageSize)}
-                          onClick={() => setDesktopPage((p) => Math.min(Math.ceil(filteredList.length / pageSize), p + 1))}
-                          className="rounded-lg border border-stroke px-3 py-1.5 font-semibold text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 disabled:opacity-40"
+                          disabled={desktopPage >= totalPages || loading}
+                          onClick={() => fetch_data(desktopPage + 1, keyword, false)}
+                          className="rounded-lg border border-stroke px-3 py-1.5 font-semibold text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 disabled:opacity-40 transition"
                         >
-                          Berikutnya
+                          Selanjutnya
                         </button>
                       </div>
                     </div>
