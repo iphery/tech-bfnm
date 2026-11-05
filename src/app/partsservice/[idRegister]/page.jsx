@@ -357,17 +357,29 @@ export default function ServiceDetail({ params }) {
                       <label className="block text-[10px] text-body dark:text-bodydark mb-0.5 font-semibold">
                         Pos Anggaran (Budget)
                       </label>
-                      <CustomSelect
-                        options={groupBudget}
-                        selectedOption={currentItem.budget}
-                        error={budgetError[index]}
-                        errorMessage="Wajib"
+                      <select
+                        value={currentItem.budget || ""}
                         onChange={(e) => {
                           const updated = [...listData];
                           updated[index] = { ...updated[index], budget: e.target.value };
                           setListData(updated);
                         }}
-                      />
+                        className={`w-full rounded-lg border bg-white py-2 px-3 text-xs text-black outline-none transition dark:bg-boxdark dark:text-white ${
+                          budgetError[index]
+                            ? "border-danger focus:border-danger"
+                            : "border-stroke focus:border-primary dark:border-strokedark"
+                        }`}
+                      >
+                        <option value="">Pilih Pos Anggaran...</option>
+                        {groupBudget.map((bg) => (
+                          <option key={bg.value} value={bg.value}>
+                            {bg.label} - {bg.title}
+                          </option>
+                        ))}
+                      </select>
+                      {budgetError[index] && (
+                        <span className="mt-1 block text-[10px] text-danger">Wajib dipilih</span>
+                      )}
                     </div>
 
                     <div>

@@ -33,7 +33,57 @@ async function handleAssetPartsUsage(request) {
       return NextResponse.json({ error: 'idAsset is required' }, { status: 400 });
     }
 
-    // 1. Fetch all spare part usage logs for this specific machine
+    // 1. Fetch latest purchase price per part from order_detail
+    let priceMap = new Map();
+    try {
+      const [prices] = await pool.query(
+        `SELECT od.id_part, 
+                od.amount, 
+                od.quantity,
+                ROUND(od.amount / NULLIF(od.quantity, 0)) as unit_price,
+                od.seller
+         FROM order_detail od
+         INNER JOIN (
+           SELECT id_part, MAX(ids) as max_id
+           FROM order_detail
+           WHERE amount > 0 AND quantity > 0
+           GROUP BY id_part
+         ) latest ON latest.id_part = od.id_part AND latest.max_id = od.ids`
+      );
+      prices.forEach((p) => {
+        priceMap.set(p.id_part, {
+          unit_price: Number(p.unit_price) || 0,
+          seller: p.seller || '',
+        });
+      });
+    } catch (e) {
+      console.error('Error fetching part prices:', e);
+    }
+
+    // 1b. Fetch specific order_detail amounts directly assigned to this machine's tickets
+    let specificTicketPartCosts = new Map();
+    try {
+      const [ticketParts] = await pool.query(
+        `SELECT od.id_part, od.id_service, od.amount, od.seller, od.quantity,
+                ROUND(od.amount / NULLIF(od.quantity, 0)) as unit_price
+         FROM order_detail od
+         INNER JOIN Request r ON r.ID_Request = od.id_service
+         WHERE r.ID_Asset = ? AND od.amount > 0`,
+        [idAsset]
+      );
+      ticketParts.forEach((tp) => {
+        const key = `${tp.id_service}_${tp.id_part}`;
+        specificTicketPartCosts.set(key, {
+          unit_price: Number(tp.unit_price) || (Number(tp.amount) / Math.max(1, Number(tp.quantity || 1))),
+          amount: Number(tp.amount) || 0,
+          seller: tp.seller || '',
+        });
+      });
+    } catch (e) {
+      console.error('Error fetching specific ticket parts:', e);
+    }
+
+    // 2. Fetch all spare part usage logs for this specific machine
     let queryParams = [idAsset];
     let dateFilter = '';
 
@@ -71,8 +121,36 @@ async function handleAssetPartsUsage(request) {
       queryParams
     );
 
-    // 2. Group usage by Month
+    // 3. Fetch external services / vendor repairs for this machine
+    let externalServices = [];
+    try {
+      const [serviceRows] = await pool.query(
+        `SELECT 
+           sd.id_register,
+           sd.item,
+           sd.amount,
+           sd.quantity,
+           sd.supplier,
+           sd.id_request,
+           COALESCE(r.Time_Request, NOW()) as date,
+           DATE_FORMAT(COALESCE(r.Time_Request, NOW()), '%Y-%m') as month_key,
+           DATE_FORMAT(COALESCE(r.Time_Request, NOW()), '%M %Y') as month_label,
+           DATE_FORMAT(COALESCE(r.Time_Request, NOW()), '%Y') as year_val,
+           DATE_FORMAT(COALESCE(r.Time_Request, NOW()), '%m') as month_val
+         FROM service_detail sd
+         INNER JOIN Request r ON r.ID_Request = sd.id_request
+         WHERE r.ID_Asset = ? AND sd.amount > 0
+         ORDER BY r.Time_Request DESC`,
+        [idAsset]
+      );
+      externalServices = serviceRows || [];
+    } catch (e) {
+      console.error('Error fetching external services:', e);
+    }
+
+    // 4. Group usage & costs by Month
     const monthGroupsMap = new Map();
+
     usageLogs.forEach((row) => {
       const key = row.month_key;
       if (!monthGroupsMap.has(key)) {
@@ -84,15 +162,32 @@ async function handleAssetPartsUsage(request) {
           total_qty: 0,
           total_quantity: 0,
           total_items: 0,
+          parts_cost: 0,
+          service_cost: 0,
+          total_cost: 0,
           parts: [],
+          services: [],
         });
       }
 
       const group = monthGroupsMap.get(key);
       const qty = Number(row.quantity || 0);
+
+      // Determine unit price and total cost
+      const ticketKey = `${row.request_id}_${row.id_part}`;
+      const ticketCost = specificTicketPartCosts.get(ticketKey);
+      const fallbackPrice = priceMap.get(row.id_part);
+
+      const unitPrice = ticketCost?.unit_price || fallbackPrice?.unit_price || 0;
+      const partCost = Math.round(qty * unitPrice);
+      const supplier = ticketCost?.seller || fallbackPrice?.seller || '-';
+
       group.total_qty += qty;
       group.total_quantity += qty;
       group.total_items += 1;
+      group.parts_cost += partCost;
+      group.total_cost += partCost;
+
       group.parts.push({
         id_part: row.id_part,
         description: row.description || row.part_name,
@@ -102,6 +197,9 @@ async function handleAssetPartsUsage(request) {
         location: row.location || '-',
         qty: qty,
         quantity: qty,
+        unit_price: unitPrice,
+        total_cost: partCost,
+        supplier: supplier,
         date: row.date,
         id_for: row.request_id || row.id_for || '-',
         request_id: row.request_id || row.id_for || '-',
@@ -109,10 +207,61 @@ async function handleAssetPartsUsage(request) {
       });
     });
 
-    const monthlyBreakdown = Array.from(monthGroupsMap.values());
+    // Merge external services into monthly groups
+    externalServices.forEach((srv) => {
+      const key = srv.month_key;
+      const srvAmount = Number(srv.amount || 0);
 
-    // 3. Calculate Routine Machine Needs (Perkiraan Kebutuhan Rutin Mesin Ini)
-    // Aggregates parts across all recorded history for this asset to show what parts this machine regularly consumes
+      if (!monthGroupsMap.has(key)) {
+        monthGroupsMap.set(key, {
+          month_key: key,
+          month_label: srv.month_label,
+          year: parseInt(srv.year_val, 10),
+          month: parseInt(srv.month_val, 10),
+          total_qty: 0,
+          total_quantity: 0,
+          total_items: 0,
+          parts_cost: 0,
+          service_cost: 0,
+          total_cost: 0,
+          parts: [],
+          services: [],
+        });
+      }
+
+      const group = monthGroupsMap.get(key);
+      group.service_cost += srvAmount;
+      group.total_cost += srvAmount;
+      group.services.push({
+        id_register: srv.id_register,
+        item: srv.item,
+        amount: srvAmount,
+        quantity: srv.quantity,
+        supplier: srv.supplier || '-',
+        id_request: srv.id_request,
+        date: srv.date,
+      });
+    });
+
+    // Sort months descending for table/list
+    const monthlyBreakdown = Array.from(monthGroupsMap.values()).sort(
+      (a, b) => b.month_key.localeCompare(a.month_key)
+    );
+
+    // Cost trend chronologically sorted (ascending) for charts
+    const costTrend = [...monthlyBreakdown]
+      .sort((a, b) => a.month_key.localeCompare(b.month_key))
+      .slice(-12) // Last 12 months for chart
+      .map((m) => ({
+        month_key: m.month_key,
+        month_label: m.month_label,
+        parts_cost: m.parts_cost,
+        service_cost: m.service_cost,
+        total_cost: m.total_cost,
+        total_qty: m.total_qty,
+      }));
+
+    // 5. Calculate Routine Machine Needs (Perkiraan Kebutuhan Rutin Mesin Ini)
     const [partFrequencyQuery] = await pool.query(
       `SELECT 
          stock_summary.id_part,
@@ -141,7 +290,6 @@ async function handleAssetPartsUsage(request) {
       const replacementCount = Number(row.replacement_count || 0);
       const monthSpan = Math.max(1, Number(row.active_month_span || 1));
       
-      // Monthly average consumption specifically for THIS machine
       const monthlyRate = Number((totalQty / monthSpan).toFixed(1));
       const recommendedStockForMachine = Math.max(1, Math.ceil(monthlyRate));
 
@@ -159,6 +307,9 @@ async function handleAssetPartsUsage(request) {
         replacementFrequencyText = 'Pernah 1x ganti';
       }
 
+      const pInfo = priceMap.get(row.id_part);
+      const unitPrice = pInfo?.unit_price || 0;
+
       return {
         id_part: row.id_part,
         description: row.description,
@@ -174,6 +325,8 @@ async function handleAssetPartsUsage(request) {
         monthly_rate: monthlyRate,
         recommended_monthly_stock: recommendedStockForMachine,
         recommended_monthly_need: recommendedStockForMachine,
+        unit_price: unitPrice,
+        est_monthly_cost: Math.round(monthlyRate * unitPrice),
         frequency_label: replacementFrequencyText,
         frequency_note: replacementFrequencyText,
         last_used: row.last_used,
@@ -181,17 +334,26 @@ async function handleAssetPartsUsage(request) {
     });
 
     const totalAllPartsQuantity = usageLogs.reduce((acc, row) => acc + Number(row.quantity || 0), 0);
+    const grandPartsCost = monthlyBreakdown.reduce((acc, m) => acc + (m.parts_cost || 0), 0);
+    const grandServiceCost = monthlyBreakdown.reduce((acc, m) => acc + (m.service_cost || 0), 0);
+    const grandTotalCost = grandPartsCost + grandServiceCost;
+    const activeMonthsCount = Math.max(1, monthlyBreakdown.length);
 
     return NextResponse.json({
       id_asset: idAsset,
       total_parts_quantity: totalAllPartsQuantity,
       total_records: usageLogs.length,
       monthly_breakdown: monthlyBreakdown,
-      routine_needs: routineNeeds, // Estimated regular needs for this machine
+      cost_trend: costTrend,
+      routine_needs: routineNeeds,
       summary: {
         total_parts_replaced: totalAllPartsQuantity,
         distinct_parts_count: routineNeeds.length,
         most_used_part: routineNeeds[0] || null,
+        grand_total_cost: grandTotalCost,
+        grand_parts_cost: grandPartsCost,
+        grand_service_cost: grandServiceCost,
+        average_monthly_cost: Math.round(grandTotalCost / activeMonthsCount),
       },
     });
   } catch (error) {

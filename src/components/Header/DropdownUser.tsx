@@ -13,19 +13,37 @@ const DropdownUser = () => {
   const [imageUrl, setImageUrl] = useState("");
   const [userName, setUserName] = useState("");
   const [userDivisi, setUserDivisi] = useState("User");
+  const [userLevel, setUserLevel] = useState("");
+
+  const getLevelName = (lvl: any) => {
+    if (lvl === null || lvl === undefined || lvl === "") return "";
+    const l = Number(lvl);
+    if (l === 0) return "Developer";
+    if (l === 1) return "Supervisor";
+    if (l === 2) return "Engineering";
+    if (l === 4) return "User";
+    return "";
+  };
 
   useEffect(() => {
-    const user = localStorage.getItem("info")!;
+    const user = localStorage.getItem("info");
     if (user != null) {
-      const parseUser = JSON.parse(user);
-      const imageUrl = parseUser[0]["imageUrl"];
-      const name = parseUser[0]["Name"];
-      const divisi = parseUser[0]["divisi"];
-      console.log(parseUser);
-      setImageUrl(imageUrl);
-      setUserName(name);
-      if (divisi != null) {
-        setUserDivisi(divisi);
+      try {
+        const parseUser = JSON.parse(user);
+        if (parseUser && parseUser[0]) {
+          const imageUrl = parseUser[0]["imageUrl"];
+          const name = parseUser[0]["Name"];
+          const divisi = parseUser[0]["divisi"];
+          const lvl = parseUser[0]["Level"];
+          setImageUrl(imageUrl);
+          setUserName(name);
+          if (divisi != null) {
+            setUserDivisi(divisi);
+          }
+          setUserLevel(getLevelName(lvl));
+        }
+      } catch (e) {
+        console.error(e);
       }
     }
   }, []);
@@ -38,10 +56,12 @@ const DropdownUser = () => {
         href="#"
       >
         <span className="hidden text-right lg:block">
-          <span className="block text-sm font-medium text-info dark:text-white">
+          <span className="block text-sm font-semibold text-black dark:text-white">
             {userName}
           </span>
-          <span className="block text-xs text-info">{userDivisi}</span>
+          <span className="block text-xs font-medium text-primary">
+            {userLevel ? `${userLevel}${userDivisi ? ` • ${userDivisi}` : ""}` : userDivisi}
+          </span>
         </span>
 
         <span className="relative h-12 w-12 overflow-hidden rounded-full">
@@ -82,6 +102,14 @@ const DropdownUser = () => {
         <div
           className={`absolute right-0 mt-4 flex w-62.5 flex-col rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark`}
         >
+          <div className="border-b border-stroke px-4.5 py-3 dark:border-strokedark">
+            <p className="text-sm font-semibold text-black dark:text-white">
+              {userName || "User"}
+            </p>
+            <p className="text-xs font-medium text-primary">
+              {userLevel ? `${userLevel}${userDivisi ? ` • ${userDivisi}` : ""}` : userDivisi}
+            </p>
+          </div>
           {/*
           <ul className="flex flex-col gap-5 border-b border-stroke px-6 py-7.5 dark:border-strokedark">
             <li>

@@ -20,7 +20,9 @@ import {
   HiOutlineCheckCircle,
   HiOutlineClock,
   HiOutlineDocumentText,
+  HiOutlineSave,
 } from "react-icons/hi";
+import { HiOutlinePencilSquare } from "react-icons/hi2";
 
 export default function PartOrderDetail({ params }) {
   const router = useRouter();
@@ -34,6 +36,8 @@ export default function PartOrderDetail({ params }) {
   const [onSubmit, setOnSubmit] = useState(false);
   const [loaderDelete, setLoaderDelete] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [isEditingDetails, setIsEditingDetails] = useState(false);
+  const [savingDetails, setSavingDetails] = useState(false);
 
   const groupBudget = [
     { label: "ME01", value: "ME01", title: "Pelumasan" },
@@ -189,6 +193,27 @@ export default function PartOrderDetail({ params }) {
     }
   };
 
+  const save_order_details = async () => {
+    setSavingDetails(true);
+    try {
+      const res = await axios.post("/api/updateorderdetail", {
+        idRegister: idRegister,
+        list: listData,
+      });
+
+      if (res.status === 200) {
+        NotifySuccess("Harga dan supplier berhasil diperbarui");
+        setIsEditingDetails(false);
+        fetch_data();
+      }
+    } catch (e) {
+      console.error(e);
+      NotifyError("Gagal memperbarui rincian harga & supplier");
+    } finally {
+      setSavingDetails(false);
+    }
+  };
+
   if (!isClient) return null;
 
   const isClosed = dataOrder.status === 1 || dataOrder.status_def === "CLOSE";
@@ -274,7 +299,7 @@ export default function PartOrderDetail({ params }) {
           <div className="rounded-xl bg-gray-50 p-2.5 dark:bg-meta-4/20">
             <span className="block text-[10px] text-body dark:text-bodydark">Penerima Gudang</span>
             <span className="font-semibold text-black dark:text-white">
-              {dataOrder.receiver || "-"}
+              {dataOrder.receiver_name || dataOrder.receiver || "-"}
             </span>
           </div>
         </div>
@@ -299,13 +324,63 @@ export default function PartOrderDetail({ params }) {
 
       {/* Items List & Receive Form */}
       <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
-        <h3 className="text-sm font-bold uppercase tracking-wider text-black dark:text-white mb-3">
-          Rincian Barang yang Dipesan ({dataOrderDetail.length} item)
-        </h3>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-stroke pb-3 dark:border-strokedark mb-3">
+          <div>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-black dark:text-white">
+              Rincian Barang yang Dipesan ({dataOrderDetail.length} item)
+            </h3>
+            <span className="text-[11px] text-body dark:text-bodydark">
+              Total Biaya:{" "}
+              <strong className="text-primary font-mono font-bold">
+                Rp{" "}
+                {listData
+                  .reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0)
+                  .toLocaleString("id-ID")}
+              </strong>
+            </span>
+          </div>
+
+          {isClosed && (
+            isEditingDetails ? (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={savingDetails}
+                  onClick={save_order_details}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-primary/90 disabled:opacity-50 transition-all"
+                >
+                  <HiOutlineSave className="text-sm" />
+                  <span>{savingDetails ? "Menyimpan..." : "Simpan Perubahan"}</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={savingDetails}
+                  onClick={() => {
+                    setIsEditingDetails(false);
+                    fetch_data();
+                  }}
+                  className="rounded-lg border border-stroke px-2.5 py-1.5 text-xs font-medium text-body hover:bg-gray-100 dark:border-strokedark dark:text-bodydark dark:hover:bg-meta-4 transition-all"
+                >
+                  Batal
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsEditingDetails(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-all shadow-sm"
+              >
+                <HiOutlinePencilSquare className="text-sm" />
+                <span>Edit Harga & Supplier</span>
+              </button>
+            )
+          )}
+        </div>
 
         <div className="space-y-3">
           {dataOrderDetail.map((item, index) => {
             const currentItem = listData[index] || {};
+            const isEditingItem = !isClosed || isEditingDetails;
 
             return (
               <div
@@ -331,8 +406,8 @@ export default function PartOrderDetail({ params }) {
                   </span>
                 </div>
 
-                {/* Form fields to receive the item */}
-                {!isClosed ? (
+                {/* Form fields to receive / edit the item */}
+                {isEditingItem ? (
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 border-t border-stroke/60 pt-2.5 dark:border-strokedark/60">
                     <div>
                       <label className="block text-[10px] text-body dark:text-bodydark mb-0.5 font-semibold">
@@ -355,17 +430,29 @@ export default function PartOrderDetail({ params }) {
                       <label className="block text-[10px] text-body dark:text-bodydark mb-0.5 font-semibold">
                         Pos Anggaran (Budget)
                       </label>
-                      <CustomSelect
-                        options={groupBudget}
-                        selectedOption={currentItem.budget}
-                        error={budgetError[index]}
-                        errorMessage="Wajib"
+                      <select
+                        value={currentItem.budget || ""}
                         onChange={(e) => {
                           const updated = [...listData];
                           updated[index] = { ...updated[index], budget: e.target.value };
                           setListData(updated);
                         }}
-                      />
+                        className={`w-full rounded-lg border bg-white py-2 px-3 text-xs text-black outline-none transition dark:bg-boxdark dark:text-white ${
+                          budgetError[index]
+                            ? "border-danger focus:border-danger"
+                            : "border-stroke focus:border-primary dark:border-strokedark"
+                        }`}
+                      >
+                        <option value="">Pilih Pos Anggaran...</option>
+                        {groupBudget.map((bg) => (
+                          <option key={bg.value} value={bg.value}>
+                            {bg.label} - {bg.title}
+                          </option>
+                        ))}
+                      </select>
+                      {budgetError[index] && (
+                        <span className="mt-1 block text-[10px] text-danger">Wajib dipilih</span>
+                      )}
                     </div>
 
                     <div>
@@ -386,17 +473,19 @@ export default function PartOrderDetail({ params }) {
                     </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-3 gap-2 border-t border-stroke/60 pt-2 text-[11px] text-body dark:border-strokedark/60 dark:text-bodydark">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 border-t border-stroke/60 pt-2 text-[11px] text-body dark:border-strokedark/60 dark:text-bodydark">
                     <div>
-                      <span className="block text-[10px] opacity-75">Harga</span>
-                      <span className="font-semibold text-black dark:text-white">
+                      <span className="block text-[10px] opacity-75">Harga Total</span>
+                      <span className="font-semibold text-black dark:text-white font-mono">
                         Rp {Number(item.amount || 0).toLocaleString("id-ID")}
                       </span>
                     </div>
                     <div>
                       <span className="block text-[10px] opacity-75">Pos Anggaran</span>
                       <span className="font-semibold text-black dark:text-white">
-                        {item.budget_pos || "-"}
+                        {groupBudget.find((b) => b.value === item.budget_pos)
+                          ? `${item.budget_pos} - ${groupBudget.find((b) => b.value === item.budget_pos)?.title}`
+                          : (item.budget_pos || "-")}
                       </span>
                     </div>
                     <div>
@@ -411,6 +500,32 @@ export default function PartOrderDetail({ params }) {
             );
           })}
         </div>
+
+        {/* Action Buttons */}
+        {isClosed && isEditingDetails && (
+          <div className="pt-4 mt-4 border-t border-stroke dark:border-strokedark flex justify-end gap-2">
+            <button
+              type="button"
+              disabled={savingDetails}
+              onClick={() => {
+                setIsEditingDetails(false);
+                fetch_data();
+              }}
+              className="rounded-xl border border-stroke px-4 py-2 text-xs font-semibold text-body hover:bg-gray-100 dark:border-strokedark dark:text-bodydark dark:hover:bg-meta-4"
+            >
+              Batal
+            </button>
+            <button
+              type="button"
+              disabled={savingDetails}
+              onClick={save_order_details}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-primary/90 disabled:opacity-50"
+            >
+              <HiOutlineSave className="text-sm" />
+              <span>{savingDetails ? "Menyimpan..." : "Simpan Perubahan Harga & Supplier"}</span>
+            </button>
+          </div>
+        )}
 
         {/* Submit Receive Action */}
         {!isClosed && (
