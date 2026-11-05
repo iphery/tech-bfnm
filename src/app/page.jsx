@@ -43,6 +43,7 @@ import { useProvider } from "@/app/appcontext";
 import { formatTime, shortDate } from "@/utils/dateformat";
 import Notifikasi from "@/components/notifikasi";
 import ECommerce from "@/components/Dashboard/E-commerce";
+import BudgetPosOverview from "@/components/Dashboard/BudgetPosOverview";
 import useColorMode from "@/hooks/useColorMode";
 
 export default function Home() {
@@ -530,6 +531,9 @@ export default function Home() {
                 </div>
               )}
             </div>
+
+            {/* Monitoring Anggaran Pemeliharaan (Budget Pos) Mobile */}
+            <BudgetPosOverview />
           </main>
 
           {/* Floating Modern Bottom Dock Bar */}

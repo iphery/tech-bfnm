@@ -21,6 +21,7 @@ import { LiaUser } from "react-icons/lia";
 import { useProvider } from "@/app/appcontext";
 import { formatTime, shortDate } from "@/utils/dateformat";
 import { IMAGE_ASSET } from "@/utils/constant";
+import BudgetPosOverview from "./BudgetPosOverview";
 
 const ECommerce: React.FC = () => {
   const [series, setSeries] = useState([]);
@@ -71,6 +72,9 @@ const ECommerce: React.FC = () => {
           <MdOutlineShoppingBag className="h-6 w-6 text-rose-500 dark:text-rose-400" />
         </CardDataStats>
       </div>
+
+      {/* Monitoring Anggaran Pemeliharaan (Budget Pos) */}
+      <BudgetPosOverview />
 
       {/* Main Grid: Chart + Sidebar Panels test*/}
       <div className="grid grid-cols-12 gap-6">

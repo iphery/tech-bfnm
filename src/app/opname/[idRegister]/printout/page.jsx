@@ -35,6 +35,16 @@ export default function Page() {
     fetch_data();
   }, [params.idRegister]);
 
+  // Otomatis membuka dialog print preview setelah data berhasil dimuat
+  useEffect(() => {
+    if (dataOpname.length > 0) {
+      const timer = setTimeout(() => {
+        window.print();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [dataOpname]);
+
   return (
     <div>
       <div className="page-header">

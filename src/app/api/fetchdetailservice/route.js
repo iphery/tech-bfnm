@@ -52,12 +52,13 @@ export async function POST(req) {
     let parts = [];
     try {
       const [partRows] = await db.query(
-        `SELECT d.id_part, d.id_register, d.description, d.quantity, d.dpm 
+        `SELECT d.id_part, d.id_register, d.description, d.quantity, COALESCE(m.dpm, d.id_register) as dpm 
          FROM order_detail d
          LEFT JOIN order_main m ON m.id_register = d.id_register
-         WHERE d.stock = 'Non Stock' AND d.id_service = ?
+         WHERE d.id_service = ?
          UNION
-         SELECT so.id_part, so.id_register, CONCAT(COALESCE(p.description, ''), ' ', COALESCE(p.vendor_code, '')) AS description, 
+         SELECT so.id_part, so.id_register, 
+                CONCAT(COALESCE(p.description, ''), ' ', COALESCE(p.vendor_code, '')) AS description, 
                 so.quantity, so.id_register AS dpm 
          FROM stock_out so
          LEFT JOIN parts p ON p.id_part = so.id_part
@@ -65,7 +66,8 @@ export async function POST(req) {
         [idRequest, idRequest]
       );
       parts = partRows;
-    } catch {
+    } catch (errParts) {
+      console.error("fetchdetailservice parts query error:", errParts);
       parts = [];
     }
 
@@ -76,7 +78,8 @@ export async function POST(req) {
         [idRequest]
       );
       servis = servisRows;
-    } catch {
+    } catch (errServis) {
+      console.error("fetchdetailservice servis query error:", errServis);
       servis = [];
     }
 
@@ -87,7 +90,8 @@ export async function POST(req) {
         [idRequest]
       );
       galleries = imgRows;
-    } catch {
+    } catch (errImg) {
+      console.error("fetchdetailservice image query error:", errImg);
       galleries = [];
     }
 

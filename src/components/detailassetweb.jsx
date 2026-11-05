@@ -37,11 +37,15 @@ import {
   HiOutlineArrowTrendingUp,
   HiOutlineCheckCircle,
   HiOutlineChartBar,
+  HiOutlinePencilSquare,
+  HiOutlineCamera,
+  HiOutlinePhoto,
 } from "react-icons/hi2";
 import { FaPlus, FaCheckSquare } from "react-icons/fa";
 import { MdCheckBox, MdCheckBoxOutlineBlank } from "react-icons/md";
 import { BsBoxSeam, BsGearWideConnected } from "react-icons/bs";
 import { RepairStatus } from "@/utils/repairstatus";
+import { NotifySuccess, NotifyError } from "@/utils/notify";
 import AssetMaintenanceCostChart from "@/components/Charts/AssetMaintenanceCostChart";
 
 export default function DetailAssetWeb({ idAsset }) {
@@ -69,6 +73,7 @@ export default function DetailAssetWeb({ idAsset }) {
   const [openImage, setOpenImage] = useState(false);
   const [openImageUser, setOpenImageUser] = useState(false);
   const [partList, setPartList] = useState([]);
+  const [servisList, setServisList] = useState([]);
   const [transactionStock, setTransactionStock] = useState([]);
   const [userLevel, setUserLevel] = useState("");
 
@@ -81,6 +86,96 @@ export default function DetailAssetWeb({ idAsset }) {
   const [selectedUsageMonth, setSelectedUsageMonth] = useState("ALL");
   const [routinePage, setRoutinePage] = useState(1);
   const [historyPage, setHistoryPage] = useState(1);
+
+  // Edit Asset States
+  const [openEditAssetModalState, setOpenEditAssetModalState] = useState(false);
+  const [savingAsset, setSavingAsset] = useState(false);
+  const [editDesc, setEditDesc] = useState("");
+  const [editManufacture, setEditManufacture] = useState("");
+  const [editModel, setEditModel] = useState("");
+  const [editNo, setEditNo] = useState("");
+  const [editLocation, setEditLocation] = useState("");
+  const [editUser, setEditUser] = useState("");
+  const [editPMCategory, setEditPMCategory] = useState("");
+  const [editCapacity, setEditCapacity] = useState("");
+  const [editPower, setEditPower] = useState("");
+  const [editVoltage, setEditVoltage] = useState("");
+  const [editSerial, setEditSerial] = useState("");
+  const [editYear, setEditYear] = useState("");
+  const [editImage, setEditImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+
+  const openEditAssetModal = () => {
+    setEditDesc(dataAsset.Description || "");
+    setEditManufacture(dataAsset.Manufacture || "");
+    setEditModel(dataAsset.Model || "");
+    setEditNo(dataAsset.No || "");
+    setEditLocation(dataAsset.Location || "");
+    setEditUser(dataAsset.User || "");
+    setEditPMCategory(dataAsset.PM_Category || "");
+    setEditCapacity(dataAsset.Capacity || "");
+    setEditPower(dataAsset.Power || "");
+    setEditVoltage(dataAsset.Voltage || "");
+    setEditSerial(dataAsset.Serial_Number || "");
+    setEditYear(dataAsset.Year_Manufacture || "");
+    setEditImage(null);
+    setImagePreview(dataAsset.Image ? `${IMAGE_ASSET}/${dataAsset.Image}` : null);
+    setOpenEditAssetModalState(true);
+  };
+
+  const handleImageFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        NotifyError("Ukuran gambar maksimal 5MB");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditImage(reader.result);
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveAsset = async () => {
+    if (!editDesc.trim()) {
+      NotifyError("Deskripsi aset wajib diisi");
+      return;
+    }
+
+    setSavingAsset(true);
+    try {
+      const res = await axios.post("/api/updateasset", {
+        idAsset: dataAsset.ID_Asset,
+        Description: editDesc,
+        Manufacture: editManufacture,
+        Model: editModel,
+        No: editNo,
+        Location: editLocation,
+        User: editUser,
+        PM_Category: editPMCategory,
+        Capacity: editCapacity,
+        Power: editPower,
+        Voltage: editVoltage,
+        Serial_Number: editSerial,
+        Year_Manufacture: editYear,
+        image: editImage,
+      });
+
+      if (res.status === 200) {
+        NotifySuccess("Data aset berhasil diperbarui");
+        setOpenEditAssetModalState(false);
+        fetch_data();
+      }
+    } catch (err) {
+      console.error(err);
+      NotifyError("Gagal memperbarui data aset");
+    } finally {
+      setSavingAsset(false);
+    }
+  };
 
   const fetch_parts_usage = async () => {
     try {
@@ -120,7 +215,24 @@ export default function DetailAssetWeb({ idAsset }) {
         keyword: keyword,
       });
       if (response.status === 200) {
-        setDataService(response.data.service || []);
+        const services = response.data.service || [];
+        setDataService(services);
+        if (services.length > 0 && !selectedCase) {
+          const first = services[0];
+          setSelectedCase(first);
+          if (first.Maintenance_Type === "PM" && first.new_checklist) {
+            try {
+              const parsed =
+                typeof first.new_checklist === "string"
+                  ? JSON.parse(first.new_checklist)
+                  : first.new_checklist;
+              setSelectedChecklist(parsed);
+            } catch {
+              setSelectedChecklist([]);
+            }
+          }
+          fetch_detail_service(first.ID_Request);
+        }
       }
     } catch (e) {
       console.error("fetch_data_service error:", e);
@@ -134,6 +246,7 @@ export default function DetailAssetWeb({ idAsset }) {
       });
       if (response.status === 200) {
         setPartList(response.data.parts || []);
+        setServisList(response.data.servis || []);
       }
     } catch (e) {
       console.error("fetch_detail_service error:", e);
@@ -308,13 +421,23 @@ export default function DetailAssetWeb({ idAsset }) {
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                 {/* Information Specs */}
                 <div className="space-y-4 lg:col-span-2">
-                  <div className="border-b border-stroke pb-3 dark:border-strokedark">
-                    <h2 className="text-base font-bold text-black dark:text-white">
-                      Informasi Spesifikasi Aset
-                    </h2>
-                    <p className="text-xs text-body dark:text-bodydark">
-                      Data identitas dan riwayat pendaftaran unit dalam sistem
-                    </p>
+                  <div className="flex items-center justify-between border-b border-stroke pb-3 dark:border-strokedark">
+                    <div>
+                      <h2 className="text-base font-bold text-black dark:text-white">
+                        Informasi Spesifikasi Aset
+                      </h2>
+                      <p className="text-xs text-body dark:text-bodydark">
+                        Data identitas dan riwayat pendaftaran unit dalam sistem
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={openEditAssetModal}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/10 px-3.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-all shadow-sm"
+                    >
+                      <HiOutlinePencilSquare className="text-sm" />
+                      <span>Edit Data Aset</span>
+                    </button>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 text-xs">
@@ -453,6 +576,230 @@ export default function DetailAssetWeb({ idAsset }) {
                 slides={[{ src: `${IMAGE_USER}/${dataAsset.Profile_Image}` }]}
               />
             )}
+
+            {/* Modal Edit Data Aset */}
+            <CustomModal
+              isVisible={openEditAssetModalState}
+              isSmallWidth="lg"
+              onClose={() => setOpenEditAssetModalState(false)}
+            >
+              <div className="flex items-center justify-between border-b border-stroke px-5 py-4 dark:border-strokedark">
+                <div>
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-black dark:text-white flex items-center gap-2">
+                    <HiOutlinePencilSquare className="text-primary text-base" />
+                    Edit Data & Foto Aset #{dataAsset.ID_Asset}
+                  </h3>
+                  <span className="text-xs text-body dark:text-bodydark">
+                    Perbarui informasi spesifikasi atau foto unit mesin/kendaraan
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-5 space-y-4 overflow-y-auto max-h-[70vh] text-xs">
+                {/* Upload Foto Aset */}
+                <div className="rounded-xl border border-stroke p-3.5 dark:border-strokedark bg-gray-50/50 dark:bg-meta-4/10">
+                  <span className="block text-[11px] font-bold text-black dark:text-white mb-2">
+                    Foto Unit Aset
+                  </span>
+                  <div className="flex flex-wrap items-center gap-4">
+                    <div className="relative h-24 w-24 rounded-xl border border-stroke dark:border-strokedark overflow-hidden bg-white dark:bg-boxdark flex items-center justify-center shrink-0 shadow-sm">
+                      {imagePreview ? (
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <HiOutlinePhoto className="text-3xl text-body opacity-40 dark:text-bodydark" />
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="inline-flex items-center gap-1.5 cursor-pointer rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-primary/90 transition-colors">
+                        <HiOutlineCamera className="text-sm" />
+                        <span>Upload / Ambil Foto</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleImageFileChange}
+                        />
+                      </label>
+                      <p className="text-[10px] text-body dark:text-bodydark max-w-xs">
+                        Mendukung file JPG, PNG, atau jepret langsung dari kamera device (maks. 5MB).
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Grid Input Form Fields */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="sm:col-span-2">
+                    <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                      Deskripsi / Nama Aset <span className="text-danger">*</span>
+                    </label>
+                    <CommonInput
+                      input={editDesc}
+                      type="text"
+                      placeholder="Nama / Deskripsi unit..."
+                      onInputChange={(val) => setEditDesc(val)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                      Manufaktur / Brand
+                    </label>
+                    <CommonInput
+                      input={editManufacture}
+                      type="text"
+                      placeholder="Contoh: Mitsubishi, Daikin, dll..."
+                      onInputChange={(val) => setEditManufacture(val)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                      Model / Seri
+                    </label>
+                    <CommonInput
+                      input={editModel}
+                      type="text"
+                      placeholder="Nomor model / tipe..."
+                      onInputChange={(val) => setEditModel(val)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                      No. Polisi / No. Unit
+                    </label>
+                    <CommonInput
+                      input={editNo}
+                      type="text"
+                      placeholder="Nomor plat atau kode fisik unit..."
+                      onInputChange={(val) => setEditNo(val)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                      Lokasi / Penempatan
+                    </label>
+                    <CommonInput
+                      input={editLocation}
+                      type="text"
+                      placeholder="Gedung, lantai, area..."
+                      onInputChange={(val) => setEditLocation(val)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                      Penanggung Jawab / User
+                    </label>
+                    <CommonInput
+                      input={editUser}
+                      type="text"
+                      placeholder="Nama pemegang unit..."
+                      onInputChange={(val) => setEditUser(val)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                      Kategori PM
+                    </label>
+                    <CommonInput
+                      input={editPMCategory}
+                      type="text"
+                      placeholder="Kategori preventive maintenance..."
+                      onInputChange={(val) => setEditPMCategory(val)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                      Kapasitas
+                    </label>
+                    <CommonInput
+                      input={editCapacity}
+                      type="text"
+                      placeholder="Contoh: 5 Ton, 3000 L, dll..."
+                      onInputChange={(val) => setEditCapacity(val)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                      Daya (Power)
+                    </label>
+                    <CommonInput
+                      input={editPower}
+                      type="text"
+                      placeholder="Contoh: 15 kW, 20 HP..."
+                      onInputChange={(val) => setEditPower(val)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                      Tegangan (Voltage)
+                    </label>
+                    <CommonInput
+                      input={editVoltage}
+                      type="text"
+                      placeholder="Contoh: 380V, 220V..."
+                      onInputChange={(val) => setEditVoltage(val)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                      Nomor Seri (Serial No)
+                    </label>
+                    <CommonInput
+                      input={editSerial}
+                      type="text"
+                      placeholder="Nomor seri pabrik..."
+                      onInputChange={(val) => setEditSerial(val)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                      Tahun Pembuatan
+                    </label>
+                    <CommonInput
+                      input={editYear}
+                      type="text"
+                      placeholder="Contoh: 2021..."
+                      onInputChange={(val) => setEditYear(val)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer Actions */}
+              <div className="flex items-center justify-end gap-2 border-t border-stroke px-5 py-3 dark:border-strokedark bg-gray-50/50 dark:bg-meta-4/20">
+                <button
+                  type="button"
+                  disabled={savingAsset}
+                  onClick={() => setOpenEditAssetModalState(false)}
+                  className="rounded-xl border border-stroke px-4 py-2 text-xs font-semibold text-body hover:bg-gray-100 dark:border-strokedark dark:text-bodydark dark:hover:bg-meta-4 transition-all"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  disabled={savingAsset}
+                  onClick={handleSaveAsset}
+                  className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-primary/90 disabled:opacity-50 transition-all"
+                >
+                  {savingAsset ? "Menyimpan..." : "Simpan Perubahan Aset"}
+                </button>
+              </div>
+            </CustomModal>
 
             {/* 1. DATA PERBAIKAN: Kartu Riwayat Perawatan & Perbaikan (F.BFNM.026/0) */}
             <PageCardLimited>
@@ -850,6 +1197,35 @@ export default function DetailAssetWeb({ idAsset }) {
                     </div>
                   )}
 
+                  {/* External Service List */}
+                  {servisList.length > 0 && (
+                    <div className="rounded-xl border border-stroke p-4 dark:border-strokedark">
+                      <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-black dark:text-white">
+                        Servis / Bengkel Luar Terkait
+                      </h4>
+                      <div className="divide-y divide-stroke dark:divide-strokedark">
+                        {servisList.map((item, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between rounded-lg px-2 py-2 text-xs"
+                          >
+                            <div>
+                              <span className="block font-semibold text-black dark:text-white">
+                                {item.item || item.description || "Jasa Servis"}
+                              </span>
+                              <span className="text-[10px] text-body dark:text-bodydark">
+                                Vendor: {item.supplier || "-"} • Ref: #{item.id_register}
+                              </span>
+                            </div>
+                            <span className="font-mono rounded-md bg-warning/10 px-2.5 py-1 font-bold text-warning">
+                              Rp {Number(item.amount || 0).toLocaleString("id-ID")}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Checklist if PM */}
                   {selectedChecklist.length > 0 && (
                     <div className="rounded-xl border border-stroke p-4 dark:border-strokedark">
@@ -1146,6 +1522,35 @@ export default function DetailAssetWeb({ idAsset }) {
                       </div>
                     </div>
                   )}
+
+                  {/* External Service List */}
+                  {servisList.length > 0 && (
+                    <div className="rounded-xl border border-stroke p-4 dark:border-strokedark">
+                      <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-black dark:text-white">
+                        Servis / Bengkel Luar Terkait
+                      </h4>
+                      <div className="divide-y divide-stroke dark:divide-strokedark">
+                        {servisList.map((item, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between rounded-lg px-2 py-2 text-xs"
+                          >
+                            <div>
+                              <span className="block font-semibold text-black dark:text-white">
+                                {item.item || item.description || "Jasa Servis"}
+                              </span>
+                              <span className="text-[10px] text-body dark:text-bodydark">
+                                Vendor: {item.supplier || "-"} • Ref: #{item.id_register}
+                              </span>
+                            </div>
+                            <span className="font-mono rounded-md bg-warning/10 px-2.5 py-1 font-bold text-warning">
+                              Rp {Number(item.amount || 0).toLocaleString("id-ID")}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Sub-section 2: Riwayat Pemakaian Part per Bulan (Dropdown Bulan & Paginasi 10/hal) */}
@@ -1368,6 +1773,35 @@ export default function DetailAssetWeb({ idAsset }) {
                         >
                           Berikutnya
                         </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* External Service List */}
+                  {servisList.length > 0 && (
+                    <div className="rounded-xl border border-stroke p-4 dark:border-strokedark">
+                      <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-black dark:text-white">
+                        Servis / Bengkel Luar Terkait
+                      </h4>
+                      <div className="divide-y divide-stroke dark:divide-strokedark">
+                        {servisList.map((item, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between rounded-lg px-2 py-2 text-xs"
+                          >
+                            <div>
+                              <span className="block font-semibold text-black dark:text-white">
+                                {item.item || item.description || "Jasa Servis"}
+                              </span>
+                              <span className="text-[10px] text-body dark:text-bodydark">
+                                Vendor: {item.supplier || "-"} • Ref: #{item.id_register}
+                              </span>
+                            </div>
+                            <span className="font-mono rounded-md bg-warning/10 px-2.5 py-1 font-bold text-warning">
+                              Rp {Number(item.amount || 0).toLocaleString("id-ID")}
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
