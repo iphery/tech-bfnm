@@ -82,6 +82,52 @@ export async function POST(req) {
         break;
       }
 
+      case "checked": {
+        message = "Pekerjaan berhasil diverifikasi (Checked).";
+        await db.query(
+          `UPDATE Request 
+           SET Tech_SPV = ?, ID_ME = ?, Tech_SPV_Name = ?, Step = 6 
+           WHERE ID_Request = ?`,
+          [now, uid, username, idRequest]
+        );
+
+        try {
+          await db.query(
+            `INSERT INTO cron_notif_finish (id_asset, id_request, tgl) VALUES (?, ?, ?)`,
+            [idAsset, idRequest, now]
+          );
+        } catch (cronErr) {
+          // Abaikan jika tabel cron tidak tersedia
+        }
+        break;
+      }
+
+      case "accepted": {
+        message = "Unit perbaikan berhasil diterima (Accepted).";
+        await db.query(
+          `UPDATE Request 
+           SET Prod_SPV = ?, ID_Approver = ?, Prod_SPV_Name = ?, Approver_Name = ?, Step = 7, Rating = 4 
+           WHERE ID_Request = ?`,
+          [now, uid, username, username, idRequest]
+        );
+
+        try {
+          const [activeReqs] = await db.query(
+            "SELECT ID_Request FROM Request WHERE ID_Asset = ? AND Step <= 6",
+            [idAsset]
+          );
+          if (activeReqs.length === 0) {
+            await db.query(
+              "UPDATE Assets SET Available = 1, Reserve = 0, View = 0 WHERE ID_Asset = ?",
+              [idAsset]
+            );
+          }
+        } catch (assetErr) {
+          // Abaikan jika error
+        }
+        break;
+      }
+
       default: {
         message = "Status tidak dikenali.";
         error = 1;

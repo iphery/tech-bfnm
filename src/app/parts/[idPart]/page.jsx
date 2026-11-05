@@ -13,6 +13,7 @@ import { formatDateLocal } from "@/utils/dateformat";
 import { NotifyError, NotifySuccess } from "@/utils/notify";
 import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
+import Webcam from "react-webcam";
 import { IMAGE_SPARE_PART } from "@/utils/constant";
 
 // Icons
@@ -36,6 +37,8 @@ import {
   HiOutlinePencilSquare,
   HiOutlinePhoto,
   HiOutlineXMark,
+  HiOutlineCamera,
+  HiOutlineArrowPath,
 } from "react-icons/hi2";
 import { BsBoxSeam, BsShieldCheck, BsExclamationCircle } from "react-icons/bs";
 
@@ -404,6 +407,14 @@ export default function DetailPart({ params }) {
   const [imagePreview, setImagePreview] = useState("");
   const [openLightbox, setOpenLightbox] = useState(false);
   const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const webcamRef = useRef(null);
+
+  // Camera Support & Controls
+  const [hasCamera, setHasCamera] = useState(false);
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [cameraFacing, setCameraFacing] = useState("environment"); // "environment" (rear) or "user" (front)
+  const [cameraLoading, setCameraLoading] = useState(false);
 
   const getFirstDate = () => {
     const today = new Date();
@@ -453,7 +464,29 @@ export default function DetailPart({ params }) {
     }
   }, [startDate, endDate]);
 
+  // Detect camera hardware support
+  useEffect(() => {
+    if (typeof navigator !== "undefined" && navigator.mediaDevices) {
+      if (navigator.mediaDevices.enumerateDevices) {
+        navigator.mediaDevices
+          .enumerateDevices()
+          .then((devices) => {
+            const hasVid = devices.some((d) => d.kind === "videoinput");
+            setHasCamera(hasVid);
+          })
+          .catch(() => {
+            setHasCamera(true);
+          });
+      } else if (navigator.mediaDevices.getUserMedia) {
+        setHasCamera(true);
+      }
+    } else {
+      setHasCamera(false);
+    }
+  }, []);
+
   const openEditModal = () => {
+    setIsCameraActive(false);
     setEditDesc(detailData.description || "");
     setEditVendorCode(detailData.vendor_code || "");
     setEditUnit(detailData.unit || "pcs");
@@ -464,6 +497,24 @@ export default function DetailPart({ params }) {
     setEditImage(detailData.image || "");
     setImagePreview(getPartImageUrl(detailData.image) || "");
     setEditModal(true);
+  };
+
+  const handleCapturePhoto = () => {
+    if (webcamRef.current) {
+      const screenshot = webcamRef.current.getScreenshot();
+      if (screenshot) {
+        setEditImage(screenshot);
+        setImagePreview(screenshot);
+        setIsCameraActive(false);
+        NotifySuccess("Foto berhasil diambil dari kamera");
+      } else {
+        NotifyError("Gagal mengambil gambar dari kamera. Coba lagi.");
+      }
+    }
+  };
+
+  const toggleCameraFacing = () => {
+    setCameraFacing((prev) => (prev === "environment" ? "user" : "environment"));
   };
 
   const handleImageFileChange = (e) => {
@@ -1155,7 +1206,10 @@ export default function DetailPart({ params }) {
         <CustomModal
           isVisible={editModal}
           isSmallWidth="md"
-          onClose={() => setEditModal(false)}
+          onClose={() => {
+            setIsCameraActive(false);
+            setEditModal(false);
+          }}
         >
           <div className="flex flex-col max-h-[82vh] overflow-hidden">
             {/* Header: Fixed at top */}
@@ -1168,7 +1222,7 @@ export default function DetailPart({ params }) {
               </p>
             </div>
 
-            {/* Hidden File Input */}
+            {/* Hidden File Inputs: Gallery & Native Mobile Camera */}
             <input
               type="file"
               ref={fileInputRef}
@@ -1176,28 +1230,162 @@ export default function DetailPart({ params }) {
               className="hidden"
               onChange={handleImageFileChange}
             />
+            <input
+              type="file"
+              ref={cameraInputRef}
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handleImageFileChange}
+            />
 
             {/* Body: Scrollable */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
-              {/* Image Upload / Preview Area */}
+              {/* Image Upload / Camera / Preview Area */}
               <div>
-                <label className="mb-1.5 block text-xs font-bold text-black dark:text-white">
-                  Foto Suku Cadang
-                </label>
-                {imagePreview ? (
-                  <div className="relative h-40 w-full rounded-xl border border-stroke overflow-hidden bg-gray-50 dark:border-strokedark dark:bg-meta-4/20 group">
-                    <img
-                      src={imagePreview}
-                      alt="Preview"
-                      className="h-full w-full object-cover"
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-black dark:text-white">
+                    Foto Suku Cadang
+                  </label>
+                  {hasCamera && !isCameraActive && (
+                    <span className="text-[10px] text-success font-medium flex items-center gap-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+                      Kamera Tersedia
+                    </span>
+                  )}
+                </div>
+
+                {/* 1. JIKA KAMERA SEDANG AKTIF: TAMPILKAN LIVE WEBCAM VIEWFINDER */}
+                {isCameraActive ? (
+                  <div className="relative overflow-hidden rounded-2xl border-2 border-primary/60 bg-black shadow-lg">
+                    <Webcam
+                      audio={false}
+                      ref={webcamRef}
+                      screenshotFormat="image/jpeg"
+                      screenshotQuality={0.88}
+                      videoConstraints={{
+                        facingMode: cameraFacing,
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                      }}
+                      onUserMedia={() => setCameraLoading(false)}
+                      onUserMediaError={(err) => {
+                        console.error("Camera access error:", err);
+                        NotifyError("Izin kamera ditolak. Membuka kamera sistem perangkat...");
+                        setIsCameraActive(false);
+                        cameraInputRef.current?.click();
+                      }}
+                      className="w-full h-64 sm:h-72 object-cover"
                     />
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+
+                    {/* Framing Guide Overlay */}
+                    <div className="absolute inset-4 pointer-events-none rounded-xl border border-white/30 border-dashed flex items-center justify-center">
+                      <span className="text-[10px] sm:text-xs font-medium text-white/80 bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">
+                        Arahkan kamera ke suku cadang
+                      </span>
+                    </div>
+
+                    {/* Camera Control Bar */}
+                    <div className="absolute bottom-3 inset-x-3 flex items-center justify-between bg-black/70 backdrop-blur-md rounded-xl p-2 text-white">
+                      <button
+                        type="button"
+                        onClick={toggleCameraFacing}
+                        title="Putar Kamera"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-xs font-semibold transition-colors"
+                      >
+                        <HiOutlineArrowPath className="text-base" />
+                        <span className="hidden sm:inline">Putar</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleCapturePhoto}
+                        className="flex items-center gap-2 px-5 py-2 rounded-full bg-primary hover:bg-opacity-90 font-bold text-xs text-white shadow-lg active:scale-95 transition-transform"
+                      >
+                        <HiOutlineCamera className="text-base" />
+                        <span>Ambil Foto</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsCameraActive(false)}
+                        className="px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-xs font-semibold transition-colors"
+                      >
+                        Tutup
+                      </button>
+                    </div>
+                  </div>
+                ) : imagePreview ? (
+                  /* 2. JIKA SUDAH ADA PREVIEW GAMBAR */
+                  <div className="space-y-2">
+                    <div className="relative h-44 w-full rounded-2xl border border-stroke overflow-hidden bg-gray-50 dark:border-strokedark dark:bg-meta-4/20 group">
+                      <img
+                        src={imagePreview}
+                        alt="Preview Part"
+                        className="h-full w-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (hasCamera) {
+                              setCameraLoading(true);
+                              setIsCameraActive(true);
+                            } else {
+                              cameraInputRef.current?.click();
+                            }
+                          }}
+                          className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-white shadow-md hover:bg-opacity-90 transition-all"
+                        >
+                          <HiOutlineCamera className="text-base" />
+                          <span>Foto Ulang</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-xs font-bold text-black shadow-md hover:bg-gray-100 transition-all"
+                        >
+                          <HiOutlinePhoto className="text-base" />
+                          <span>Pilih File</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditImage("");
+                            setImagePreview("");
+                          }}
+                          className="flex items-center gap-1.5 rounded-xl bg-danger px-3 py-2 text-xs font-bold text-white shadow-md hover:bg-opacity-90 transition-all"
+                        >
+                          <HiOutlineTrash className="text-base" />
+                          <span>Hapus</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Tombol Aksi Mobile (Selalu terlihat di smartphone tanpa perlu hover) */}
+                    <div className="flex sm:hidden items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (hasCamera) {
+                            setCameraLoading(true);
+                            setIsCameraActive(true);
+                          } else {
+                            cameraInputRef.current?.click();
+                          }
+                        }}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl border border-primary/40 bg-primary/10 text-primary text-xs font-bold"
+                      >
+                        <HiOutlineCamera className="text-sm" />
+                        <span>Foto Ulang</span>
+                      </button>
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-black shadow hover:bg-gray-100"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl border border-stroke dark:border-strokedark text-xs font-semibold text-body dark:text-bodydark"
                       >
-                        Ganti Foto
+                        <HiOutlinePhoto className="text-sm" />
+                        <span>Pilih File</span>
                       </button>
                       <button
                         type="button"
@@ -1205,20 +1393,59 @@ export default function DetailPart({ params }) {
                           setEditImage("");
                           setImagePreview("");
                         }}
-                        className="rounded-lg bg-danger px-3 py-1.5 text-xs font-bold text-white shadow hover:bg-opacity-90"
+                        className="py-2 px-3 rounded-xl border border-danger/30 bg-danger/10 text-danger text-xs font-bold"
                       >
                         Hapus
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex h-28 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-stroke bg-gray-50 text-body hover:border-primary hover:text-primary dark:border-strokedark dark:bg-meta-4/10 dark:text-bodydark transition-all"
-                  >
-                    <HiOutlinePhoto className="text-2xl opacity-50 mb-1" />
-                    <span className="text-xs font-semibold">+ Pilih / Ambil Foto Part</span>
-                    <span className="text-[10px] opacity-70">JPG, PNG atau WebP (Maks 5MB)</span>
+                  /* 3. JIKA BELUM ADA GAMBAR: OPSI KAMERA & FILE */
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Opsi Kamera */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (hasCamera) {
+                          setCameraLoading(true);
+                          setIsCameraActive(true);
+                        } else {
+                          cameraInputRef.current?.click();
+                        }
+                      }}
+                      className="group flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-primary/40 bg-primary/5 p-4 text-primary hover:border-primary hover:bg-primary/10 transition-all text-center"
+                    >
+                      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary text-white shadow-md group-hover:scale-110 transition-transform">
+                        <HiOutlineCamera className="text-xl" />
+                      </div>
+                      <div>
+                        <span className="block text-xs font-bold text-black dark:text-white">
+                          Ambil dari Kamera
+                        </span>
+                        <span className="block text-[10px] text-body dark:text-bodydark mt-0.5">
+                          {hasCamera ? "Buka kamera & jepret foto langsung" : "Buka kamera perangkat"}
+                        </span>
+                      </div>
+                    </button>
+
+                    {/* Opsi File / Galeri */}
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="group flex flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-stroke bg-gray-50 p-4 text-body hover:border-primary hover:text-primary dark:border-strokedark dark:bg-meta-4/10 dark:text-bodydark transition-all text-center"
+                    >
+                      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gray-200 dark:bg-meta-4 text-black dark:text-white shadow-sm group-hover:scale-110 transition-transform">
+                        <HiOutlinePhoto className="text-xl" />
+                      </div>
+                      <div>
+                        <span className="block text-xs font-bold text-black dark:text-white">
+                          Pilih dari Galeri / File
+                        </span>
+                        <span className="block text-[10px] text-body dark:text-bodydark mt-0.5">
+                          JPG, PNG, atau WebP (Maks 5MB)
+                        </span>
+                      </div>
+                    </button>
                   </div>
                 )}
               </div>
@@ -1362,7 +1589,10 @@ export default function DetailPart({ params }) {
             <div className="shrink-0 flex items-center justify-end gap-2.5 p-4 border-t border-stroke/60 dark:border-strokedark/60 bg-gray-50/80 dark:bg-meta-4/20">
               <button
                 type="button"
-                onClick={() => setEditModal(false)}
+                onClick={() => {
+                  setIsCameraActive(false);
+                  setEditModal(false);
+                }}
                 className="rounded-xl border border-stroke px-4 py-2 text-xs font-medium text-black hover:bg-gray-100 dark:border-strokedark dark:text-white dark:hover:bg-meta-4/40 transition-colors"
               >
                 Batal

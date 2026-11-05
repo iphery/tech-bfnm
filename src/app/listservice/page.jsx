@@ -105,7 +105,7 @@ export default function Page() {
                         </div>
                       )}
                     </td>
-                    <td className="p-1 align-top">{item["Technician"]}</td>
+                    <td className="p-1 align-top">{item["TechName"] || item["Technician"] || "-"}</td>
                   </tr>
                 );
               })}
