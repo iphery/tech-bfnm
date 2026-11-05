@@ -1538,6 +1538,7 @@ export default function DetailAssetMobile({ idAsset }) {
                                 <th className="py-2 px-2.5 font-semibold text-center">Total</th>
                                 <th className="py-2 px-2.5 font-semibold text-center">Laju/Bln</th>
                                 <th className="py-2 px-2.5 font-semibold text-center">Est/Bln</th>
+                                <th className="py-2 px-2.5 font-semibold text-right">Est. Biaya/Bln</th>
                                 <th className="py-2 px-2.5 font-semibold text-center">Stok</th>
                               </tr>
                             </thead>
@@ -1561,6 +1562,11 @@ export default function DetailAssetMobile({ idAsset }) {
                                       <span className="font-semibold text-[11px] text-black dark:text-white truncate block max-w-[120px]">
                                         {part.description}
                                       </span>
+                                      {Number(part.unit_price || 0) > 0 && (
+                                        <span className="text-[9px] text-meta-3 font-mono font-semibold block">
+                                          @Rp {Number(part.unit_price).toLocaleString("id-ID")}
+                                        </span>
+                                      )}
                                     </td>
                                     <td className="py-2 px-2.5 text-center whitespace-nowrap font-mono font-bold text-[11px] text-black dark:text-white">
                                       {part.total_qty} {part.unit}
@@ -1570,6 +1576,13 @@ export default function DetailAssetMobile({ idAsset }) {
                                     </td>
                                     <td className="py-2 px-2.5 text-center whitespace-nowrap font-mono font-bold text-[11px] text-primary">
                                       {part.recommended_monthly_stock} {part.unit}
+                                    </td>
+                                    <td className="py-2 px-2.5 text-right whitespace-nowrap font-mono font-bold text-[11px] text-primary">
+                                      {Number(part.est_monthly_cost || 0) > 0 ? (
+                                        `Rp ${Number(part.est_monthly_cost).toLocaleString("id-ID")}`
+                                      ) : (
+                                        <span className="text-body dark:text-bodydark font-normal">Rp 0</span>
+                                      )}
                                     </td>
                                     <td className="py-2 px-2.5 text-center whitespace-nowrap">
                                       <span className={`inline-block rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
@@ -1691,20 +1704,44 @@ export default function DetailAssetMobile({ idAsset }) {
                                       <span className="font-semibold text-xs text-black dark:text-white block truncate max-w-[140px]">
                                         {item.description}
                                       </span>
-                                      <span className="font-mono text-[10px] text-primary block truncate max-w-[140px]">
-                                        {item.vendor_code || item.id_part}
-                                      </span>
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span className="font-mono text-[10px] text-primary block truncate max-w-[110px]">
+                                          {item.vendor_code || item.id_part}
+                                        </span>
+                                        {item.supplier && item.supplier !== "-" && (
+                                          <span className="text-[9px] text-body dark:text-bodydark block truncate max-w-[100px]">
+                                            • {item.supplier}
+                                          </span>
+                                        )}
+                                      </div>
                                     </td>
                                     <td className="py-2 px-2.5 text-center font-bold text-warning whitespace-nowrap text-xs font-mono">
                                       -{item.qty} {item.unit || "pcs"}
                                     </td>
                                     <td className="py-2 px-2.5 text-right font-bold text-black dark:text-white whitespace-nowrap text-xs font-mono">
-                                      {item.total_cost > 0
-                                        ? `Rp ${Number(item.total_cost).toLocaleString("id-ID")}`
-                                        : "-"}
+                                      {Number(item.total_cost || 0) > 0 ? (
+                                        <span className="text-primary font-bold">
+                                          Rp {Number(item.total_cost).toLocaleString("id-ID")}
+                                        </span>
+                                      ) : (
+                                        <span className="text-[10px] text-body dark:text-bodydark font-normal">Rp 0</span>
+                                      )}
+                                      {Number(item.unit_price || 0) > 0 && (
+                                        <span className="block text-[9px] text-body dark:text-bodydark font-normal">
+                                          @Rp {Number(item.unit_price).toLocaleString("id-ID")}
+                                        </span>
+                                      )}
                                     </td>
                                     <td className="py-2 px-2.5 font-mono text-[10px] text-body dark:text-bodydark whitespace-nowrap">
-                                      #{item.id_for}
+                                      <span className="block font-bold">#{item.id_for}</span>
+                                      {item.dpm && item.dpm !== "-" && (
+                                        <span className="block text-[9px] text-primary">DPM #{item.dpm}</span>
+                                      )}
+                                      {item.source && (
+                                        <span className="block text-[8px] text-body dark:text-bodydark opacity-75">
+                                          {item.source.includes("DPM") ? "DPM" : "Gudang"}
+                                        </span>
+                                      )}
                                     </td>
                                   </tr>
                                 );

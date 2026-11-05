@@ -1574,6 +1574,15 @@ export default function DetailAssetWeb({ idAsset }) {
                             <th className="px-3 py-2.5 text-center font-semibold">
                               Estimasi Kebutuhan / Bln
                             </th>
+                            <th className="px-3 py-2.5 text-right font-semibold">
+                              Harga Satuan
+                            </th>
+                            <th className="px-3 py-2.5 text-right font-semibold">
+                              Est. Biaya / Bln
+                            </th>
+                            <th className="px-3 py-2.5 font-semibold">
+                              Supplier Terakhir
+                            </th>
                             <th className="px-3 py-2.5 text-center font-semibold">
                               Stok Gudang
                             </th>
@@ -1635,6 +1644,23 @@ export default function DetailAssetWeb({ idAsset }) {
                                   <span className="font-mono rounded-lg bg-primary/10 px-2.5 py-1 font-bold text-primary">
                                     {part.recommended_monthly_stock} {part.unit}
                                   </span>
+                                </td>
+                                <td className="whitespace-nowrap px-3 py-2.5 text-right font-mono text-xs font-semibold text-black dark:text-white">
+                                  {Number(part.unit_price || 0) > 0 ? (
+                                    <span>Rp {Number(part.unit_price).toLocaleString("id-ID")}</span>
+                                  ) : (
+                                    <span className="text-[10px] text-body dark:text-bodydark">Rp 0</span>
+                                  )}
+                                </td>
+                                <td className="whitespace-nowrap px-3 py-2.5 text-right font-mono font-bold text-primary text-xs">
+                                  {Number(part.est_monthly_cost || 0) > 0 ? (
+                                    <span>Rp {Number(part.est_monthly_cost).toLocaleString("id-ID")}</span>
+                                  ) : (
+                                    <span className="text-[10px] text-body dark:text-bodydark">Rp 0</span>
+                                  )}
+                                </td>
+                                <td className="whitespace-nowrap px-3 py-2.5 text-xs text-body dark:text-bodydark max-w-[130px] truncate" title={part.supplier || "-"}>
+                                  {part.supplier || "-"}
                                 </td>
                                 <td className="whitespace-nowrap px-3 py-2.5 text-center">
                                   <span
@@ -1808,6 +1834,9 @@ export default function DetailAssetWeb({ idAsset }) {
                             Total Biaya
                           </th>
                           <th className="px-3 py-2.5 font-semibold">
+                            Supplier / Sumber
+                          </th>
+                          <th className="px-3 py-2.5 font-semibold">
                             Lokasi Rak
                           </th>
                           <th className="px-3 py-2.5 font-semibold">
@@ -1822,7 +1851,7 @@ export default function DetailAssetWeb({ idAsset }) {
                         {displayedHistoryItems.length === 0 ? (
                           <tr>
                             <td
-                              colSpan={11}
+                              colSpan={12}
                               className="py-6 text-center text-body dark:text-bodydark"
                             >
                               Tidak ada data pemakaian part untuk periode ini.
@@ -1862,20 +1891,47 @@ export default function DetailAssetWeb({ idAsset }) {
                                   <td className="whitespace-nowrap px-3 py-2.5 text-center font-bold text-warning font-mono">
                                     -{item.qty} {item.unit || "pcs"}
                                   </td>
-                                  <td className="whitespace-nowrap px-3 py-2.5 text-right font-mono text-[11px] text-body dark:text-bodydark">
-                                    {item.unit_price > 0
-                                      ? `Rp ${Number(item.unit_price).toLocaleString("id-ID")}`
-                                      : "-"}
+                                  <td className="whitespace-nowrap px-3 py-2.5 text-right font-mono text-xs font-semibold text-body dark:text-bodydark">
+                                    {Number(item.unit_price || 0) > 0 ? (
+                                      `Rp ${Number(item.unit_price).toLocaleString("id-ID")}`
+                                    ) : (
+                                      <span className="text-[10px] text-body dark:text-bodydark">Rp 0</span>
+                                    )}
                                   </td>
-                                  <td className="whitespace-nowrap px-3 py-2.5 text-right font-mono font-bold text-black dark:text-white">
-                                    {item.total_cost > 0
-                                      ? `Rp ${Number(item.total_cost).toLocaleString("id-ID")}`
-                                      : "-"}
+                                  <td className="whitespace-nowrap px-3 py-2.5 text-right font-mono font-bold text-black dark:text-white text-xs">
+                                    {Number(item.total_cost || 0) > 0 ? (
+                                      <span className="text-primary font-bold">
+                                        Rp {Number(item.total_cost).toLocaleString("id-ID")}
+                                      </span>
+                                    ) : (
+                                      <span className="text-[10px] text-body dark:text-bodydark">Rp 0</span>
+                                    )}
+                                  </td>
+                                  <td className="whitespace-nowrap px-3 py-2.5 text-xs text-body dark:text-bodydark">
+                                    <span className="block font-medium text-black dark:text-white">
+                                      {item.supplier || "-"}
+                                    </span>
+                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                      {item.dpm && item.dpm !== "-" && (
+                                        <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[9px] font-mono font-bold text-primary">
+                                          DPM #{item.dpm}
+                                        </span>
+                                      )}
+                                      {item.source && (
+                                        <span className={`rounded-md px-1.5 py-0.5 text-[9px] font-medium ${
+                                          item.source.includes("DPM") || item.source.includes("Order")
+                                            ? "bg-meta-3/15 text-meta-3"
+                                            : "bg-gray-100 text-body dark:bg-meta-4/30 dark:text-bodydark"
+                                        }`}>
+                                          {item.source}
+                                        </span>
+                                      )}
+                                    </div>
                                   </td>
                                   <td className="whitespace-nowrap px-3 py-2.5 text-body dark:text-bodydark">
                                     {item.location || "-"}
                                   </td>
-                                  <td className="font-mono px-3 py-2.5 text-body dark:text-bodydark">
+                                  <td className="font-mono px-3 py-2.5 text-body dark:text-bodydark font-bold">
                                     #{item.id_for}
                                   </td>
                                   <td className="max-w-xs truncate px-3 py-2.5 text-body dark:text-bodydark">
@@ -1911,7 +1967,7 @@ export default function DetailAssetWeb({ idAsset }) {
                                     )
                                     .toLocaleString("id-ID")}
                                 </td>
-                                <td colSpan={3}></td>
+                                <td colSpan={4}></td>
                               </tr>
                             )}
                           </>

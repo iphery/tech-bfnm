@@ -507,7 +507,7 @@ export default function NewServicePage() {
 
       {/* MODAL PICKER TIKET / ID REQUEST */}
       {showRequestModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-999999 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-boxdark rounded-2xl w-full max-w-xl shadow-2xl border border-slate-200 dark:border-strokedark overflow-hidden flex flex-col max-h-[85vh]">
             <div className="p-4 border-b border-slate-200 dark:border-strokedark flex items-center justify-between">
               <div>

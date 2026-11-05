@@ -64,11 +64,11 @@ async function handleBudgetSummary(request) {
            SUM(COALESCE(sd.amount, 0)) as total_service_amount,
            COUNT(*) as item_count
          FROM service_detail sd
-         LEFT JOIN service_main sm ON sm.id_register = sd.id_register
+         LEFT JOIN service sm ON sm.id_register = sd.id_register
          WHERE sd.budget_pos IS NOT NULL 
            AND sd.budget_pos != ''
            AND sd.amount > 0
-           AND YEAR(COALESCE(sm.date, sd.required_date, NOW())) = ?
+           AND YEAR(COALESCE(sm.date_issued, sm.created_at, sd.required_date, NOW())) = ?
          GROUP BY sd.budget_pos`,
         [queryYear]
       );

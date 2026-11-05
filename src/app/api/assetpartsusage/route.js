@@ -33,57 +33,122 @@ async function handleAssetPartsUsage(request) {
       return NextResponse.json({ error: 'idAsset is required' }, { status: 400 });
     }
 
-    // 1. Fetch latest purchase price per part from order_detail
+    // 1. Fetch latest purchase price per part from order_detail (global cache by id_part & item name)
     let priceMap = new Map();
+    let itemNamePriceMap = new Map();
     try {
-      const [prices] = await pool.query(
+      const [allOrderPrices] = await pool.query(
         `SELECT od.id_part, 
+                od.item,
+                od.description,
                 od.amount, 
                 od.quantity,
                 ROUND(od.amount / NULLIF(od.quantity, 0)) as unit_price,
                 od.seller
          FROM order_detail od
-         INNER JOIN (
-           SELECT id_part, MAX(ids) as max_id
-           FROM order_detail
-           WHERE amount > 0 AND quantity > 0
-           GROUP BY id_part
-         ) latest ON latest.id_part = od.id_part AND latest.max_id = od.ids`
+         WHERE od.amount > 0 AND od.quantity > 0
+         ORDER BY od.ids DESC`
       );
-      prices.forEach((p) => {
-        priceMap.set(p.id_part, {
-          unit_price: Number(p.unit_price) || 0,
-          seller: p.seller || '',
-        });
+      allOrderPrices.forEach((p) => {
+        const uPrice = Number(p.unit_price) || (Number(p.amount) / Math.max(1, Number(p.quantity || 1)));
+        const seller = p.seller || '';
+        if (p.id_part && !priceMap.has(p.id_part)) {
+          priceMap.set(p.id_part, { unit_price: uPrice, seller });
+        }
+        const cleanItem = (p.item || '').trim().toLowerCase();
+        if (cleanItem && !itemNamePriceMap.has(cleanItem)) {
+          itemNamePriceMap.set(cleanItem, { unit_price: uPrice, seller });
+        }
+        const cleanDesc = (p.description || '').trim().toLowerCase();
+        if (cleanDesc && !itemNamePriceMap.has(cleanDesc)) {
+          itemNamePriceMap.set(cleanDesc, { unit_price: uPrice, seller });
+        }
       });
     } catch (e) {
       console.error('Error fetching part prices:', e);
     }
 
-    // 1b. Fetch specific order_detail amounts directly assigned to this machine's tickets
-    let specificTicketPartCosts = new Map();
+    // 1b. Fetch all orders and specific pricing tied to this machine's tickets (Request.ID_Asset = ?)
+    let machineOrders = [];
+    let ticketPartCosts = new Map();
     try {
-      const [ticketParts] = await pool.query(
-        `SELECT od.id_part, od.id_service, od.amount, od.seller, od.quantity,
-                ROUND(od.amount / NULLIF(od.quantity, 0)) as unit_price
+      const [orderRows] = await pool.query(
+        `SELECT od.ids, 
+                od.id_register, 
+                od.id_part, 
+                od.item, 
+                od.description, 
+                od.amount, 
+                od.seller, 
+                od.quantity, 
+                od.stock,
+                od.id_service,
+                od.id_service as request_id,
+                COALESCE(p.description, od.item, od.description, 'Suku Cadang') as part_name,
+                COALESCE(p.vendor_code, od.id_part, '-') as vendor_code,
+                COALESCE(p.unit, 'pcs') as unit,
+                COALESCE(p.location, '-') as location,
+                COALESCE(m.dpm, od.id_register) as dpm,
+                COALESCE(od.date, r.Time_Request, NOW()) as date,
+                r.Problem as subject,
+                ROUND(od.amount / NULLIF(od.quantity, 0)) as unit_price,
+                DATE_FORMAT(COALESCE(od.date, r.Time_Request, NOW()), '%Y-%m') as month_key,
+                DATE_FORMAT(COALESCE(od.date, r.Time_Request, NOW()), '%M %Y') as month_label,
+                DATE_FORMAT(COALESCE(od.date, r.Time_Request, NOW()), '%Y') as year_val,
+                DATE_FORMAT(COALESCE(od.date, r.Time_Request, NOW()), '%m') as month_val
          FROM order_detail od
          INNER JOIN Request r ON r.ID_Request = od.id_service
-         WHERE r.ID_Asset = ? AND od.amount > 0`,
+         LEFT JOIN order_main m ON m.id_register = od.id_register
+         LEFT JOIN parts p ON (p.id_part = od.id_part OR (od.id_part IS NULL AND p.description = od.item))
+         WHERE r.ID_Asset = ?
+         ORDER BY od.ids DESC`,
         [idAsset]
       );
-      ticketParts.forEach((tp) => {
-        const key = `${tp.id_service}_${tp.id_part}`;
-        specificTicketPartCosts.set(key, {
-          unit_price: Number(tp.unit_price) || (Number(tp.amount) / Math.max(1, Number(tp.quantity || 1))),
-          amount: Number(tp.amount) || 0,
-          seller: tp.seller || '',
-        });
+      machineOrders = orderRows || [];
+
+      machineOrders.forEach((mo) => {
+        const uPrice = Number(mo.unit_price) || (Number(mo.amount) / Math.max(1, Number(mo.quantity || 1)));
+        const costObj = {
+          ids: mo.ids,
+          unit_price: uPrice,
+          amount: Number(mo.amount) || 0,
+          quantity: Number(mo.quantity) || 1,
+          seller: mo.seller || '',
+          dpm: mo.dpm || mo.id_register || '',
+          matched: false,
+        };
+
+        const reqId = (mo.id_service || '').trim();
+        const partId = (mo.id_part || '').trim();
+        const itemClean = (mo.item || '').trim().toLowerCase();
+        const descClean = (mo.description || '').trim().toLowerCase();
+
+        if (reqId && partId) {
+          ticketPartCosts.set(`${reqId}_${partId}`, costObj);
+        }
+        if (reqId && itemClean) {
+          ticketPartCosts.set(`${reqId}_${itemClean}`, costObj);
+        }
+        if (reqId && descClean) {
+          ticketPartCosts.set(`${reqId}_${descClean}`, costObj);
+        }
+        if (reqId && !ticketPartCosts.has(reqId)) {
+          ticketPartCosts.set(reqId, costObj);
+        }
+
+        // Also enrich fallback price map if this machine has order pricing
+        if (partId && (!priceMap.has(partId) || priceMap.get(partId).unit_price === 0)) {
+          priceMap.set(partId, { unit_price: uPrice, seller: mo.seller || '' });
+        }
+        if (itemClean && (!itemNamePriceMap.has(itemClean) || itemNamePriceMap.get(itemClean).unit_price === 0)) {
+          itemNamePriceMap.set(itemClean, { unit_price: uPrice, seller: mo.seller || '' });
+        }
       });
     } catch (e) {
-      console.error('Error fetching specific ticket parts:', e);
+      console.error('Error fetching machine orders:', e);
     }
 
-    // 2. Fetch all spare part usage logs for this specific machine
+    // 2. Fetch all spare part usage logs for this specific machine from warehouse (stock_summary)
     let queryParams = [idAsset];
     let dateFilter = '';
 
@@ -121,6 +186,114 @@ async function handleAssetPartsUsage(request) {
       queryParams
     );
 
+    // 2b. Combine warehouse stock usage with direct repair order procurement
+    const allCombinedLogs = [];
+
+    usageLogs.forEach((row) => {
+      const qty = Number(row.quantity || 0);
+      const reqId = (row.request_id || row.id_for || '').trim();
+      const partId = (row.id_part || '').trim();
+      const partDesc = (row.description || row.part_name || '').trim().toLowerCase();
+
+      // Look up specific ticket pricing
+      let ticketCost = null;
+      if (reqId && partId && ticketPartCosts.has(`${reqId}_${partId}`)) {
+        ticketCost = ticketPartCosts.get(`${reqId}_${partId}`);
+      } else if (reqId && partDesc && ticketPartCosts.has(`${reqId}_${partDesc}`)) {
+        ticketCost = ticketPartCosts.get(`${reqId}_${partDesc}`);
+      } else if (reqId && ticketPartCosts.has(reqId)) {
+        ticketCost = ticketPartCosts.get(reqId);
+      }
+
+      if (ticketCost) {
+        ticketCost.matched = true;
+      }
+
+      const fallbackPrice = priceMap.get(partId) || itemNamePriceMap.get(partDesc);
+      const unitPrice = ticketCost?.unit_price || fallbackPrice?.unit_price || 0;
+      const partCost = Math.round(qty * unitPrice);
+      const supplier = ticketCost?.seller || fallbackPrice?.seller || '-';
+      const dpm = ticketCost?.dpm || '-';
+
+      allCombinedLogs.push({
+        id_part: row.id_part,
+        description: row.description || row.part_name,
+        part_name: row.part_name || row.description,
+        vendor_code: row.vendor_code || '',
+        unit: row.unit || 'pcs',
+        location: row.location || '-',
+        qty: qty,
+        quantity: qty,
+        unit_price: unitPrice,
+        total_cost: partCost,
+        supplier: supplier,
+        dpm: dpm,
+        source: 'Gudang (Stock)',
+        date: row.date,
+        id_for: reqId || '-',
+        request_id: reqId || '-',
+        subject: row.subject || '-',
+        month_key: row.month_key,
+        month_label: row.month_label,
+        year_val: row.year_val,
+        month_val: row.month_val,
+      });
+    });
+
+    // Add any order from machineOrders that was NOT already matched to warehouse stockout
+    // (e.g. Non-Stock or direct orders for that repair ticket!)
+    machineOrders.forEach((mo) => {
+      const reqId = (mo.id_service || '').trim();
+      const partId = (mo.id_part || '').trim();
+      const itemDesc = (mo.item || mo.description || '').trim().toLowerCase();
+
+      const costObj = (partId && ticketPartCosts.get(`${reqId}_${partId}`)) ||
+                      (itemDesc && ticketPartCosts.get(`${reqId}_${itemDesc}`)) ||
+                      ticketPartCosts.get(reqId);
+
+      if (!costObj || !costObj.matched) {
+        // If date filter active, check month and year
+        if (month && year) {
+          if (parseInt(mo.year_val, 10) !== parseInt(year, 10) || parseInt(mo.month_val, 10) !== parseInt(month, 10)) {
+            return;
+          }
+        }
+
+        const qty = Number(mo.quantity) || 1;
+        const uPrice = Number(mo.unit_price) || (Number(mo.amount) / Math.max(1, qty));
+        const totalCost = Number(mo.amount) > 0 ? Number(mo.amount) : Math.round(qty * uPrice);
+
+        allCombinedLogs.push({
+          id_part: mo.id_part || String(mo.ids),
+          description: mo.item || mo.description || 'Suku Cadang DPM',
+          part_name: mo.part_name || mo.item || 'Suku Cadang DPM',
+          vendor_code: mo.vendor_code || mo.id_part || '-',
+          unit: mo.unit || 'pcs',
+          location: mo.location || '-',
+          qty: qty,
+          quantity: qty,
+          unit_price: uPrice,
+          total_cost: totalCost,
+          supplier: mo.seller || '-',
+          dpm: mo.dpm || mo.id_register || '-',
+          source: mo.stock === 'Stock' ? 'Order Stok' : 'Pengadaan DPM (Non-Stock)',
+          date: mo.date,
+          id_for: reqId || '-',
+          request_id: reqId || '-',
+          subject: mo.subject || `Order Pengadaan #${mo.dpm || mo.id_register}`,
+          month_key: mo.month_key,
+          month_label: mo.month_label,
+          year_val: mo.year_val,
+          month_val: mo.month_val,
+        });
+
+        if (costObj) costObj.matched = true;
+      }
+    });
+
+    // Sort all combined logs descending by date
+    allCombinedLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
+
     // 3. Fetch external services / vendor repairs for this machine
     let externalServices = [];
     try {
@@ -148,10 +321,10 @@ async function handleAssetPartsUsage(request) {
       console.error('Error fetching external services:', e);
     }
 
-    // 4. Group usage & costs by Month
+    // 4. Group usage & costs by Month using allCombinedLogs
     const monthGroupsMap = new Map();
 
-    usageLogs.forEach((row) => {
+    allCombinedLogs.forEach((row) => {
       const key = row.month_key;
       if (!monthGroupsMap.has(key)) {
         monthGroupsMap.set(key, {
@@ -171,16 +344,8 @@ async function handleAssetPartsUsage(request) {
       }
 
       const group = monthGroupsMap.get(key);
-      const qty = Number(row.quantity || 0);
-
-      // Determine unit price and total cost
-      const ticketKey = `${row.request_id}_${row.id_part}`;
-      const ticketCost = specificTicketPartCosts.get(ticketKey);
-      const fallbackPrice = priceMap.get(row.id_part);
-
-      const unitPrice = ticketCost?.unit_price || fallbackPrice?.unit_price || 0;
-      const partCost = Math.round(qty * unitPrice);
-      const supplier = ticketCost?.seller || fallbackPrice?.seller || '-';
+      const qty = Number(row.qty || row.quantity || 0);
+      const partCost = Number(row.total_cost || 0);
 
       group.total_qty += qty;
       group.total_quantity += qty;
@@ -197,9 +362,11 @@ async function handleAssetPartsUsage(request) {
         location: row.location || '-',
         qty: qty,
         quantity: qty,
-        unit_price: unitPrice,
+        unit_price: row.unit_price,
         total_cost: partCost,
-        supplier: supplier,
+        supplier: row.supplier || '-',
+        dpm: row.dpm || '-',
+        source: row.source || 'Gudang (Stock)',
         date: row.date,
         id_for: row.request_id || row.id_for || '-',
         request_id: row.request_id || row.id_for || '-',
@@ -307,8 +474,10 @@ async function handleAssetPartsUsage(request) {
         replacementFrequencyText = 'Pernah 1x ganti';
       }
 
-      const pInfo = priceMap.get(row.id_part);
+      const cleanDesc = (row.description || '').trim().toLowerCase();
+      const pInfo = priceMap.get(row.id_part) || itemNamePriceMap.get(cleanDesc);
       const unitPrice = pInfo?.unit_price || 0;
+      const supplier = pInfo?.seller || '-';
 
       return {
         id_part: row.id_part,
@@ -327,13 +496,14 @@ async function handleAssetPartsUsage(request) {
         recommended_monthly_need: recommendedStockForMachine,
         unit_price: unitPrice,
         est_monthly_cost: Math.round(monthlyRate * unitPrice),
+        supplier: supplier,
         frequency_label: replacementFrequencyText,
         frequency_note: replacementFrequencyText,
         last_used: row.last_used,
       };
     });
 
-    const totalAllPartsQuantity = usageLogs.reduce((acc, row) => acc + Number(row.quantity || 0), 0);
+    const totalAllPartsQuantity = allCombinedLogs.reduce((acc, row) => acc + Number(row.qty || row.quantity || 0), 0);
     const grandPartsCost = monthlyBreakdown.reduce((acc, m) => acc + (m.parts_cost || 0), 0);
     const grandServiceCost = monthlyBreakdown.reduce((acc, m) => acc + (m.service_cost || 0), 0);
     const grandTotalCost = grandPartsCost + grandServiceCost;
@@ -342,7 +512,7 @@ async function handleAssetPartsUsage(request) {
     return NextResponse.json({
       id_asset: idAsset,
       total_parts_quantity: totalAllPartsQuantity,
-      total_records: usageLogs.length,
+      total_records: allCombinedLogs.length,
       monthly_breakdown: monthlyBreakdown,
       cost_trend: costTrend,
       routine_needs: routineNeeds,

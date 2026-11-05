@@ -8,7 +8,8 @@ export async function GET() {
        FROM Request r
        LEFT JOIN Assets a ON a.ID_Asset = r.ID_Asset
        LEFT JOIN User u ON u.Uid = r.Technician
-       WHERE r.Step <= 6 AND r.Maintenance_Type = 'CM'
+       WHERE (r.Step <= 6 OR r.Step IN ('1','2','3','4','5','6')) 
+         AND (TRIM(r.Maintenance_Type) = 'CM' OR r.Maintenance_Type IS NULL OR r.Maintenance_Type = '')
        ORDER BY r.Time_Request DESC`
     );
 

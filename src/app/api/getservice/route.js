@@ -33,23 +33,20 @@ async function handleGetService(request) {
     const trimmedSearch = (search || '').trim();
     if (trimmedSearch) {
       whereClause = `
-        WHERE (service_main.id_register LIKE ? 
-           OR service_main.dpm LIKE ? 
-           OR q1.Name LIKE ? 
-           OR q2.Name LIKE ?)
+        WHERE (s.id_register LIKE ? 
+           OR u.Name LIKE ?)
       `;
       const pattern = `%${trimmedSearch}%`;
-      queryParams.push(pattern, pattern, pattern, pattern);
-      countParams.push(pattern, pattern, pattern, pattern);
+      queryParams.push(pattern, pattern);
+      countParams.push(pattern, pattern);
     }
 
     let total = 0;
     if (shouldPaginate) {
       const [countResult] = await pool.query(
         `SELECT COUNT(*) as total 
-         FROM service_main
-         LEFT JOIN User q1 ON q1.Uid = service_main.created_by
-         LEFT JOIN User q2 ON q2.Uid = service_main.receiver
+         FROM service s
+         LEFT JOIN User u ON u.Uid = s.created_by
          ${whereClause}`,
         countParams
       );
@@ -57,16 +54,19 @@ async function handleGetService(request) {
     }
 
     let queryStr = `
-      SELECT service_main.id_register, service_main.date, service_main.dpm, 
-             q1.Name as requestor, q2.Name as receiver, 
-             service_main.status, 
-             IF(service_main.status = 0, 'OPEN', 'CLOSE') as status_def, 
-             service_main.created_at 
-      FROM service_main
-      LEFT JOIN User q1 ON q1.Uid = service_main.created_by
-      LEFT JOIN User q2 ON q2.Uid = service_main.receiver
+      SELECT s.*,
+             s.id_register, 
+             s.date_issued as date, 
+             s.date_issued, 
+             u.Name as requestor, 
+             u.Name as Name, 
+             s.status, 
+             IF(s.status = 0, 'OPEN', 'CLOSE') as status_def, 
+             s.created_at 
+      FROM service s
+      LEFT JOIN User u ON u.Uid = s.created_by
       ${whereClause}
-      ORDER BY service_main.date DESC, service_main.created_at DESC
+      ORDER BY s.date_issued DESC, s.created_at DESC, s.id_register DESC
     `;
 
     if (shouldPaginate) {
