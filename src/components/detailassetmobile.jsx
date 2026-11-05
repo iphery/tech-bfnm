@@ -1,8 +1,9 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import axios from "axios";
+import Webcam from "react-webcam";
 import UserAuth from "@/components/auth";
 import { CommonInput, CommonTextArea } from "@/components/input";
 import { CommonButtonFull } from "./button";
@@ -33,6 +34,10 @@ import {
   HiSparkles,
   HiOutlineChartBar,
   HiOutlineCalendar,
+  HiOutlinePencilSquare,
+  HiOutlineCamera,
+  HiOutlinePhoto,
+  HiOutlineArrowPath,
 } from "react-icons/hi2";
 import {
   MdOutlineClose,
@@ -131,6 +136,153 @@ export default function DetailAssetMobile({ idAsset }) {
   const [selectedUsageMonth, setSelectedUsageMonth] = useState("ALL");
   const [routinePage, setRoutinePage] = useState(1);
   const [historyPage, setHistoryPage] = useState(1);
+
+  // Edit Asset States Mobile
+  const [openEditAssetModalState, setOpenEditAssetModalState] = useState(false);
+  const [savingAsset, setSavingAsset] = useState(false);
+  const [editDesc, setEditDesc] = useState("");
+  const [editManufacture, setEditManufacture] = useState("");
+  const [editModel, setEditModel] = useState("");
+  const [editNo, setEditNo] = useState("");
+  const [editLocation, setEditLocation] = useState("");
+  const [editUser, setEditUser] = useState("");
+  const [editPMCategory, setEditPMCategory] = useState("");
+  const [editCapacity, setEditCapacity] = useState("");
+  const [editPower, setEditPower] = useState("");
+  const [editVoltage, setEditVoltage] = useState("");
+  const [editSerial, setEditSerial] = useState("");
+  const [editYear, setEditYear] = useState("");
+
+  const [editImage, setEditImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [editUserImage, setEditUserImage] = useState(null);
+  const [userImagePreview, setUserImagePreview] = useState(null);
+
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [cameraTarget, setCameraTarget] = useState("asset"); // "asset" | "user"
+  const [cameraFacing, setCameraFacing] = useState("environment");
+  const webcamRef = useRef(null);
+
+  const openEditAssetModal = () => {
+    setEditDesc(dataAsset.Description || "");
+    setEditManufacture(dataAsset.Manufacture || "");
+    setEditModel(dataAsset.Model || "");
+    setEditNo(dataAsset.No || "");
+    setEditLocation(dataAsset.Location || "");
+    setEditUser(dataAsset.User || "");
+    setEditPMCategory(dataAsset.PM_Category || "");
+    setEditCapacity(dataAsset.Capacity || "");
+    setEditPower(dataAsset.Power || "");
+    setEditVoltage(dataAsset.Voltage || "");
+    setEditSerial(dataAsset.Serial_Number || "");
+    setEditYear(dataAsset.Year_Manufacture || "");
+
+    setEditImage(null);
+    setImagePreview(dataAsset.Image ? `${IMAGE_ASSET}/${dataAsset.Image}` : null);
+
+    setEditUserImage(null);
+    setUserImagePreview(dataAsset.Profile_Image ? `${IMAGE_USER}/${dataAsset.Profile_Image}` : null);
+
+    setIsCameraActive(false);
+    setOpenEditAssetModalState(true);
+  };
+
+  const handleStartCamera = (target) => {
+    setCameraTarget(target);
+    setCameraFacing(target === "user" ? "user" : "environment");
+    setIsCameraActive(true);
+  };
+
+  const handleCapturePhoto = () => {
+    if (webcamRef.current) {
+      const screenshot = webcamRef.current.getScreenshot();
+      if (screenshot) {
+        if (cameraTarget === "asset") {
+          setEditImage(screenshot);
+          setImagePreview(screenshot);
+          NotifySuccess("Foto aset berhasil diambil");
+        } else {
+          setEditUserImage(screenshot);
+          setUserImagePreview(screenshot);
+          NotifySuccess("Foto pemegang berhasil diambil");
+        }
+        setIsCameraActive(false);
+      } else {
+        NotifyError("Gagal mengambil foto. Pastikan kamera diizinkan.");
+      }
+    }
+  };
+
+  const handleImageFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        NotifyError("Ukuran gambar maksimal 5MB");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditImage(reader.result);
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUserImageFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        NotifyError("Ukuran gambar maksimal 5MB");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditUserImage(reader.result);
+        setUserImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveAsset = async () => {
+    if (!editDesc.trim()) {
+      NotifyError("Deskripsi aset wajib diisi");
+      return;
+    }
+
+    setSavingAsset(true);
+    try {
+      const res = await axios.post("/api/updateasset", {
+        idAsset: dataAsset.ID_Asset,
+        Description: editDesc,
+        Manufacture: editManufacture,
+        Model: editModel,
+        No: editNo,
+        Location: editLocation,
+        User: editUser,
+        PM_Category: editPMCategory,
+        Capacity: editCapacity,
+        Power: editPower,
+        Voltage: editVoltage,
+        Serial_Number: editSerial,
+        Year_Manufacture: editYear,
+        image: editImage,
+        user_image: editUserImage,
+      });
+
+      if (res.status === 200) {
+        NotifySuccess("Data aset & foto berhasil diperbarui");
+        setOpenEditAssetModalState(false);
+        fetch_data();
+      }
+    } catch (err) {
+      console.error(err);
+      NotifyError("Gagal memperbarui data aset");
+    } finally {
+      setSavingAsset(false);
+    }
+  };
 
   const fetch_parts_usage = async () => {
     try {
@@ -387,6 +539,17 @@ export default function DetailAssetMobile({ idAsset }) {
                 </span>
               </div>
               <div className="flex items-center gap-1.5">
+                {/* Edit Asset Button */}
+                {!switchPage && (
+                  <button
+                    type="button"
+                    title="Edit Data & Foto Aset"
+                    onClick={openEditAssetModal}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary hover:bg-primary/20 dark:bg-primary/20 transition-colors"
+                  >
+                    <HiOutlinePencilSquare className="text-base" />
+                  </button>
+                )}
                 {/* Reset Asset Button for Admin */}
                 {parseInt(userLevel) === 0 && !switchPage && (
                   <button
@@ -1785,6 +1948,367 @@ export default function DetailAssetMobile({ idAsset }) {
                 }
               }}
             />
+          </div>
+        </CustomModal>
+
+        {/* Edit Asset Modal Mobile */}
+        <CustomModal
+          isVisible={openEditAssetModalState}
+          isSmallWidth="lg"
+          onClose={() => setOpenEditAssetModalState(false)}
+        >
+          <div className="flex items-center justify-between border-b border-stroke px-4 py-3 dark:border-strokedark">
+            <div>
+              <h3 className="text-sm font-bold uppercase tracking-wider text-black dark:text-white flex items-center gap-1.5">
+                <HiOutlinePencilSquare className="text-primary text-base" />
+                Edit Data & Foto #{dataAsset.ID_Asset}
+              </h3>
+              <span className="text-[11px] text-body dark:text-bodydark">
+                Perbarui data unit atau ambil foto aset & foto user
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setOpenEditAssetModalState(false)}
+              className="text-body hover:text-black dark:text-bodydark dark:hover:text-white p-1"
+            >
+              <MdOutlineClose className="text-lg" />
+            </button>
+          </div>
+
+          <div className="p-4 space-y-4 overflow-y-auto max-h-[75vh] text-xs">
+            {/* 1. JIKA KAMERA SEDANG AKTIF: TAMPILKAN LIVE WEBCAM VIEWFINDER */}
+            {isCameraActive ? (
+              <div className="relative overflow-hidden rounded-2xl border-2 border-primary/60 bg-black shadow-lg p-2 space-y-2">
+                <div className="flex items-center justify-between text-white text-xs px-2 py-1">
+                  <span className="font-bold flex items-center gap-1.5">
+                    <HiOutlineCamera className="text-primary text-base" />
+                    Kamera: {cameraTarget === "asset" ? "Foto Aset" : "Foto Pemegang"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsCameraActive(false)}
+                    className="rounded-lg bg-white/20 hover:bg-white/30 px-2 py-1 text-[11px] transition-colors"
+                  >
+                    Tutup
+                  </button>
+                </div>
+
+                <div className="relative rounded-xl overflow-hidden bg-black flex items-center justify-center">
+                  <Webcam
+                    audio={false}
+                    ref={webcamRef}
+                    screenshotFormat="image/jpeg"
+                    screenshotQuality={0.88}
+                    videoConstraints={{
+                      facingMode: cameraFacing,
+                      width: { ideal: 1280 },
+                      height: { ideal: 720 },
+                    }}
+                    onUserMediaError={(err) => {
+                      console.error("Camera access error:", err);
+                      NotifyError("Izin kamera ditolak. Silakan pilih berkas.");
+                      setIsCameraActive(false);
+                    }}
+                    className="w-full h-56 sm:h-64 object-cover"
+                  />
+
+                  {/* Framing Guide */}
+                  <div className="absolute inset-3 pointer-events-none rounded-xl border border-white/30 border-dashed flex items-center justify-center">
+                    <span className="text-[10px] font-medium text-white/80 bg-black/50 px-2.5 py-1 rounded-full backdrop-blur-sm">
+                      {cameraTarget === "asset" ? "Arahkan ke mesin / aset" : "Arahkan ke wajah pengguna"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Camera Action Buttons */}
+                <div className="flex items-center justify-between pt-1 px-1">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCameraFacing((prev) => (prev === "environment" ? "user" : "environment"))
+                    }
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-semibold transition-colors"
+                  >
+                    <HiOutlineArrowPath className="text-sm" />
+                    <span>Putar</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCapturePhoto}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-bold shadow-md transition-all active:scale-95"
+                  >
+                    <div className="h-3 w-3 rounded-full border-2 border-white bg-white/30" />
+                    <span>Jepret Foto</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* 2. DUA KARTU FOTO: FOTO ASET DAN FOTO PEMEGANG / USER */
+              <div className="grid grid-cols-1 gap-3">
+                {/* Foto Aset */}
+                <div className="rounded-xl border border-stroke p-3 dark:border-strokedark bg-gray-50/50 dark:bg-meta-4/10">
+                  <span className="block text-[11px] font-bold text-black dark:text-white mb-2">
+                    Foto Unit Aset
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <div className="relative h-18 w-18 rounded-xl border border-stroke dark:border-strokedark overflow-hidden bg-white dark:bg-boxdark flex items-center justify-center shrink-0 shadow-sm">
+                      {imagePreview ? (
+                        <img
+                          src={imagePreview}
+                          alt="Foto Aset"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <HiOutlinePhoto className="text-2xl text-body opacity-40 dark:text-bodydark" />
+                      )}
+                    </div>
+
+                    <div className="flex-1 space-y-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleStartCamera("asset")}
+                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-primary/90 transition-colors"
+                      >
+                        <HiOutlineCamera className="text-sm" />
+                        <span>Ambil dari Kamera</span>
+                      </button>
+
+                      <label className="w-full inline-flex items-center justify-center gap-1.5 cursor-pointer rounded-xl border border-stroke bg-white px-2.5 py-1.5 text-xs font-semibold text-body hover:bg-gray-100 dark:border-strokedark dark:bg-boxdark dark:text-bodydark dark:hover:bg-meta-4 transition-colors">
+                        <HiOutlinePhoto className="text-sm" />
+                        <span>Pilih Berkas Galeri</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleImageFileChange}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Foto Pemegang / User Profile */}
+                <div className="rounded-xl border border-stroke p-3 dark:border-strokedark bg-gray-50/50 dark:bg-meta-4/10">
+                  <span className="block text-[11px] font-bold text-black dark:text-white mb-2">
+                    Foto Pemegang / User
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <div className="relative h-18 w-18 rounded-full border border-stroke dark:border-strokedark overflow-hidden bg-white dark:bg-boxdark flex items-center justify-center shrink-0 shadow-sm">
+                      {userImagePreview ? (
+                        <img
+                          src={userImagePreview}
+                          alt="Foto User"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <HiOutlineUser className="text-2xl text-body opacity-40 dark:text-bodydark" />
+                      )}
+                    </div>
+
+                    <div className="flex-1 space-y-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleStartCamera("user")}
+                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-meta-5 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-meta-5/90 transition-colors"
+                      >
+                        <HiOutlineCamera className="text-sm" />
+                        <span>Ambil dari Kamera</span>
+                      </button>
+
+                      <label className="w-full inline-flex items-center justify-center gap-1.5 cursor-pointer rounded-xl border border-stroke bg-white px-2.5 py-1.5 text-xs font-semibold text-body hover:bg-gray-100 dark:border-strokedark dark:bg-boxdark dark:text-bodydark dark:hover:bg-meta-4 transition-colors">
+                        <HiOutlinePhoto className="text-sm" />
+                        <span>Pilih Berkas Galeri</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleUserImageFileChange}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Grid Input Form Fields */}
+            <div className="space-y-3">
+              <div>
+                <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                  Deskripsi / Nama Aset <span className="text-danger">*</span>
+                </label>
+                <CommonInput
+                  input={editDesc}
+                  type="text"
+                  placeholder="Nama / Deskripsi unit..."
+                  onInputChange={(val) => setEditDesc(val)}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                    Manufaktur / Brand
+                  </label>
+                  <CommonInput
+                    input={editManufacture}
+                    type="text"
+                    placeholder="Brand..."
+                    onInputChange={(val) => setEditManufacture(val)}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                    Model / Seri
+                  </label>
+                  <CommonInput
+                    input={editModel}
+                    type="text"
+                    placeholder="Model..."
+                    onInputChange={(val) => setEditModel(val)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                    No. Polisi / No. Unit
+                  </label>
+                  <CommonInput
+                    input={editNo}
+                    type="text"
+                    placeholder="No. Polisi..."
+                    onInputChange={(val) => setEditNo(val)}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                    Lokasi / Area
+                  </label>
+                  <CommonInput
+                    input={editLocation}
+                    type="text"
+                    placeholder="Lokasi..."
+                    onInputChange={(val) => setEditLocation(val)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                    Penanggung Jawab / User
+                  </label>
+                  <CommonInput
+                    input={editUser}
+                    type="text"
+                    placeholder="User..."
+                    onInputChange={(val) => setEditUser(val)}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                    Kategori PM
+                  </label>
+                  <CommonInput
+                    input={editPMCategory}
+                    type="text"
+                    placeholder="Kategori..."
+                    onInputChange={(val) => setEditPMCategory(val)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                    Kapasitas
+                  </label>
+                  <CommonInput
+                    input={editCapacity}
+                    type="text"
+                    placeholder="Kapasitas..."
+                    onInputChange={(val) => setEditCapacity(val)}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                    Daya (Power)
+                  </label>
+                  <CommonInput
+                    input={editPower}
+                    type="text"
+                    placeholder="Power..."
+                    onInputChange={(val) => setEditPower(val)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                    Tegangan (Voltage)
+                  </label>
+                  <CommonInput
+                    input={editVoltage}
+                    type="text"
+                    placeholder="Voltage..."
+                    onInputChange={(val) => setEditVoltage(val)}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                    Tahun Pembuatan
+                  </label>
+                  <CommonInput
+                    input={editYear}
+                    type="text"
+                    placeholder="Tahun..."
+                    onInputChange={(val) => setEditYear(val)}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                  Nomor Seri (Serial No)
+                </label>
+                <CommonInput
+                  input={editSerial}
+                  type="text"
+                  placeholder="Serial number pabrik..."
+                  onInputChange={(val) => setEditSerial(val)}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Footer Actions */}
+          <div className="flex items-center justify-end gap-2 border-t border-stroke px-4 py-3 dark:border-strokedark bg-gray-50/50 dark:bg-meta-4/20">
+            <button
+              type="button"
+              disabled={savingAsset}
+              onClick={() => setOpenEditAssetModalState(false)}
+              className="rounded-xl border border-stroke px-3 py-2 text-xs font-semibold text-body hover:bg-gray-100 dark:border-strokedark dark:text-bodydark dark:hover:bg-meta-4 transition-all"
+            >
+              Batal
+            </button>
+            <button
+              type="button"
+              disabled={savingAsset}
+              onClick={handleSaveAsset}
+              className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-primary/90 disabled:opacity-50 transition-all"
+            >
+              {savingAsset ? "Menyimpan..." : "Simpan Perubahan Aset"}
+            </button>
           </div>
         </CustomModal>
       </div>

@@ -1,7 +1,8 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import Webcam from "react-webcam";
 import UserAuth from "./auth";
 import DefaultLayout from "./Layouts/DefaultLayout";
 import { PageCard, PageCardLimited } from "@/components/card";
@@ -40,6 +41,8 @@ import {
   HiOutlinePencilSquare,
   HiOutlineCamera,
   HiOutlinePhoto,
+  HiOutlineArrowPath,
+  HiOutlineXMark,
 } from "react-icons/hi2";
 import { FaPlus, FaCheckSquare } from "react-icons/fa";
 import { MdCheckBox, MdCheckBoxOutlineBlank } from "react-icons/md";
@@ -102,8 +105,20 @@ export default function DetailAssetWeb({ idAsset }) {
   const [editVoltage, setEditVoltage] = useState("");
   const [editSerial, setEditSerial] = useState("");
   const [editYear, setEditYear] = useState("");
+
+  // Foto Aset
   const [editImage, setEditImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+
+  // Foto User / Pemegang
+  const [editUserImage, setEditUserImage] = useState(null);
+  const [userImagePreview, setUserImagePreview] = useState(null);
+
+  // Camera States
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [cameraTarget, setCameraTarget] = useState("asset"); // "asset" | "user"
+  const [cameraFacing, setCameraFacing] = useState("environment");
+  const webcamRef = useRef(null);
 
   const openEditAssetModal = () => {
     setEditDesc(dataAsset.Description || "");
@@ -118,9 +133,41 @@ export default function DetailAssetWeb({ idAsset }) {
     setEditVoltage(dataAsset.Voltage || "");
     setEditSerial(dataAsset.Serial_Number || "");
     setEditYear(dataAsset.Year_Manufacture || "");
+
     setEditImage(null);
     setImagePreview(dataAsset.Image ? `${IMAGE_ASSET}/${dataAsset.Image}` : null);
+
+    setEditUserImage(null);
+    setUserImagePreview(dataAsset.Profile_Image ? `${IMAGE_USER}/${dataAsset.Profile_Image}` : null);
+
+    setIsCameraActive(false);
     setOpenEditAssetModalState(true);
+  };
+
+  const handleStartCamera = (target) => {
+    setCameraTarget(target);
+    setCameraFacing(target === "user" ? "user" : "environment");
+    setIsCameraActive(true);
+  };
+
+  const handleCapturePhoto = () => {
+    if (webcamRef.current) {
+      const screenshot = webcamRef.current.getScreenshot();
+      if (screenshot) {
+        if (cameraTarget === "asset") {
+          setEditImage(screenshot);
+          setImagePreview(screenshot);
+          NotifySuccess("Foto aset berhasil diambil dari kamera");
+        } else {
+          setEditUserImage(screenshot);
+          setUserImagePreview(screenshot);
+          NotifySuccess("Foto pemegang berhasil diambil dari kamera");
+        }
+        setIsCameraActive(false);
+      } else {
+        NotifyError("Gagal mengambil foto. Pastikan kamera diizinkan.");
+      }
+    }
   };
 
   const handleImageFileChange = (e) => {
@@ -134,6 +181,22 @@ export default function DetailAssetWeb({ idAsset }) {
       reader.onloadend = () => {
         setEditImage(reader.result);
         setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUserImageFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        NotifyError("Ukuran gambar maksimal 5MB");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditUserImage(reader.result);
+        setUserImagePreview(reader.result);
       };
       reader.readAsDataURL(file);
     }
@@ -162,10 +225,11 @@ export default function DetailAssetWeb({ idAsset }) {
         Serial_Number: editSerial,
         Year_Manufacture: editYear,
         image: editImage,
+        user_image: editUserImage,
       });
 
       if (res.status === 200) {
-        NotifySuccess("Data aset berhasil diperbarui");
+        NotifySuccess("Data aset & foto berhasil diperbarui");
         setOpenEditAssetModalState(false);
         fetch_data();
       }
@@ -596,41 +660,161 @@ export default function DetailAssetWeb({ idAsset }) {
               </div>
 
               <div className="p-5 space-y-4 overflow-y-auto max-h-[70vh] text-xs">
-                {/* Upload Foto Aset */}
-                <div className="rounded-xl border border-stroke p-3.5 dark:border-strokedark bg-gray-50/50 dark:bg-meta-4/10">
-                  <span className="block text-[11px] font-bold text-black dark:text-white mb-2">
-                    Foto Unit Aset
-                  </span>
-                  <div className="flex flex-wrap items-center gap-4">
-                    <div className="relative h-24 w-24 rounded-xl border border-stroke dark:border-strokedark overflow-hidden bg-white dark:bg-boxdark flex items-center justify-center shrink-0 shadow-sm">
-                      {imagePreview ? (
-                        <img
-                          src={imagePreview}
-                          alt="Preview"
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <HiOutlinePhoto className="text-3xl text-body opacity-40 dark:text-bodydark" />
-                      )}
+                {/* 1. JIKA KAMERA SEDANG AKTIF: TAMPILKAN LIVE WEBCAM VIEWFINDER */}
+                {isCameraActive ? (
+                  <div className="relative overflow-hidden rounded-2xl border-2 border-primary/60 bg-black shadow-lg p-2 space-y-2">
+                    <div className="flex items-center justify-between text-white text-xs px-2 py-1">
+                      <span className="font-bold flex items-center gap-1.5">
+                        <HiOutlineCamera className="text-primary text-base" />
+                        Kamera Aktif: {cameraTarget === "asset" ? "Foto Aset" : "Foto Pemegang / User"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setIsCameraActive(false)}
+                        className="rounded-lg bg-white/20 hover:bg-white/30 px-2 py-1 text-[11px] transition-colors"
+                      >
+                        Tutup Kamera
+                      </button>
                     </div>
 
-                    <div className="space-y-2">
-                      <label className="inline-flex items-center gap-1.5 cursor-pointer rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-primary/90 transition-colors">
-                        <HiOutlineCamera className="text-sm" />
-                        <span>Upload / Ambil Foto</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleImageFileChange}
-                        />
-                      </label>
-                      <p className="text-[10px] text-body dark:text-bodydark max-w-xs">
-                        Mendukung file JPG, PNG, atau jepret langsung dari kamera device (maks. 5MB).
-                      </p>
+                    <div className="relative rounded-xl overflow-hidden bg-black flex items-center justify-center">
+                      <Webcam
+                        audio={false}
+                        ref={webcamRef}
+                        screenshotFormat="image/jpeg"
+                        screenshotQuality={0.88}
+                        videoConstraints={{
+                          facingMode: cameraFacing,
+                          width: { ideal: 1280 },
+                          height: { ideal: 720 },
+                        }}
+                        onUserMediaError={(err) => {
+                          console.error("Camera access error:", err);
+                          NotifyError("Izin kamera ditolak. Silakan upload via berkas.");
+                          setIsCameraActive(false);
+                        }}
+                        className="w-full h-60 sm:h-72 object-cover"
+                      />
+
+                      {/* Framing Guide */}
+                      <div className="absolute inset-4 pointer-events-none rounded-xl border border-white/30 border-dashed flex items-center justify-center">
+                        <span className="text-[10px] font-medium text-white/80 bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">
+                          {cameraTarget === "asset" ? "Arahkan ke mesin / aset" : "Arahkan ke wajah pengguna"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Camera Action Buttons */}
+                    <div className="flex items-center justify-between pt-1 px-1">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setCameraFacing((prev) => (prev === "environment" ? "user" : "environment"))
+                        }
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-semibold transition-colors"
+                      >
+                        <HiOutlineArrowPath className="text-sm" />
+                        <span>Putar Kamera</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleCapturePhoto}
+                        className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-bold shadow-md transition-all active:scale-95"
+                      >
+                        <div className="h-3.5 w-3.5 rounded-full border-2 border-white bg-white/30" />
+                        <span>Jepret Foto</span>
+                      </button>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  /* 2. DUA KARTU FOTO: FOTO ASET DAN FOTO PEMEGANG / USER */
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    {/* Foto Aset */}
+                    <div className="rounded-xl border border-stroke p-3.5 dark:border-strokedark bg-gray-50/50 dark:bg-meta-4/10">
+                      <span className="block text-[11px] font-bold text-black dark:text-white mb-2">
+                        Foto Unit Aset
+                      </span>
+                      <div className="flex items-center gap-3">
+                        <div className="relative h-20 w-20 rounded-xl border border-stroke dark:border-strokedark overflow-hidden bg-white dark:bg-boxdark flex items-center justify-center shrink-0 shadow-sm">
+                          {imagePreview ? (
+                            <img
+                              src={imagePreview}
+                              alt="Foto Aset"
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <HiOutlinePhoto className="text-2xl text-body opacity-40 dark:text-bodydark" />
+                          )}
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleStartCamera("asset")}
+                            className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-primary/90 transition-colors"
+                          >
+                            <HiOutlineCamera className="text-sm" />
+                            <span>Buka Kamera</span>
+                          </button>
+
+                          <label className="w-full inline-flex items-center justify-center gap-1.5 cursor-pointer rounded-xl border border-stroke bg-white px-2.5 py-1.5 text-xs font-semibold text-body hover:bg-gray-100 dark:border-strokedark dark:bg-boxdark dark:text-bodydark dark:hover:bg-meta-4 transition-colors">
+                            <HiOutlinePhoto className="text-sm" />
+                            <span>Pilih Berkas</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={handleImageFileChange}
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Foto Pemegang / User Profile */}
+                    <div className="rounded-xl border border-stroke p-3.5 dark:border-strokedark bg-gray-50/50 dark:bg-meta-4/10">
+                      <span className="block text-[11px] font-bold text-black dark:text-white mb-2">
+                        Foto Pemegang / User
+                      </span>
+                      <div className="flex items-center gap-3">
+                        <div className="relative h-20 w-20 rounded-full border border-stroke dark:border-strokedark overflow-hidden bg-white dark:bg-boxdark flex items-center justify-center shrink-0 shadow-sm">
+                          {userImagePreview ? (
+                            <img
+                              src={userImagePreview}
+                              alt="Foto User"
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <HiOutlineUser className="text-2xl text-body opacity-40 dark:text-bodydark" />
+                          )}
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleStartCamera("user")}
+                            className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-meta-5 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-meta-5/90 transition-colors"
+                          >
+                            <HiOutlineCamera className="text-sm" />
+                            <span>Buka Kamera</span>
+                          </button>
+
+                          <label className="w-full inline-flex items-center justify-center gap-1.5 cursor-pointer rounded-xl border border-stroke bg-white px-2.5 py-1.5 text-xs font-semibold text-body hover:bg-gray-100 dark:border-strokedark dark:bg-boxdark dark:text-bodydark dark:hover:bg-meta-4 transition-colors">
+                            <HiOutlinePhoto className="text-sm" />
+                            <span>Pilih Berkas</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={handleUserImageFileChange}
+                            />
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Grid Input Form Fields */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
