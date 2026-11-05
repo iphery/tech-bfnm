@@ -102,6 +102,13 @@ export async function POST(request) {
       suggestedReorder = 0;
     }
 
+    // Import Lead Time Projections (3 & 6 Months)
+    const isImport = Boolean(Number(part[0].is_import || 0) === 1);
+    const need3Months = Math.ceil(amc * 3);
+    const need6Months = Math.ceil(amc * 6);
+    const suggestedReorder3Months = Math.max(0, need3Months - availableStock);
+    const suggestedReorder6Months = Math.max(0, need6Months - availableStock);
+
     // 3. Machines / Assets that used this part
     const [machinesUsed] = await pool.query(
       `SELECT 
@@ -128,6 +135,14 @@ export async function POST(request) {
         recommended_monthly_need: recommendedMonthlyNeed,
         suggested_reorder: suggestedReorder,
         status: status,
+        is_import: isImport,
+        import_projection: {
+          is_import: isImport,
+          need_3_months: need3Months,
+          suggested_reorder_3_months: suggestedReorder3Months,
+          need_6_months: need6Months,
+          suggested_reorder_6_months: suggestedReorder6Months,
+        },
         monthly_trend: monthlyTrend,
         machines_used: machinesUsed.map((m) => ({
           id_asset: m.id_asset || 'UMUM',

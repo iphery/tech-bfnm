@@ -57,14 +57,27 @@ async function handlePartsUsage(request) {
     const threeMonthsAgoDate = new Date(selectedYear, selectedMonth - 3, 1);
     const startOf3Months = `${threeMonthsAgoDate.getFullYear()}-${pad(threeMonthsAgoDate.getMonth() + 1)}-01`;
 
-    // 1. Fetch all active parts with available warehouse stock
+    // Check system setting for part status visibility
+    let activeStatusFilter = 'aktif';
+    try {
+      const [settingRow] = await pool.query(
+        "SELECT setting_value FROM system_settings WHERE setting_key = 'part_status_filter' LIMIT 1"
+      );
+      activeStatusFilter = settingRow[0]?.setting_value || 'aktif';
+    } catch {
+      activeStatusFilter = 'aktif';
+    }
+
+    const statusWhere = activeStatusFilter === 'all' ? '' : "WHERE parts.status = 'Aktif'";
+
+    // 1. Fetch parts with available warehouse stock
     const [partsList] = await pool.query(`
-      SELECT parts.id_part, parts.description, parts.vendor_code, parts.unit, parts.location, parts.remark,
+      SELECT parts.id_part, parts.description, parts.vendor_code, parts.unit, parts.location, parts.remark, parts.status,
              (parts.initial_stock + COALESCE(qin.qty, 0) - COALESCE(qout.qty, 0)) as available_stock
       FROM parts
       LEFT JOIN (SELECT id_part, SUM(qty) as qty FROM stockin GROUP BY id_part) qin ON qin.id_part = parts.id_part 
       LEFT JOIN (SELECT id_part, SUM(qty) as qty FROM stockout GROUP BY id_part) qout ON qout.id_part = parts.id_part 
-      WHERE parts.status = 'Aktif'
+      ${statusWhere}
     `);
 
     // 2. Fetch monthly consumption for the selected month (qty < 0 in stock_summary)

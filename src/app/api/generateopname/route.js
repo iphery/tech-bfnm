@@ -59,7 +59,19 @@ export async function POST(request) {
     const body = await request.json();
     const { start: start_date, end: end_date, uid: created_by } = body;
 
-    const [parts] = await pool.query("SELECT id_part FROM parts WHERE status = 'Aktif'");
+    // Check system setting for part status visibility
+    let activeStatusFilter = 'aktif';
+    try {
+      const [settingRow] = await pool.query(
+        "SELECT setting_value FROM system_settings WHERE setting_key = 'part_status_filter' LIMIT 1"
+      );
+      activeStatusFilter = settingRow[0]?.setting_value || 'aktif';
+    } catch {
+      activeStatusFilter = 'aktif';
+    }
+
+    const statusQuery = activeStatusFilter === 'all' ? "SELECT id_part FROM parts" : "SELECT id_part FROM parts WHERE status = 'Aktif'";
+    const [parts] = await pool.query(statusQuery);
 
     const result = [];
     for (const part of parts) {

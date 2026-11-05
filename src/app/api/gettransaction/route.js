@@ -61,7 +61,7 @@ async function handleGetTransaction(request) {
       FROM stock_summary
       LEFT JOIN parts ON parts.id_part = stock_summary.id_part
       ${whereClause}
-      ORDER BY stock_summary.date DESC, stock_summary.id_summary DESC
+      ORDER BY stock_summary.date DESC
     `;
 
     if (shouldPaginate) {

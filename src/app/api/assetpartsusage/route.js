@@ -48,14 +48,15 @@ async function handleAssetPartsUsage(request) {
 
     const [usageLogs] = await pool.query(
       `SELECT 
-         stock_summary.id_summary,
          stock_summary.id_part,
+         parts.description,
          parts.description as part_name,
          parts.vendor_code,
          parts.unit,
          parts.location,
          stock_summary.quantity,
          stock_summary.date,
+         stock_summary.id_for,
          stock_summary.id_for as request_id,
          stock_summary.subject,
          DATE_FORMAT(stock_summary.date, '%Y-%m') as month_key,
@@ -80,6 +81,7 @@ async function handleAssetPartsUsage(request) {
           month_label: row.month_label,
           year: parseInt(row.year_val, 10),
           month: parseInt(row.month_val, 10),
+          total_qty: 0,
           total_quantity: 0,
           total_items: 0,
           parts: [],
@@ -87,18 +89,22 @@ async function handleAssetPartsUsage(request) {
       }
 
       const group = monthGroupsMap.get(key);
-      group.total_quantity += Number(row.quantity || 0);
+      const qty = Number(row.quantity || 0);
+      group.total_qty += qty;
+      group.total_quantity += qty;
       group.total_items += 1;
       group.parts.push({
-        id_summary: row.id_summary,
         id_part: row.id_part,
-        part_name: row.part_name,
-        vendor_code: row.vendor_code,
-        unit: row.unit,
-        location: row.location,
-        quantity: Number(row.quantity || 0),
+        description: row.description || row.part_name,
+        part_name: row.part_name || row.description,
+        vendor_code: row.vendor_code || '',
+        unit: row.unit || 'pcs',
+        location: row.location || '-',
+        qty: qty,
+        quantity: qty,
         date: row.date,
-        request_id: row.request_id || '-',
+        id_for: row.request_id || row.id_for || '-',
+        request_id: row.request_id || row.id_for || '-',
         subject: row.subject || '-',
       });
     });
@@ -110,10 +116,11 @@ async function handleAssetPartsUsage(request) {
     const [partFrequencyQuery] = await pool.query(
       `SELECT 
          stock_summary.id_part,
-         parts.description as part_name,
+         parts.description,
          parts.vendor_code,
          parts.unit,
          parts.location,
+         (parts.initial_stock + COALESCE(qin.qty, 0) - COALESCE(qout.qty, 0)) as available,
          SUM(stock_summary.quantity) as total_quantity_used,
          COUNT(*) as replacement_count,
          MIN(stock_summary.date) as first_used,
@@ -121,8 +128,10 @@ async function handleAssetPartsUsage(request) {
          TIMESTAMPDIFF(MONTH, MIN(stock_summary.date), MAX(stock_summary.date)) as active_month_span
        FROM stock_summary
        INNER JOIN parts ON parts.id_part = stock_summary.id_part
+       LEFT JOIN (SELECT id_part, SUM(qty) as qty FROM stockin GROUP BY id_part) qin ON qin.id_part = parts.id_part 
+       LEFT JOIN (SELECT id_part, SUM(qty) as qty FROM stockout GROUP BY id_part) qout ON qout.id_part = parts.id_part
        WHERE stock_summary.id_asset = ? AND stock_summary.qty < 0
-       GROUP BY stock_summary.id_part, parts.description, parts.vendor_code, parts.unit, parts.location
+       GROUP BY stock_summary.id_part, parts.description, parts.vendor_code, parts.unit, parts.location, parts.initial_stock, qin.qty, qout.qty
        ORDER BY total_quantity_used DESC`,
       [idAsset]
     );
@@ -141,25 +150,31 @@ async function handleAssetPartsUsage(request) {
         const daysBetween = Math.max(1, Math.round((new Date(row.last_used) - new Date(row.first_used)) / (1000 * 60 * 60 * 24)));
         const avgDaysBetween = Math.round(daysBetween / (replacementCount - 1));
         if (avgDaysBetween < 30) {
-          replacementFrequencyText = `Rutin diganti tiap ~${avgDaysBetween} hari`;
+          replacementFrequencyText = `Rutin tiap ~${avgDaysBetween} hari`;
         } else {
           const avgMonths = (avgDaysBetween / 30).toFixed(1);
-          replacementFrequencyText = `Rutin diganti tiap ~${avgMonths} bulan`;
+          replacementFrequencyText = `Rutin tiap ~${avgMonths} bln`;
         }
       } else {
-        replacementFrequencyText = 'Pernah diganti 1 kali';
+        replacementFrequencyText = 'Pernah 1x ganti';
       }
 
       return {
         id_part: row.id_part,
-        part_name: row.part_name,
+        description: row.description,
+        part_name: row.description,
         vendor_code: row.vendor_code || '',
         unit: row.unit || 'pcs',
         location: row.location || '-',
+        available: Number(row.available || 0),
+        total_qty: totalQty,
         total_quantity_used: totalQty,
+        times_used: replacementCount,
         replacement_count: replacementCount,
         monthly_rate: monthlyRate,
+        recommended_monthly_stock: recommendedStockForMachine,
         recommended_monthly_need: recommendedStockForMachine,
+        frequency_label: replacementFrequencyText,
         frequency_note: replacementFrequencyText,
         last_used: row.last_used,
       };
@@ -173,10 +188,14 @@ async function handleAssetPartsUsage(request) {
       total_records: usageLogs.length,
       monthly_breakdown: monthlyBreakdown,
       routine_needs: routineNeeds, // Estimated regular needs for this machine
+      summary: {
+        total_parts_replaced: totalAllPartsQuantity,
+        distinct_parts_count: routineNeeds.length,
+        most_used_part: routineNeeds[0] || null,
+      },
     });
   } catch (error) {
     console.error('assetpartsusage error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
-

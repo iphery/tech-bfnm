@@ -11,7 +11,7 @@ import { IoAccessibility } from "react-icons/io5";
 import { BiSolidReport } from "react-icons/bi";
 import { BsFillBoxFill } from "react-icons/bs";
 import { FaTools } from "react-icons/fa";
-import { FaXbox } from "react-icons/fa";
+import { FaXbox, FaCog } from "react-icons/fa";
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -121,6 +121,12 @@ const menuGroups = [
           { label: "Quality Objective", route: "/qualityobjective" },
           { label: "Machine Utilize", route: "/machineutilize" },
         ],
+      },
+      {
+        icon: <FaCog className="h-5 w-5" />,
+        label: "Pengaturan",
+        route: "/settings",
+        consumer: "public",
       },
       /*
       {

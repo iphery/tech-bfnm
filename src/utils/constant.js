@@ -6,6 +6,8 @@ export const NETWORK_FAILED =
 
 export const IMAGE_ASSET =
   "https://balifoam.com/mita/mobile/flutter/image_asset";
+export const IMAGE_SPARE_PART =
+  "https://balifoam.com/mita/mobile/flutter/image_spare_part";
 export const IMAGE_USER =
   "http://mita.balifoam.com/mobile/flutter/image_user_profile";
 

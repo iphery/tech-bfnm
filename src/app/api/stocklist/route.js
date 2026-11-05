@@ -20,13 +20,26 @@ async function handleStockList(request) {
       };
     }
 
-    const { page, per_page = 15, search = '', paginate = false } = body;
+    const { page, per_page = 15, search = '', paginate = false, status_filter } = body;
     const shouldPaginate = Boolean(paginate || page);
     const currentPage = Math.max(1, parseInt(page, 10) || 1);
     const limit = Math.max(1, parseInt(per_page, 10) || 15);
     const offset = (currentPage - 1) * limit;
 
-    let whereClause = "WHERE status = 'Aktif'";
+    // Check system setting for part status visibility
+    let activeStatusFilter = status_filter;
+    if (!activeStatusFilter) {
+      try {
+        const [settingRow] = await pool.query(
+          "SELECT setting_value FROM system_settings WHERE setting_key = 'part_status_filter' LIMIT 1"
+        );
+        activeStatusFilter = settingRow[0]?.setting_value || 'aktif';
+      } catch {
+        activeStatusFilter = 'aktif';
+      }
+    }
+
+    let whereClause = activeStatusFilter === 'all' ? "WHERE 1=1" : "WHERE status = 'Aktif'";
     const queryParams = [];
     const countParams = [];
 
