@@ -41,25 +41,48 @@ export async function POST(request) {
             fs.writeFileSync(filepath, buffer);
             imagePath = filename;
           } else {
-            // 2. Try remote upload to Laravel API if available, fallback to local Next.js storage
+            // 2. Upload via HTTP to Balifoam server
             let uploadedRemotely = false;
+
+            // 2a. Try direct upload script inside image_spare_part/upload.php
             try {
-              const remoteRes = await fetch('https://mitalaravel.balifoam.com/api/savingpartimage', {
+              const uploadRes = await fetch('https://balifoam.com/mita/mobile/flutter/image_spare_part/upload.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ image, idPart }),
+                body: JSON.stringify({ image, idPart, filename }),
               });
-              if (remoteRes.ok) {
-                const data = await remoteRes.json();
-                if (data.image) {
-                  imagePath = data.image;
+              if (uploadRes.ok) {
+                const uploadData = await uploadRes.json();
+                if (uploadData.error === 0 && uploadData.filename) {
+                  imagePath = uploadData.filename;
                   uploadedRemotely = true;
                 }
               }
-            } catch (remoteErr) {
-              // Remote endpoint not reachable or not yet deployed
+            } catch (phpErr) {
+              // upload.php not yet uploaded or network error
             }
 
+            // 2b. Try Laravel API endpoint
+            if (!uploadedRemotely) {
+              try {
+                const remoteRes = await fetch('https://mitalaravel.balifoam.com/api/savingpartimage', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ image, idPart }),
+                });
+                if (remoteRes.ok) {
+                  const data = await remoteRes.json();
+                  if (data.image) {
+                    imagePath = data.image;
+                    uploadedRemotely = true;
+                  }
+                }
+              } catch (remoteErr) {
+                // Laravel endpoint not yet added
+              }
+            }
+
+            // 2c. Fallback to local Next.js storage
             if (!uploadedRemotely) {
               const dir = path.join(process.cwd(), 'public', 'images', 'parts');
               if (!fs.existsSync(dir)) {

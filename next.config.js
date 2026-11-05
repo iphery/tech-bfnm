@@ -14,13 +14,15 @@ const withPWA = require("next-pwa")({
   dest: "public",
   register: true,
   skipWaiting: true,
-  // disable: process.env.NODE_ENV === "development",
+  disable: process.env.NODE_ENV === "development",
 });
 
 /**  @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false,
-  images: { domains: ["mita.balifoam.com"] },
+  images: {
+    domains: ["mita.balifoam.com", "balifoam.com"],
+  },
 };
 
 module.exports = withPWA(nextConfig);

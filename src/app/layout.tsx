@@ -5,15 +5,32 @@ import "@/css/style.css";
 import "react-toastify/dist/ReactToastify.css";
 import { DataProvider } from "@/app/appcontext";
 
-import { Metadata } from "next";
+import { Metadata, Viewport } from "next";
 import { ReactNode } from "react";
 import { ToastContainer } from "react-toastify";
 //import Main from "./main";
+
+export const viewport: Viewport = {
+  themeColor: "#1A222C",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
 
 export const metadata: Metadata = {
   title: "MITA BFNM",
   description: "Maintenance Apps",
   manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "MITA BFNM",
+  },
+  icons: {
+    icon: "/icon-192x192.png",
+    shortcut: "/icon-192x192.png",
+    apple: "/icon-192x192.png",
+  },
 };
 
 export default function RootLayout({

@@ -44,11 +44,14 @@ app.prepare().then(() => {
 
 const { createServer } = require("http");
 const { join } = require("path");
+const { existsSync } = require("fs");
 const { parse } = require("url");
 const next = require("next");
 
-const app = next({ dev: process.env.NODE_ENV !== "production" });
+const dev = process.env.NODE_ENV !== "production";
+const app = next({ dev });
 const handle = app.getRequestHandler();
+const port = process.env.PORT || 3000;
 
 app.prepare().then(() => {
   createServer((req, res) => {
@@ -59,12 +62,16 @@ app.prepare().then(() => {
       pathname === "/sw.js" ||
       /^\/(workbox|worker|fallback)-\w+\.js$/.test(pathname)
     ) {
-      const filePath = join(__dirname, ".next", pathname);
-      app.serveStatic(req, res, filePath);
+      // Prioritize public/ directory where next-pwa outputs files, fallback to .next
+      const publicPath = join(__dirname, "public", pathname);
+      const nextPath = join(__dirname, ".next", pathname);
+      const targetPath = existsSync(publicPath) ? publicPath : nextPath;
+
+      app.serveStatic(req, res, targetPath);
     } else {
       handle(req, res, parsedUrl);
     }
-  }).listen(3000, () => {
-    console.log(`> Ready on http://localhost:${3000}`);
+  }).listen(port, () => {
+    console.log(`> Ready on http://localhost:${port}`);
   });
 });
