@@ -10,12 +10,14 @@ export async function POST(request) {
       return NextResponse.json({ error: 'idPart is required' }, { status: 400 });
     }
 
-    // 1. Fetch Part info & current warehouse stock
+    // 1. Fetch Part info & current warehouse stock (optimized correlated subquery for this single part)
     const [part] = await pool.query(
-      `SELECT parts.*, (initial_stock + COALESCE(qin.qty, 0) - COALESCE(qout.qty, 0)) as available 
+      `SELECT parts.*, 
+        (parts.initial_stock 
+         + COALESCE((SELECT SUM(qty) FROM stockin WHERE stockin.id_part = parts.id_part), 0)
+         - COALESCE((SELECT SUM(qty) FROM stockout WHERE stockout.id_part = parts.id_part), 0)
+        ) as available 
        FROM parts 
-       LEFT JOIN (SELECT id_part, SUM(qty) as qty FROM stockin GROUP BY id_part) qin ON qin.id_part = parts.id_part 
-       LEFT JOIN (SELECT id_part, SUM(qty) as qty FROM stockout GROUP BY id_part) qout ON qout.id_part = parts.id_part
        WHERE parts.id_part = ?`,
       [idPart]
     );
@@ -45,7 +47,7 @@ export async function POST(request) {
       });
     }
 
-    const sixMonthsAgo = `${pastMonths[0].year}-${pad(pastMonths[0].month)}-01`;
+    const sixMonthsAgo = `${pastMonths[0].year}-${pad(pastMonths[0].month)}-01 00:00:00`;
 
     const [monthlyQuery] = await pool.query(
       `SELECT 
@@ -53,7 +55,7 @@ export async function POST(request) {
          SUM(quantity) as total_qty,
          COUNT(*) as tx_count
        FROM stock_summary
-       WHERE id_part = ? AND qty < 0 AND DATE(date) >= ?
+       WHERE id_part = ? AND qty < 0 AND date >= ?
        GROUP BY DATE_FORMAT(date, '%Y-%m')
        ORDER BY month_key ASC`,
       [idPart, sixMonthsAgo]

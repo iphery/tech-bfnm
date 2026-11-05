@@ -60,18 +60,30 @@ async function handleStockList(request) {
       total = countResult[0]?.total ? Number(countResult[0].total) : 0;
     }
 
-    let queryStr = `
-      SELECT parts.*, (initial_stock + COALESCE(qin.qty, 0) - COALESCE(qout.qty, 0)) as available 
-      FROM parts 
-      LEFT JOIN (SELECT id_part, SUM(qty) as qty FROM stockin GROUP BY id_part) qin ON qin.id_part = parts.id_part 
-      LEFT JOIN (SELECT id_part, SUM(qty) as qty FROM stockout GROUP BY id_part) qout ON qout.id_part = parts.id_part 
-      ${whereClause}
-      ORDER BY parts.description ASC
-    `;
-
+    let queryStr = ``;
     if (shouldPaginate) {
-      queryStr += ` LIMIT ? OFFSET ?`;
+      // Fast path for pagination: Only calculate warehouse sums for the requested page items
+      queryStr = `
+        SELECT parts.*, 
+          (parts.initial_stock 
+           + COALESCE((SELECT SUM(qty) FROM stockin WHERE stockin.id_part = parts.id_part), 0)
+           - COALESCE((SELECT SUM(qty) FROM stockout WHERE stockout.id_part = parts.id_part), 0)
+          ) as available 
+        FROM parts 
+        ${whereClause}
+        ORDER BY parts.description ASC
+        LIMIT ? OFFSET ?
+      `;
       queryParams.push(limit, offset);
+    } else {
+      queryStr = `
+        SELECT parts.*, (initial_stock + COALESCE(qin.qty, 0) - COALESCE(qout.qty, 0)) as available 
+        FROM parts 
+        LEFT JOIN (SELECT id_part, SUM(qty) as qty FROM stockin GROUP BY id_part) qin ON qin.id_part = parts.id_part 
+        LEFT JOIN (SELECT id_part, SUM(qty) as qty FROM stockout GROUP BY id_part) qout ON qout.id_part = parts.id_part 
+        ${whereClause}
+        ORDER BY parts.description ASC
+      `;
     }
 
     const [lists] = await pool.query(queryStr, queryParams);

@@ -503,6 +503,16 @@ export default function DetailAssetMobile({ idAsset }) {
         month_label: partsUsage.monthly_breakdown?.find((m) => m.month_key === selectedUsageMonth)?.month_label,
       }));
 
+  const currentMonthData = partsUsage.monthly_breakdown?.find((m) => m.month_key === selectedUsageMonth);
+  const currentMonthServices = selectedUsageMonth === "ALL"
+    ? (partsUsage.monthly_breakdown || []).flatMap((m) =>
+        (m.services || []).map((s) => ({ ...s, month_label: m.month_label }))
+      )
+    : (currentMonthData?.services || []).map((s) => ({
+        ...s,
+        month_label: currentMonthData?.month_label,
+      }));
+
   const historyTotalPages = Math.max(1, Math.ceil(currentFilteredHistory.length / 10));
   const displayedHistoryItems = currentFilteredHistory.slice((historyPage - 1) * 10, historyPage * 10);
 
@@ -1805,6 +1815,44 @@ export default function DetailAssetMobile({ idAsset }) {
                           </div>
                         )}
                       </>
+                    )}
+
+                    {/* Biaya Servis / Jasa Luar Mesin Ini (Mobile) */}
+                    {currentMonthServices.length > 0 && (
+                      <div className="mt-3 rounded-xl border border-stroke p-3 dark:border-strokedark">
+                        <div className="mb-2 flex items-center justify-between">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-black dark:text-white flex items-center gap-1">
+                            <HiOutlineWrenchScrewdriver className="text-warning text-xs" />
+                            Jasa Bengkel Luar
+                          </span>
+                          <span className="font-mono text-xs font-bold text-warning">
+                            Rp{" "}
+                            {currentMonthServices
+                              .reduce((sum, s) => sum + (Number(s.amount) || 0), 0)
+                              .toLocaleString("id-ID")}
+                          </span>
+                        </div>
+                        <div className="divide-y divide-stroke dark:divide-strokedark">
+                          {currentMonthServices.map((item, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center justify-between py-1.5 text-xs"
+                            >
+                              <div className="pr-2">
+                                <span className="block font-semibold text-black dark:text-white truncate max-w-[170px]">
+                                  {item.item || item.description || "Jasa Servis"}
+                                </span>
+                                <span className="text-[10px] text-body dark:text-bodydark">
+                                  {item.supplier || "-"} • Ref #{item.id_register}
+                                </span>
+                              </div>
+                              <span className="font-mono rounded bg-warning/10 px-1.5 py-0.5 text-[11px] font-bold text-warning whitespace-nowrap">
+                                Rp {Number(item.amount || 0).toLocaleString("id-ID")}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>

@@ -39,8 +39,8 @@ async function handleAssetPartsUsage(request) {
     try {
       const [allOrderPrices] = await pool.query(
         `SELECT od.id_part, 
-                od.item,
-                od.description,
+                od.item, 
+                od.description, 
                 od.amount, 
                 od.quantity,
                 ROUND(od.amount / NULLIF(od.quantity, 0)) as unit_price,
@@ -49,7 +49,7 @@ async function handleAssetPartsUsage(request) {
          WHERE od.amount > 0 AND od.quantity > 0
          ORDER BY od.ids DESC`
       );
-      allOrderPrices.forEach((p) => {
+      (allOrderPrices || []).forEach((p) => {
         const uPrice = Number(p.unit_price) || (Number(p.amount) / Math.max(1, Number(p.quantity || 1)));
         const seller = p.seller || '';
         if (p.id_part && !priceMap.has(p.id_part)) {
@@ -89,17 +89,17 @@ async function handleAssetPartsUsage(request) {
                 COALESCE(p.unit, 'pcs') as unit,
                 COALESCE(p.location, '-') as location,
                 COALESCE(m.dpm, od.id_register) as dpm,
-                COALESCE(od.date, r.Time_Request, NOW()) as date,
+                COALESCE(m.date, r.Time_Request, NOW()) as date,
                 r.Problem as subject,
                 ROUND(od.amount / NULLIF(od.quantity, 0)) as unit_price,
-                DATE_FORMAT(COALESCE(od.date, r.Time_Request, NOW()), '%Y-%m') as month_key,
-                DATE_FORMAT(COALESCE(od.date, r.Time_Request, NOW()), '%M %Y') as month_label,
-                DATE_FORMAT(COALESCE(od.date, r.Time_Request, NOW()), '%Y') as year_val,
-                DATE_FORMAT(COALESCE(od.date, r.Time_Request, NOW()), '%m') as month_val
+                DATE_FORMAT(COALESCE(m.date, r.Time_Request, NOW()), '%Y-%m') as month_key,
+                DATE_FORMAT(COALESCE(m.date, r.Time_Request, NOW()), '%M %Y') as month_label,
+                DATE_FORMAT(COALESCE(m.date, r.Time_Request, NOW()), '%Y') as year_val,
+                DATE_FORMAT(COALESCE(m.date, r.Time_Request, NOW()), '%m') as month_val
          FROM order_detail od
-         INNER JOIN Request r ON r.ID_Request = od.id_service
-         LEFT JOIN order_main m ON m.id_register = od.id_register
-         LEFT JOIN parts p ON (p.id_part = od.id_part OR (od.id_part IS NULL AND p.description = od.item))
+         INNER JOIN Request r ON (TRIM(r.ID_Request) = TRIM(od.id_service) OR TRIM(r.ID_Request) = TRIM(od.id_register))
+         LEFT JOIN order_main m ON TRIM(m.id_register) = TRIM(od.id_register)
+         LEFT JOIN parts p ON (p.id_part = od.id_part OR (od.id_part IS NOT NULL AND od.id_part != '' AND p.id_part = od.id_part) OR p.description = od.item OR p.description = od.description)
          WHERE r.ID_Asset = ?
          ORDER BY od.ids DESC`,
         [idAsset]
@@ -146,45 +146,54 @@ async function handleAssetPartsUsage(request) {
       });
     } catch (e) {
       console.error('Error fetching machine orders:', e);
+      machineOrders = [];
     }
 
     // 2. Fetch all spare part usage logs for this specific machine from warehouse (stock_summary)
-    let queryParams = [idAsset];
-    let dateFilter = '';
+    let usageLogs = [];
+    try {
+      let queryParams = [idAsset, idAsset];
+      let dateFilter = '';
 
-    if (month && year) {
-      const pad = (n) => String(n).padStart(2, '0');
-      const startOfMonth = `${year}-${pad(month)}-01`;
-      const lastDay = new Date(year, month, 0).getDate();
-      const endOfMonth = `${year}-${pad(month)}-${pad(lastDay)}`;
-      dateFilter = 'AND DATE(stock_summary.date) >= ? AND DATE(stock_summary.date) <= ?';
-      queryParams.push(startOfMonth, endOfMonth);
+      if (month && year) {
+        const pad = (n) => String(n).padStart(2, '0');
+        const startOfMonth = `${year}-${pad(month)}-01`;
+        const lastDay = new Date(year, month, 0).getDate();
+        const endOfMonth = `${year}-${pad(month)}-${pad(lastDay)}`;
+        dateFilter = 'AND DATE(stock_summary.date) >= ? AND DATE(stock_summary.date) <= ?';
+        queryParams.push(startOfMonth, endOfMonth);
+      }
+
+      const [summaryRows] = await pool.query(
+        `SELECT 
+           stock_summary.id_part,
+           parts.description,
+           parts.description as part_name,
+           parts.vendor_code,
+           parts.unit,
+           parts.location,
+           stock_summary.quantity,
+           stock_summary.date,
+           stock_summary.id_for,
+           stock_summary.id_for as request_id,
+           stock_summary.subject,
+           DATE_FORMAT(stock_summary.date, '%Y-%m') as month_key,
+           DATE_FORMAT(stock_summary.date, '%M %Y') as month_label,
+           DATE_FORMAT(stock_summary.date, '%Y') as year_val,
+           DATE_FORMAT(stock_summary.date, '%m') as month_val
+         FROM stock_summary
+         INNER JOIN parts ON parts.id_part = stock_summary.id_part
+         WHERE (stock_summary.id_asset = ? OR stock_summary.id_for IN (SELECT ID_Request FROM Request WHERE ID_Asset = ?)) 
+           AND stock_summary.qty < 0
+         ${dateFilter}
+         ORDER BY stock_summary.date DESC`,
+        queryParams
+      );
+      usageLogs = summaryRows || [];
+    } catch (e) {
+      console.error('Error fetching warehouse usage logs:', e);
+      usageLogs = [];
     }
-
-    const [usageLogs] = await pool.query(
-      `SELECT 
-         stock_summary.id_part,
-         parts.description,
-         parts.description as part_name,
-         parts.vendor_code,
-         parts.unit,
-         parts.location,
-         stock_summary.quantity,
-         stock_summary.date,
-         stock_summary.id_for,
-         stock_summary.id_for as request_id,
-         stock_summary.subject,
-         DATE_FORMAT(stock_summary.date, '%Y-%m') as month_key,
-         DATE_FORMAT(stock_summary.date, '%M %Y') as month_label,
-         DATE_FORMAT(stock_summary.date, '%Y') as year_val,
-         DATE_FORMAT(stock_summary.date, '%m') as month_val
-       FROM stock_summary
-       INNER JOIN parts ON parts.id_part = stock_summary.id_part
-       WHERE stock_summary.id_asset = ? AND stock_summary.qty < 0
-       ${dateFilter}
-       ORDER BY stock_summary.date DESC`,
-      queryParams
-    );
 
     // 2b. Combine warehouse stock usage with direct repair order procurement
     const allCombinedLogs = [];
@@ -240,7 +249,7 @@ async function handleAssetPartsUsage(request) {
       });
     });
 
-    // Add any order from machineOrders that was NOT already matched to warehouse stockout
+    // Add orders from machineOrders that were NOT already matched to warehouse stockout
     // (e.g. Non-Stock or direct orders for that repair ticket!)
     machineOrders.forEach((mo) => {
       const reqId = (mo.id_service || '').trim();
@@ -305,20 +314,22 @@ async function handleAssetPartsUsage(request) {
            sd.quantity,
            sd.supplier,
            sd.id_request,
-           COALESCE(r.Time_Request, NOW()) as date,
-           DATE_FORMAT(COALESCE(r.Time_Request, NOW()), '%Y-%m') as month_key,
-           DATE_FORMAT(COALESCE(r.Time_Request, NOW()), '%M %Y') as month_label,
-           DATE_FORMAT(COALESCE(r.Time_Request, NOW()), '%Y') as year_val,
-           DATE_FORMAT(COALESCE(r.Time_Request, NOW()), '%m') as month_val
+           COALESCE(s.date_issued, r.Time_Request, NOW()) as date,
+           DATE_FORMAT(COALESCE(s.date_issued, r.Time_Request, NOW()), '%Y-%m') as month_key,
+           DATE_FORMAT(COALESCE(s.date_issued, r.Time_Request, NOW()), '%M %Y') as month_label,
+           DATE_FORMAT(COALESCE(s.date_issued, r.Time_Request, NOW()), '%Y') as year_val,
+           DATE_FORMAT(COALESCE(s.date_issued, r.Time_Request, NOW()), '%m') as month_val
          FROM service_detail sd
-         INNER JOIN Request r ON r.ID_Request = sd.id_request
+         INNER JOIN Request r ON (TRIM(r.ID_Request) = TRIM(sd.id_request) OR TRIM(r.ID_Request) = TRIM(sd.id_register))
+         LEFT JOIN service s ON TRIM(s.id_register) = TRIM(sd.id_register)
          WHERE r.ID_Asset = ? AND sd.amount > 0
-         ORDER BY r.Time_Request DESC`,
+         ORDER BY COALESCE(s.date_issued, r.Time_Request) DESC`,
         [idAsset]
       );
       externalServices = serviceRows || [];
     } catch (e) {
       console.error('Error fetching external services:', e);
+      externalServices = [];
     }
 
     // 4. Group usage & costs by Month using allCombinedLogs
@@ -326,6 +337,8 @@ async function handleAssetPartsUsage(request) {
 
     allCombinedLogs.forEach((row) => {
       const key = row.month_key;
+      if (!key) return;
+
       if (!monthGroupsMap.has(key)) {
         monthGroupsMap.set(key, {
           month_key: key,
@@ -377,6 +390,8 @@ async function handleAssetPartsUsage(request) {
     // Merge external services into monthly groups
     externalServices.forEach((srv) => {
       const key = srv.month_key;
+      if (!key) return;
+
       const srvAmount = Number(srv.amount || 0);
 
       if (!monthGroupsMap.has(key)) {
@@ -428,56 +443,122 @@ async function handleAssetPartsUsage(request) {
         total_qty: m.total_qty,
       }));
 
-    // 5. Calculate Routine Machine Needs (Perkiraan Kebutuhan Rutin Mesin Ini)
-    const [partFrequencyQuery] = await pool.query(
-      `SELECT 
-         stock_summary.id_part,
-         parts.description,
-         parts.vendor_code,
-         parts.unit,
-         parts.location,
-         (parts.initial_stock + COALESCE(qin.qty, 0) - COALESCE(qout.qty, 0)) as available,
-         SUM(stock_summary.quantity) as total_quantity_used,
-         COUNT(*) as replacement_count,
-         MIN(stock_summary.date) as first_used,
-         MAX(stock_summary.date) as last_used,
-         TIMESTAMPDIFF(MONTH, MIN(stock_summary.date), MAX(stock_summary.date)) as active_month_span
-       FROM stock_summary
-       INNER JOIN parts ON parts.id_part = stock_summary.id_part
-       LEFT JOIN (SELECT id_part, SUM(qty) as qty FROM stockin GROUP BY id_part) qin ON qin.id_part = parts.id_part 
-       LEFT JOIN (SELECT id_part, SUM(qty) as qty FROM stockout GROUP BY id_part) qout ON qout.id_part = parts.id_part
-       WHERE stock_summary.id_asset = ? AND stock_summary.qty < 0
-       GROUP BY stock_summary.id_part, parts.description, parts.vendor_code, parts.unit, parts.location, parts.initial_stock, qin.qty, qout.qty
-       ORDER BY total_quantity_used DESC`,
-      [idAsset]
+    // 5. Fetch available stock in warehouse only for the parts relevant to this machine
+    const availableStockMap = new Map();
+    const relevantPartIds = Array.from(
+      new Set(
+        allCombinedLogs
+          .map((l) => l.id_part)
+          .filter((id) => id && id !== '-' && !String(id).startsWith('MO'))
+      )
     );
 
-    const routineNeeds = partFrequencyQuery.map((row) => {
-      const totalQty = Number(row.total_quantity_used || 0);
-      const replacementCount = Number(row.replacement_count || 0);
-      const monthSpan = Math.max(1, Number(row.active_month_span || 1));
+    if (relevantPartIds.length > 0) {
+      try {
+        const [warehouseStocks] = await pool.query(
+          `SELECT parts.id_part, parts.description, parts.vendor_code, parts.unit, parts.location,
+                  (parts.initial_stock 
+                   + COALESCE((SELECT SUM(qty) FROM stockin WHERE stockin.id_part = parts.id_part), 0)
+                   - COALESCE((SELECT SUM(qty) FROM stockout WHERE stockout.id_part = parts.id_part), 0)
+                  ) as available
+           FROM parts
+           WHERE parts.id_part IN (?)`,
+          [relevantPartIds]
+        );
+        (warehouseStocks || []).forEach((ws) => {
+          const avail = Number(ws.available || 0);
+          if (ws.id_part) availableStockMap.set(String(ws.id_part).trim(), avail);
+          const cleanDesc = (ws.description || '').trim().toLowerCase();
+          if (cleanDesc) availableStockMap.set(cleanDesc, avail);
+        });
+      } catch (e) {
+        console.error('Error fetching warehouse stocks for routine needs:', e);
+      }
+    }
+
+    // 6. Calculate Routine Machine Needs (Perkiraan Kebutuhan Rutin Mesin Ini)
+    // Aggregating from all combined logs to include both warehouse stock and ticket purchase orders
+    const routineMap = new Map();
+    allCombinedLogs.forEach((log) => {
+      const partKey = (log.id_part && log.id_part !== '-' && !log.id_part.startsWith('MO')) 
+        ? String(log.id_part).trim() 
+        : (log.description || log.part_name || '').trim().toLowerCase();
+
+      if (!partKey) return;
+
+      if (!routineMap.has(partKey)) {
+        const cleanDesc = (log.description || log.part_name || '').trim().toLowerCase();
+        const avail = availableStockMap.get(String(log.id_part).trim()) ?? 
+                      availableStockMap.get(cleanDesc) ?? 0;
+
+        routineMap.set(partKey, {
+          id_part: log.id_part || '-',
+          description: log.description || log.part_name || 'Suku Cadang',
+          part_name: log.part_name || log.description || 'Suku Cadang',
+          vendor_code: log.vendor_code || '-',
+          unit: log.unit || 'pcs',
+          location: log.location || '-',
+          available: avail,
+          total_quantity_used: 0,
+          total_qty: 0,
+          replacement_count: 0,
+          times_used: 0,
+          dates: [],
+          unit_price: log.unit_price || 0,
+          supplier: log.supplier || '-',
+          last_used: log.date,
+        });
+      }
+
+      const item = routineMap.get(partKey);
+      const qty = Number(log.qty || log.quantity || 0);
+      item.total_quantity_used += qty;
+      item.total_qty += qty;
+      item.replacement_count += 1;
+      item.times_used += 1;
+      if (log.date) {
+        item.dates.push(new Date(log.date));
+        if (!item.last_used || new Date(log.date) > new Date(item.last_used)) {
+          item.last_used = log.date;
+        }
+      }
+      if (!item.unit_price && log.unit_price) item.unit_price = log.unit_price;
+      if ((!item.supplier || item.supplier === '-') && log.supplier && log.supplier !== '-') {
+        item.supplier = log.supplier;
+      }
+    });
+
+    const routineNeeds = Array.from(routineMap.values()).map((row) => {
+      const totalQty = row.total_quantity_used;
+      const count = row.replacement_count;
       
+      let monthSpan = 1;
+      let replacementFrequencyText = 'Pernah 1x ganti';
+
+      if (row.dates.length > 1) {
+        row.dates.sort((a, b) => a - b);
+        const firstDate = row.dates[0];
+        const lastDate = row.dates[row.dates.length - 1];
+        const diffMs = lastDate - firstDate;
+        const daysBetween = Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)));
+        monthSpan = Math.max(1, Math.round(daysBetween / 30));
+
+        const avgDays = Math.round(daysBetween / Math.max(1, count - 1));
+        if (avgDays < 30) {
+          replacementFrequencyText = `Rutin tiap ~${avgDays} hari`;
+        } else {
+          const avgMonths = (avgDays / 30).toFixed(1);
+          replacementFrequencyText = `Rutin tiap ~${avgMonths} bln`;
+        }
+      }
+
       const monthlyRate = Number((totalQty / monthSpan).toFixed(1));
       const recommendedStockForMachine = Math.max(1, Math.ceil(monthlyRate));
 
-      let replacementFrequencyText = '';
-      if (replacementCount > 1 && row.first_used !== row.last_used) {
-        const daysBetween = Math.max(1, Math.round((new Date(row.last_used) - new Date(row.first_used)) / (1000 * 60 * 60 * 24)));
-        const avgDaysBetween = Math.round(daysBetween / (replacementCount - 1));
-        if (avgDaysBetween < 30) {
-          replacementFrequencyText = `Rutin tiap ~${avgDaysBetween} hari`;
-        } else {
-          const avgMonths = (avgDaysBetween / 30).toFixed(1);
-          replacementFrequencyText = `Rutin tiap ~${avgMonths} bln`;
-        }
-      } else {
-        replacementFrequencyText = 'Pernah 1x ganti';
-      }
-
       const cleanDesc = (row.description || '').trim().toLowerCase();
       const pInfo = priceMap.get(row.id_part) || itemNamePriceMap.get(cleanDesc);
-      const unitPrice = pInfo?.unit_price || 0;
-      const supplier = pInfo?.seller || '-';
+      const unitPrice = row.unit_price || pInfo?.unit_price || 0;
+      const supplier = row.supplier !== '-' ? row.supplier : (pInfo?.seller || '-');
 
       return {
         id_part: row.id_part,
@@ -489,8 +570,8 @@ async function handleAssetPartsUsage(request) {
         available: Number(row.available || 0),
         total_qty: totalQty,
         total_quantity_used: totalQty,
-        times_used: replacementCount,
-        replacement_count: replacementCount,
+        times_used: count,
+        replacement_count: count,
         monthly_rate: monthlyRate,
         recommended_monthly_stock: recommendedStockForMachine,
         recommended_monthly_need: recommendedStockForMachine,
@@ -501,7 +582,7 @@ async function handleAssetPartsUsage(request) {
         frequency_note: replacementFrequencyText,
         last_used: row.last_used,
       };
-    });
+    }).sort((a, b) => b.total_quantity_used - a.total_quantity_used);
 
     const totalAllPartsQuantity = allCombinedLogs.reduce((acc, row) => acc + Number(row.qty || row.quantity || 0), 0);
     const grandPartsCost = monthlyBreakdown.reduce((acc, m) => acc + (m.parts_cost || 0), 0);

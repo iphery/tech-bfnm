@@ -10,8 +10,12 @@ if (!global._dbPool) {
     database: process.env.DB_NAME,
     port: Number(process.env.DB_PORT) || 3306,
     waitForConnections: true,
-    connectionLimit: 10,
+    connectionLimit: 25,
+    maxIdle: 10,
+    idleTimeout: 60000,
     queueLimit: 0,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 10000,
   });
 }
 

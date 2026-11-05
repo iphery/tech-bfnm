@@ -109,6 +109,7 @@ const menuGroups = [
           { label: "Order", route: "/partsorder" },
           { label: "Service", route: "/partsservice" },
           { label: "Stock Opname", route: "/opname" },
+          { label: "Simulation", route: "/partssimulation" },
         ],
       },
       {

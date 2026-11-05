@@ -1,10 +1,14 @@
 import { useEffect } from "react";
 import useLocalStorage from "./useLocalStorage";
 
-const useColorMode = () => {
+type SetValue<T> = T | ((val: T) => T);
+
+const useColorMode = (): [string, (value: SetValue<string>) => void] => {
   const [colorMode, setColorMode] = useLocalStorage("color-theme", "light");
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     const className = "dark";
     const bodyClass = window.document.body.classList;
     const htmlClass = window.document.documentElement.classList;

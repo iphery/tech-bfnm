@@ -419,6 +419,19 @@ export default function DetailAssetWeb({ idAsset }) {
           )?.month_label,
         }));
 
+  const currentMonthData = partsUsage.monthly_breakdown?.find(
+    (m) => m.month_key === selectedUsageMonth,
+  );
+  const currentMonthServices =
+    selectedUsageMonth === "ALL"
+      ? (partsUsage.monthly_breakdown || []).flatMap((m) =>
+          (m.services || []).map((s) => ({ ...s, month_label: m.month_label })),
+        )
+      : (currentMonthData?.services || []).map((s) => ({
+          ...s,
+          month_label: currentMonthData?.month_label,
+        }));
+
   const historyTotalPages = Math.max(
     1,
     Math.ceil(currentFilteredHistory.length / 10),
@@ -1381,11 +1394,11 @@ export default function DetailAssetWeb({ idAsset }) {
                     </div>
                   )}
 
-                  {/* External Service List */}
+                  {/* External Service List for Selected Ticket */}
                   {servisList.length > 0 && (
                     <div className="rounded-xl border border-stroke p-4 dark:border-strokedark">
                       <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-black dark:text-white">
-                        Servis / Bengkel Luar Terkait
+                        Servis / Bengkel Luar Terkait Tiket Ini
                       </h4>
                       <div className="divide-y divide-stroke dark:divide-strokedark">
                         {servisList.map((item, index) => (
@@ -1732,35 +1745,6 @@ export default function DetailAssetWeb({ idAsset }) {
                       </div>
                     </div>
                   )}
-
-                  {/* External Service List */}
-                  {servisList.length > 0 && (
-                    <div className="rounded-xl border border-stroke p-4 dark:border-strokedark">
-                      <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-black dark:text-white">
-                        Servis / Bengkel Luar Terkait
-                      </h4>
-                      <div className="divide-y divide-stroke dark:divide-strokedark">
-                        {servisList.map((item, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center justify-between rounded-lg px-2 py-2 text-xs"
-                          >
-                            <div>
-                              <span className="block font-semibold text-black dark:text-white">
-                                {item.item || item.description || "Jasa Servis"}
-                              </span>
-                              <span className="text-[10px] text-body dark:text-bodydark">
-                                Vendor: {item.supplier || "-"} • Ref: #{item.id_register}
-                              </span>
-                            </div>
-                            <span className="font-mono rounded-md bg-warning/10 px-2.5 py-1 font-bold text-warning">
-                              Rp {Number(item.amount || 0).toLocaleString("id-ID")}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
 
                 {/* Sub-section 2: Riwayat Pemakaian Part per Bulan (Dropdown Bulan & Paginasi 10/hal) */}
@@ -2017,24 +2001,33 @@ export default function DetailAssetWeb({ idAsset }) {
                     </div>
                   )}
 
-                  {/* External Service List */}
-                  {servisList.length > 0 && (
-                    <div className="rounded-xl border border-stroke p-4 dark:border-strokedark">
-                      <h4 className="mb-3 text-xs font-bold uppercase tracking-wider text-black dark:text-white">
-                        Servis / Bengkel Luar Terkait
-                      </h4>
+                  {/* Biaya Servis / Jasa Bengkel Luar Mesin Ini */}
+                  {currentMonthServices.length > 0 && (
+                    <div className="mt-4 rounded-xl border border-stroke p-4 dark:border-strokedark">
+                      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                        <h4 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-black dark:text-white">
+                          <HiOutlineWrenchScrewdriver className="text-warning text-sm" />
+                          Biaya Servis / Jasa Bengkel Luar Mesin Ini ({selectedUsageMonth === "ALL" ? "Semua Bulan" : currentMonthData?.month_label || selectedUsageMonth})
+                        </h4>
+                        <span className="font-mono text-xs font-bold text-warning">
+                          Total: Rp{" "}
+                          {currentMonthServices
+                            .reduce((sum, s) => sum + (Number(s.amount) || 0), 0)
+                            .toLocaleString("id-ID")}
+                        </span>
+                      </div>
                       <div className="divide-y divide-stroke dark:divide-strokedark">
-                        {servisList.map((item, index) => (
+                        {currentMonthServices.map((item, index) => (
                           <div
                             key={index}
-                            className="flex items-center justify-between rounded-lg px-2 py-2 text-xs"
+                            className="flex items-center justify-between rounded-lg px-2 py-2 text-xs hover:bg-gray-50 dark:hover:bg-meta-4/20 transition-colors"
                           >
                             <div>
                               <span className="block font-semibold text-black dark:text-white">
                                 {item.item || item.description || "Jasa Servis"}
                               </span>
                               <span className="text-[10px] text-body dark:text-bodydark">
-                                Vendor: {item.supplier || "-"} • Ref: #{item.id_register}
+                                Vendor: {item.supplier || "-"} • Ref: #{item.id_register} {item.id_request ? `• Tiket: #${item.id_request}` : ""} {item.month_label ? `• Periode: ${item.month_label}` : ""}
                               </span>
                             </div>
                             <span className="font-mono rounded-md bg-warning/10 px-2.5 py-1 font-bold text-warning">

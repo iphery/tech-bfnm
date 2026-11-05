@@ -40,7 +40,28 @@ export default function RootLayout({
 }>) {
   return (
     <DataProvider>
-      <html lang="en">
+      <html lang="en" suppressHydrationWarning>
+        <head>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                (function() {
+                  try {
+                    var theme = localStorage.getItem('color-theme');
+                    if (theme) {
+                      try { theme = JSON.parse(theme); } catch(e) {}
+                    }
+                    if (theme === 'dark') {
+                      document.documentElement.classList.add('dark');
+                    } else if (theme === 'light') {
+                      document.documentElement.classList.remove('dark');
+                    }
+                  } catch (e) {}
+                })();
+              `,
+            }}
+          />
+        </head>
         <body suppressHydrationWarning={true} className="bg-whiten text-body dark:bg-boxdark-2 dark:text-bodydark transition-colors duration-200">
           <ToastContainer
             position="top-center"

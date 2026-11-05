@@ -84,6 +84,22 @@ export default function PartsIn() {
   useEffect(() => {
     fetch_data();
     setIsClient(true);
+
+    try {
+      if (typeof window !== "undefined") {
+        const stored = sessionStorage.getItem("simulation_order_items");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setListOrder(parsed);
+            sessionStorage.removeItem("simulation_order_items");
+            NotifySuccess(`Memuat ${parsed.length} suku cadang dari hasil simulasi kebutuhan.`);
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Gagal membaca hasil simulasi pengadaan:", e);
+    }
   }, []);
 
   useEffect(() => {

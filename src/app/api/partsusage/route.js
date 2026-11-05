@@ -45,17 +45,17 @@ async function handlePartsUsage(request) {
     const perPage = Math.max(1, parseInt(body.per_page, 10) || 15);
     const offset = (page - 1) * perPage;
 
-    // Date calculations
+    // Date calculations with timestamp bounds for index-friendly range scans
     const pad = (n) => String(n).padStart(2, '0');
-    const startOfMonth = `${selectedYear}-${pad(selectedMonth)}-01`;
+    const startOfMonth = `${selectedYear}-${pad(selectedMonth)}-01 00:00:00`;
     // Last day of month
     const lastDay = new Date(selectedYear, selectedMonth, 0).getDate();
-    const endOfMonth = `${selectedYear}-${pad(selectedMonth)}-${pad(lastDay)}`;
+    const endOfMonth = `${selectedYear}-${pad(selectedMonth)}-${pad(lastDay)} 23:59:59`;
 
     // 3 Months range for AMC (Average Monthly Consumption)
     // E.g. 2 months prior + selected month = 3 months
     const threeMonthsAgoDate = new Date(selectedYear, selectedMonth - 3, 1);
-    const startOf3Months = `${threeMonthsAgoDate.getFullYear()}-${pad(threeMonthsAgoDate.getMonth() + 1)}-01`;
+    const startOf3Months = `${threeMonthsAgoDate.getFullYear()}-${pad(threeMonthsAgoDate.getMonth() + 1)}-01 00:00:00`;
 
     // Check system setting for part status visibility
     let activeStatusFilter = 'aktif';
@@ -85,7 +85,7 @@ async function handlePartsUsage(request) {
       SELECT stock_summary.id_part, SUM(stock_summary.quantity) as total_qty, COUNT(*) as tx_count
       FROM stock_summary
       WHERE stock_summary.qty < 0
-        AND DATE(stock_summary.date) >= ? AND DATE(stock_summary.date) <= ?
+        AND stock_summary.date >= ? AND stock_summary.date <= ?
       GROUP BY stock_summary.id_part
     `, [startOfMonth, endOfMonth]);
 
@@ -102,7 +102,7 @@ async function handlePartsUsage(request) {
       SELECT stock_summary.id_part, SUM(stock_summary.quantity) as total_qty
       FROM stock_summary
       WHERE stock_summary.qty < 0
-        AND DATE(stock_summary.date) >= ? AND DATE(stock_summary.date) <= ?
+        AND stock_summary.date >= ? AND stock_summary.date <= ?
       GROUP BY stock_summary.id_part
     `, [startOf3Months, endOfMonth]);
 
@@ -121,7 +121,7 @@ async function handlePartsUsage(request) {
       FROM stock_summary
       LEFT JOIN Assets ON Assets.ID_Asset = stock_summary.id_asset
       WHERE stock_summary.qty < 0
-        AND DATE(stock_summary.date) >= ? AND DATE(stock_summary.date) <= ?
+        AND stock_summary.date >= ? AND stock_summary.date <= ?
       ORDER BY stock_summary.date DESC
     `, [startOfMonth, endOfMonth]);
 

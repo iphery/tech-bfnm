@@ -8,29 +8,10 @@ export async function GET() {
     const year = now.getFullYear();
     const thisMonth = now.getMonth() + 1;
     const months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+    const yearStart = `${year}-01-01 00:00:00`;
+    const yearEnd = `${year}-12-31 23:59:59`;
 
-    const [inyearRows] = await db.query(
-      `SELECT ID_Request FROM Request 
-       LEFT JOIN Assets ON Assets.ID_Asset = Request.ID_Asset 
-       WHERE (Assets.Type = 'MP' OR Assets.Type = 'K') 
-         AND YEAR(Time_Request) = ? 
-         AND Maintenance_Type = 'CM'`,
-      [year]
-    );
-    const totalInYear = inyearRows.length;
-
-    const [inmonthRows] = await db.query(
-      `SELECT ID_Request FROM Request 
-       LEFT JOIN Assets ON Assets.ID_Asset = Request.ID_Asset 
-       WHERE (Assets.Type = 'MP' OR Assets.Type = 'K') 
-         AND YEAR(Time_Request) = ? 
-         AND Maintenance_Type = 'CM' 
-         AND MONTH(Time_Request) = ?`,
-      [year, thisMonth]
-    );
-    const totalInMonth = inmonthRows.length;
-
-    // Fetch MP & K requests for the entire year in 1 query to optimize performance
+    // Fetch MP & K requests for the entire year in 1 single optimized query using index range
     const [allYearRequests] = await db.query(
       `SELECT Request.ID_Request, Request.ID_Asset, Request.Time_Request, 
               Request.Time_Response, Request.Time_Repair_Complete, 
@@ -40,9 +21,12 @@ export async function GET() {
        LEFT JOIN Assets ON Assets.ID_Asset = Request.ID_Asset 
        WHERE (Assets.Type = 'MP' OR Assets.Type = 'K') 
          AND Maintenance_Type = 'CM' 
-         AND YEAR(Time_Request) = ?`,
-      [year]
+         AND Request.Time_Request >= ? AND Request.Time_Request <= ?`,
+      [yearStart, yearEnd]
     );
+
+    const totalInYear = allYearRequests.length;
+    const totalInMonth = allYearRequests.filter((r) => r.req_month === thisMonth).length;
 
     const serviceMesin = [];
     const serviceKendaraan = [];
@@ -100,12 +84,12 @@ export async function GET() {
       { name: "Kendaraan", data: serviceKendaraan },
     ];
 
-    const [waitingPartRows] = await db.query(
-      `SELECT ID_Request FROM Request 
+    const [[waitingPartRow]] = await db.query(
+      `SELECT COUNT(*) AS total FROM Request 
        LEFT JOIN Assets ON Assets.ID_Asset = Request.ID_Asset 
-       WHERE Step = 3 AND (Assets.Type = 'MP' OR Assets.Type = 'K')`
+       WHERE Request.Step = 3 AND (Assets.Type = 'MP' OR Assets.Type = 'K')`
     );
-    const waitingPart = waitingPartRows.length;
+    const waitingPart = Number(waitingPartRow?.total || 0);
 
     let openOrder = 0;
     try {
