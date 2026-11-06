@@ -56,6 +56,9 @@ export default function DetailAssetWeb({ idAsset }) {
 
   const [dataAsset, setDataAsset] = useState({});
   const [dataService, setDataService] = useState([]);
+  const [mttr, setMttr] = useState(0);
+  const [totalRepairHours, setTotalRepairHours] = useState(0);
+  const [completedRepairsCount, setCompletedRepairsCount] = useState(0);
   const [loader, setLoader] = useState(true);
 
   const [keyword, setKeyword] = useState("");
@@ -135,10 +138,16 @@ export default function DetailAssetWeb({ idAsset }) {
     setEditYear(dataAsset.Year_Manufacture || "");
 
     setEditImage(null);
-    setImagePreview(dataAsset.Image ? `${IMAGE_ASSET}/${dataAsset.Image}` : null);
+    setImagePreview(
+      dataAsset.Image ? `${IMAGE_ASSET}/${dataAsset.Image}` : null,
+    );
 
     setEditUserImage(null);
-    setUserImagePreview(dataAsset.Profile_Image ? `${IMAGE_USER}/${dataAsset.Profile_Image}` : null);
+    setUserImagePreview(
+      dataAsset.Profile_Image
+        ? `${IMAGE_USER}/${dataAsset.Profile_Image}`
+        : null,
+    );
 
     setIsCameraActive(false);
     setOpenEditAssetModalState(true);
@@ -161,7 +170,7 @@ export default function DetailAssetWeb({ idAsset }) {
         } else {
           setEditUserImage(screenshot);
           setUserImagePreview(screenshot);
-          NotifySuccess("Foto pemegang berhasil diambil dari kamera");
+          NotifySuccess("Foto user berhasil diambil dari kamera");
         }
         setIsCameraActive(false);
       } else {
@@ -281,6 +290,9 @@ export default function DetailAssetWeb({ idAsset }) {
       if (response.status === 200) {
         const services = response.data.service || [];
         setDataService(services);
+        setMttr(response.data.mttr ?? 0);
+        setTotalRepairHours(response.data.total_repair_hours ?? 0);
+        setCompletedRepairsCount(response.data.completed_repairs_count ?? 0);
         if (services.length > 0 && !selectedCase) {
           const first = services[0];
           setSelectedCase(first);
@@ -510,7 +522,7 @@ export default function DetailAssetWeb({ idAsset }) {
                     <button
                       type="button"
                       onClick={openEditAssetModal}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/10 px-3.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-all shadow-sm"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/10 px-3.5 py-1.5 text-xs font-semibold text-primary shadow-sm transition-all hover:bg-primary/20"
                     >
                       <HiOutlinePencilSquare className="text-sm" />
                       <span>Edit Data Aset</span>
@@ -627,7 +639,7 @@ export default function DetailAssetWeb({ idAsset }) {
                         )}
                       </div>
                       <span className="text-[11px] font-medium text-body dark:text-bodydark">
-                        Foto Pemegang
+                        Foto User
                       </span>
                     </div>
                   </div>
@@ -662,35 +674,37 @@ export default function DetailAssetWeb({ idAsset }) {
             >
               <div className="flex items-center justify-between border-b border-stroke px-5 py-4 dark:border-strokedark">
                 <div>
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-black dark:text-white flex items-center gap-2">
-                    <HiOutlinePencilSquare className="text-primary text-base" />
+                  <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-black dark:text-white">
+                    <HiOutlinePencilSquare className="text-base text-primary" />
                     Edit Data & Foto Aset #{dataAsset.ID_Asset}
                   </h3>
                   <span className="text-xs text-body dark:text-bodydark">
-                    Perbarui informasi spesifikasi atau foto unit mesin/kendaraan
+                    Perbarui informasi spesifikasi atau foto unit
+                    mesin/kendaraan
                   </span>
                 </div>
               </div>
 
-              <div className="p-5 space-y-4 overflow-y-auto max-h-[70vh] text-xs">
+              <div className="max-h-[70vh] space-y-4 overflow-y-auto p-5 text-xs">
                 {/* 1. JIKA KAMERA SEDANG AKTIF: TAMPILKAN LIVE WEBCAM VIEWFINDER */}
                 {isCameraActive ? (
-                  <div className="relative overflow-hidden rounded-2xl border-2 border-primary/60 bg-black shadow-lg p-2 space-y-2">
-                    <div className="flex items-center justify-between text-white text-xs px-2 py-1">
-                      <span className="font-bold flex items-center gap-1.5">
-                        <HiOutlineCamera className="text-primary text-base" />
-                        Kamera Aktif: {cameraTarget === "asset" ? "Foto Aset" : "Foto Pemegang / User"}
+                  <div className="relative space-y-2 overflow-hidden rounded-2xl border-2 border-primary/60 bg-black p-2 shadow-lg">
+                    <div className="flex items-center justify-between px-2 py-1 text-xs text-white">
+                      <span className="flex items-center gap-1.5 font-bold">
+                        <HiOutlineCamera className="text-base text-primary" />
+                        Kamera Aktif:{" "}
+                        {cameraTarget === "asset" ? "Foto Aset" : "Foto User"}
                       </span>
                       <button
                         type="button"
                         onClick={() => setIsCameraActive(false)}
-                        className="rounded-lg bg-white/20 hover:bg-white/30 px-2 py-1 text-[11px] transition-colors"
+                        className="rounded-lg bg-white/20 px-2 py-1 text-[11px] transition-colors hover:bg-white/30"
                       >
                         Tutup Kamera
                       </button>
                     </div>
 
-                    <div className="relative rounded-xl overflow-hidden bg-black flex items-center justify-center">
+                    <div className="relative flex items-center justify-center overflow-hidden rounded-xl bg-black">
                       <Webcam
                         audio={false}
                         ref={webcamRef}
@@ -703,28 +717,34 @@ export default function DetailAssetWeb({ idAsset }) {
                         }}
                         onUserMediaError={(err) => {
                           console.error("Camera access error:", err);
-                          NotifyError("Izin kamera ditolak. Silakan upload via berkas.");
+                          NotifyError(
+                            "Izin kamera ditolak. Silakan upload via berkas.",
+                          );
                           setIsCameraActive(false);
                         }}
-                        className="w-full h-60 sm:h-72 object-cover"
+                        className="h-60 w-full object-cover sm:h-72"
                       />
 
                       {/* Framing Guide */}
-                      <div className="absolute inset-4 pointer-events-none rounded-xl border border-white/30 border-dashed flex items-center justify-center">
-                        <span className="text-[10px] font-medium text-white/80 bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">
-                          {cameraTarget === "asset" ? "Arahkan ke mesin / aset" : "Arahkan ke wajah pengguna"}
+                      <div className="pointer-events-none absolute inset-4 flex items-center justify-center rounded-xl border border-dashed border-white/30">
+                        <span className="rounded-full bg-black/50 px-3 py-1 text-[10px] font-medium text-white/80 backdrop-blur-sm">
+                          {cameraTarget === "asset"
+                            ? "Arahkan ke mesin / aset"
+                            : "Arahkan ke wajah pengguna"}
                         </span>
                       </div>
                     </div>
 
                     {/* Camera Action Buttons */}
-                    <div className="flex items-center justify-between pt-1 px-1">
+                    <div className="flex items-center justify-between px-1 pt-1">
                       <button
                         type="button"
                         onClick={() =>
-                          setCameraFacing((prev) => (prev === "environment" ? "user" : "environment"))
+                          setCameraFacing((prev) =>
+                            prev === "environment" ? "user" : "environment",
+                          )
                         }
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-semibold transition-colors"
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-white/20 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-white/30"
                       >
                         <HiOutlineArrowPath className="text-sm" />
                         <span>Putar Kamera</span>
@@ -733,7 +753,7 @@ export default function DetailAssetWeb({ idAsset }) {
                       <button
                         type="button"
                         onClick={handleCapturePhoto}
-                        className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-bold shadow-md transition-all active:scale-95"
+                        className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-primary/90 active:scale-95"
                       >
                         <div className="h-3.5 w-3.5 rounded-full border-2 border-white bg-white/30" />
                         <span>Jepret Foto</span>
@@ -741,15 +761,15 @@ export default function DetailAssetWeb({ idAsset }) {
                     </div>
                   </div>
                 ) : (
-                  /* 2. DUA KARTU FOTO: FOTO ASET DAN FOTO PEMEGANG / USER */
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  /* 2. DUA KARTU FOTO: FOTO ASET DAN USER */
+                  <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
                     {/* Foto Aset */}
-                    <div className="rounded-xl border border-stroke p-3.5 dark:border-strokedark bg-gray-50/50 dark:bg-meta-4/10">
-                      <span className="block text-[11px] font-bold text-black dark:text-white mb-2">
+                    <div className="bg-gray-50/50 rounded-xl border border-stroke p-3.5 dark:border-strokedark dark:bg-meta-4/10">
+                      <span className="mb-2 block text-[11px] font-bold text-black dark:text-white">
                         Foto Unit Aset
                       </span>
                       <div className="flex items-center gap-3">
-                        <div className="relative h-20 w-20 rounded-xl border border-stroke dark:border-strokedark overflow-hidden bg-white dark:bg-boxdark flex items-center justify-center shrink-0 shadow-sm">
+                        <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-stroke bg-white shadow-sm dark:border-strokedark dark:bg-boxdark">
                           {imagePreview ? (
                             <img
                               src={imagePreview}
@@ -765,13 +785,13 @@ export default function DetailAssetWeb({ idAsset }) {
                           <button
                             type="button"
                             onClick={() => handleStartCamera("asset")}
-                            className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-primary/90 transition-colors"
+                            className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-primary px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-primary/90"
                           >
                             <HiOutlineCamera className="text-sm" />
                             <span>Buka Kamera</span>
                           </button>
 
-                          <label className="w-full inline-flex items-center justify-center gap-1.5 cursor-pointer rounded-xl border border-stroke bg-white px-2.5 py-1.5 text-xs font-semibold text-body hover:bg-gray-100 dark:border-strokedark dark:bg-boxdark dark:text-bodydark dark:hover:bg-meta-4 transition-colors">
+                          <label className="hover:bg-gray-100 inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-stroke bg-white px-2.5 py-1.5 text-xs font-semibold text-body transition-colors dark:border-strokedark dark:bg-boxdark dark:text-bodydark dark:hover:bg-meta-4">
                             <HiOutlinePhoto className="text-sm" />
                             <span>Pilih Berkas</span>
                             <input
@@ -785,13 +805,13 @@ export default function DetailAssetWeb({ idAsset }) {
                       </div>
                     </div>
 
-                    {/* Foto Pemegang / User Profile */}
-                    <div className="rounded-xl border border-stroke p-3.5 dark:border-strokedark bg-gray-50/50 dark:bg-meta-4/10">
-                      <span className="block text-[11px] font-bold text-black dark:text-white mb-2">
-                        Foto Pemegang / User
+                    {/* Foto User Profile */}
+                    <div className="bg-gray-50/50 rounded-xl border border-stroke p-3.5 dark:border-strokedark dark:bg-meta-4/10">
+                      <span className="mb-2 block text-[11px] font-bold text-black dark:text-white">
+                        Foto User
                       </span>
                       <div className="flex items-center gap-3">
-                        <div className="relative h-20 w-20 rounded-full border border-stroke dark:border-strokedark overflow-hidden bg-white dark:bg-boxdark flex items-center justify-center shrink-0 shadow-sm">
+                        <div className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-stroke bg-white shadow-sm dark:border-strokedark dark:bg-boxdark">
                           {userImagePreview ? (
                             <img
                               src={userImagePreview}
@@ -807,13 +827,13 @@ export default function DetailAssetWeb({ idAsset }) {
                           <button
                             type="button"
                             onClick={() => handleStartCamera("user")}
-                            className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-meta-5 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-meta-5/90 transition-colors"
+                            className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-meta-5 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-meta-5/90"
                           >
                             <HiOutlineCamera className="text-sm" />
                             <span>Buka Kamera</span>
                           </button>
 
-                          <label className="w-full inline-flex items-center justify-center gap-1.5 cursor-pointer rounded-xl border border-stroke bg-white px-2.5 py-1.5 text-xs font-semibold text-body hover:bg-gray-100 dark:border-strokedark dark:bg-boxdark dark:text-bodydark dark:hover:bg-meta-4 transition-colors">
+                          <label className="hover:bg-gray-100 inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-stroke bg-white px-2.5 py-1.5 text-xs font-semibold text-body transition-colors dark:border-strokedark dark:bg-boxdark dark:text-bodydark dark:hover:bg-meta-4">
                             <HiOutlinePhoto className="text-sm" />
                             <span>Pilih Berkas</span>
                             <input
@@ -830,10 +850,11 @@ export default function DetailAssetWeb({ idAsset }) {
                 )}
 
                 {/* Grid Input Form Fields */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
                   <div className="sm:col-span-2">
-                    <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
-                      Deskripsi / Nama Aset <span className="text-danger">*</span>
+                    <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
+                      Deskripsi / Nama Aset{" "}
+                      <span className="text-danger">*</span>
                     </label>
                     <CommonInput
                       input={editDesc}
@@ -844,7 +865,7 @@ export default function DetailAssetWeb({ idAsset }) {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                    <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
                       Manufaktur / Brand
                     </label>
                     <CommonInput
@@ -856,7 +877,7 @@ export default function DetailAssetWeb({ idAsset }) {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                    <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
                       Model / Seri
                     </label>
                     <CommonInput
@@ -868,7 +889,7 @@ export default function DetailAssetWeb({ idAsset }) {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                    <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
                       No. Polisi / No. Unit
                     </label>
                     <CommonInput
@@ -880,7 +901,7 @@ export default function DetailAssetWeb({ idAsset }) {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                    <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
                       Lokasi / Penempatan
                     </label>
                     <CommonInput
@@ -892,7 +913,7 @@ export default function DetailAssetWeb({ idAsset }) {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                    <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
                       Penanggung Jawab / User
                     </label>
                     <CommonInput
@@ -904,7 +925,7 @@ export default function DetailAssetWeb({ idAsset }) {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                    <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
                       Kategori PM
                     </label>
                     <CommonInput
@@ -916,7 +937,7 @@ export default function DetailAssetWeb({ idAsset }) {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                    <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
                       Kapasitas
                     </label>
                     <CommonInput
@@ -928,7 +949,7 @@ export default function DetailAssetWeb({ idAsset }) {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                    <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
                       Daya (Power)
                     </label>
                     <CommonInput
@@ -940,7 +961,7 @@ export default function DetailAssetWeb({ idAsset }) {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                    <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
                       Tegangan (Voltage)
                     </label>
                     <CommonInput
@@ -952,7 +973,7 @@ export default function DetailAssetWeb({ idAsset }) {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                    <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
                       Nomor Seri (Serial No)
                     </label>
                     <CommonInput
@@ -964,7 +985,7 @@ export default function DetailAssetWeb({ idAsset }) {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                    <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
                       Tahun Pembuatan
                     </label>
                     <CommonInput
@@ -978,12 +999,12 @@ export default function DetailAssetWeb({ idAsset }) {
               </div>
 
               {/* Footer Actions */}
-              <div className="flex items-center justify-end gap-2 border-t border-stroke px-5 py-3 dark:border-strokedark bg-gray-50/50 dark:bg-meta-4/20">
+              <div className="bg-gray-50/50 flex items-center justify-end gap-2 border-t border-stroke px-5 py-3 dark:border-strokedark dark:bg-meta-4/20">
                 <button
                   type="button"
                   disabled={savingAsset}
                   onClick={() => setOpenEditAssetModalState(false)}
-                  className="rounded-xl border border-stroke px-4 py-2 text-xs font-semibold text-body hover:bg-gray-100 dark:border-strokedark dark:text-bodydark dark:hover:bg-meta-4 transition-all"
+                  className="hover:bg-gray-100 rounded-xl border border-stroke px-4 py-2 text-xs font-semibold text-body transition-all dark:border-strokedark dark:text-bodydark dark:hover:bg-meta-4"
                 >
                   Batal
                 </button>
@@ -991,7 +1012,7 @@ export default function DetailAssetWeb({ idAsset }) {
                   type="button"
                   disabled={savingAsset}
                   onClick={handleSaveAsset}
-                  className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-primary/90 disabled:opacity-50 transition-all"
+                  className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-primary/90 disabled:opacity-50"
                 >
                   {savingAsset ? "Menyimpan..." : "Simpan Perubahan Aset"}
                 </button>
@@ -1010,10 +1031,16 @@ export default function DetailAssetWeb({ idAsset }) {
                       <span className="font-mono rounded bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
                         F.BFNM.026/0
                       </span>
+                      <span className="inline-flex items-center gap-1 rounded-md border border-warning/20 bg-warning/10 px-2.5 py-0.5 text-[11px] font-bold text-warning">
+                        <HiOutlineClock className="text-xs" />
+                        MTTR: {mttr} Jam
+                      </span>
                     </div>
                     <p className="text-xs text-body dark:text-bodydark">
                       Daftar seluruh tiket permintaan perbaikan (CM) dan
-                      perawatan rutin (PM)
+                      perawatan rutin (PM) • MTTR dihitung dari rata-rata waktu
+                      pengerjaan kerusakan ({completedRepairsCount} perbaikan
+                      selesai)
                     </p>
                   </div>
 
@@ -1043,6 +1070,9 @@ export default function DetailAssetWeb({ idAsset }) {
                         </th>
                         <th className="px-4 py-3 font-semibold">Tipe</th>
                         <th className="px-4 py-3 text-center font-semibold">
+                          Waktu Servis
+                        </th>
+                        <th className="px-4 py-3 text-center font-semibold">
                           Status
                         </th>
                         <th className="px-4 py-3 text-center font-semibold">
@@ -1054,7 +1084,7 @@ export default function DetailAssetWeb({ idAsset }) {
                       {filteredDataService.length === 0 ? (
                         <tr>
                           <td
-                            colSpan={7}
+                            colSpan={8}
                             className="py-8 text-center text-body dark:text-bodydark"
                           >
                             Tidak ada riwayat perbaikan yang sesuai kriteria.
@@ -1118,6 +1148,18 @@ export default function DetailAssetWeb({ idAsset }) {
                                     ? "PM Rutin"
                                     : "Perbaikan"}
                                 </span>
+                              </td>
+                              <td className="whitespace-nowrap px-4 py-3 text-center">
+                                {item.repair_hours !== null &&
+                                item.repair_hours !== undefined ? (
+                                  <span className="font-mono text-xs font-bold text-black dark:text-white">
+                                    {item.repair_hours} Jam
+                                  </span>
+                                ) : (
+                                  <span className="text-[11px] text-body dark:text-bodydark">
+                                    -
+                                  </span>
+                                )}
                               </td>
                               <td className="px-4 py-3 text-center">
                                 <span
@@ -1382,12 +1424,24 @@ export default function DetailAssetWeb({ idAsset }) {
                                 {item.description}
                               </span>
                               <span className="text-[10px] text-body dark:text-bodydark">
-                                Ref: {item.dpm}
+                                Ref: {item.dpm}{" "}
+                                {item.source ? `• ${item.source}` : ""}
                               </span>
                             </div>
-                            <span className="font-mono rounded-md bg-primary/10 px-2.5 py-1 font-bold text-primary">
-                              {item.quantity} pcs
-                            </span>
+                            <div className="text-right">
+                              {Number(item.amount || item.total_cost || 0) >
+                                0 && (
+                                <span className="font-mono block text-xs font-bold text-success">
+                                  Rp{" "}
+                                  {Number(
+                                    item.amount || item.total_cost || 0,
+                                  ).toLocaleString("id-ID")}
+                                </span>
+                              )}
+                              <span className="font-mono rounded-md bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary">
+                                {item.quantity} {item.unit || "pcs"}
+                              </span>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -1411,11 +1465,13 @@ export default function DetailAssetWeb({ idAsset }) {
                                 {item.item || item.description || "Jasa Servis"}
                               </span>
                               <span className="text-[10px] text-body dark:text-bodydark">
-                                Vendor: {item.supplier || "-"} • Ref: #{item.id_register}
+                                Vendor: {item.supplier || "-"} • Ref: #
+                                {item.id_register}
                               </span>
                             </div>
                             <span className="font-mono rounded-md bg-warning/10 px-2.5 py-1 font-bold text-warning">
-                              Rp {Number(item.amount || 0).toLocaleString("id-ID")}
+                              Rp{" "}
+                              {Number(item.amount || 0).toLocaleString("id-ID")}
                             </span>
                           </div>
                         ))}
@@ -1486,11 +1542,23 @@ export default function DetailAssetWeb({ idAsset }) {
                       <span className="block text-[10px] text-body dark:text-bodydark">
                         Total Biaya Maintenance
                       </span>
-                      <span className="font-bold font-mono text-primary">
+                      <span className="font-mono font-bold text-primary">
                         Rp{" "}
                         {Number(
                           partsUsage.summary?.grand_total_cost || 0,
                         ).toLocaleString("id-ID")}
+                      </span>
+                    </div>
+                    <div className="bg-gray-50 rounded-xl border border-stroke/50 px-3 py-1.5 dark:border-strokedark/50 dark:bg-meta-4/20">
+                      <span className="block text-[10px] text-body dark:text-bodydark">
+                        MTTR (Mean Time to Repair)
+                      </span>
+                      <span className="flex items-center gap-1 font-bold text-black dark:text-white">
+                        <span className="font-mono text-warning">{mttr}</span>{" "}
+                        Jam
+                        <span className="text-[10px] font-normal text-body dark:text-bodydark">
+                          ({completedRepairsCount} perbaikan)
+                        </span>
                       </span>
                     </div>
                     <div className="bg-gray-50 rounded-xl border border-stroke/50 px-3 py-1.5 dark:border-strokedark/50 dark:bg-meta-4/20">
@@ -1523,7 +1591,8 @@ export default function DetailAssetWeb({ idAsset }) {
                         Tren Biaya Pemeliharaan Mesin per Bulan
                       </h4>
                       <span className="text-[11px] text-body dark:text-bodydark">
-                        Statistik pengeluaran biaya suku cadang dan jasa perbaikan mesin ini dari bulan ke bulan
+                        Statistik pengeluaran biaya suku cadang dan jasa
+                        perbaikan mesin ini dari bulan ke bulan
                       </span>
                     </div>
                   </div>
@@ -1658,21 +1727,38 @@ export default function DetailAssetWeb({ idAsset }) {
                                     {part.recommended_monthly_stock} {part.unit}
                                   </span>
                                 </td>
-                                <td className="whitespace-nowrap px-3 py-2.5 text-right font-mono text-xs font-semibold text-black dark:text-white">
+                                <td className="font-mono whitespace-nowrap px-3 py-2.5 text-right text-xs font-semibold text-black dark:text-white">
                                   {Number(part.unit_price || 0) > 0 ? (
-                                    <span>Rp {Number(part.unit_price).toLocaleString("id-ID")}</span>
+                                    <span>
+                                      Rp{" "}
+                                      {Number(part.unit_price).toLocaleString(
+                                        "id-ID",
+                                      )}
+                                    </span>
                                   ) : (
-                                    <span className="text-[10px] text-body dark:text-bodydark">Rp 0</span>
+                                    <span className="text-[10px] text-body dark:text-bodydark">
+                                      Rp 0
+                                    </span>
                                   )}
                                 </td>
-                                <td className="whitespace-nowrap px-3 py-2.5 text-right font-mono font-bold text-primary text-xs">
+                                <td className="font-mono whitespace-nowrap px-3 py-2.5 text-right text-xs font-bold text-primary">
                                   {Number(part.est_monthly_cost || 0) > 0 ? (
-                                    <span>Rp {Number(part.est_monthly_cost).toLocaleString("id-ID")}</span>
+                                    <span>
+                                      Rp{" "}
+                                      {Number(
+                                        part.est_monthly_cost,
+                                      ).toLocaleString("id-ID")}
+                                    </span>
                                   ) : (
-                                    <span className="text-[10px] text-body dark:text-bodydark">Rp 0</span>
+                                    <span className="text-[10px] text-body dark:text-bodydark">
+                                      Rp 0
+                                    </span>
                                   )}
                                 </td>
-                                <td className="whitespace-nowrap px-3 py-2.5 text-xs text-body dark:text-bodydark max-w-[130px] truncate" title={part.supplier || "-"}>
+                                <td
+                                  className="max-w-[130px] truncate whitespace-nowrap px-3 py-2.5 text-xs text-body dark:text-bodydark"
+                                  title={part.supplier || "-"}
+                                >
                                   {part.supplier || "-"}
                                 </td>
                                 <td className="whitespace-nowrap px-3 py-2.5 text-center">
@@ -1784,8 +1870,8 @@ export default function DetailAssetWeb({ idAsset }) {
                         {partsUsage.monthly_breakdown?.map((m) => (
                           <option key={m.month_key} value={m.month_key}>
                             {m.month_label} (Rp{" "}
-                            {Number(m.total_cost || 0).toLocaleString("id-ID")} •{" "}
-                            {m.total_qty} part)
+                            {Number(m.total_cost || 0).toLocaleString("id-ID")}{" "}
+                            • {m.total_qty} part)
                           </option>
                         ))}
                       </select>
@@ -1811,10 +1897,10 @@ export default function DetailAssetWeb({ idAsset }) {
                           <th className="px-3 py-2.5 text-center font-semibold">
                             Jumlah (Qty)
                           </th>
-                          <th className="px-3 py-2.5 font-semibold text-right">
+                          <th className="px-3 py-2.5 text-right font-semibold">
                             Harga Satuan
                           </th>
-                          <th className="px-3 py-2.5 font-semibold text-right">
+                          <th className="px-3 py-2.5 text-right font-semibold">
                             Total Biaya
                           </th>
                           <th className="px-3 py-2.5 font-semibold">
@@ -1844,7 +1930,8 @@ export default function DetailAssetWeb({ idAsset }) {
                         ) : (
                           <>
                             {displayedHistoryItems.map((item, idx) => {
-                              const rowNumber = (historyPage - 1) * 10 + idx + 1;
+                              const rowNumber =
+                                (historyPage - 1) * 10 + idx + 1;
                               return (
                                 <tr
                                   key={idx}
@@ -1872,41 +1959,51 @@ export default function DetailAssetWeb({ idAsset }) {
                                   <td className="px-3 py-2.5 font-semibold text-black dark:text-white">
                                     {item.description}
                                   </td>
-                                  <td className="whitespace-nowrap px-3 py-2.5 text-center font-bold text-warning font-mono">
+                                  <td className="font-mono whitespace-nowrap px-3 py-2.5 text-center font-bold text-warning">
                                     -{item.qty} {item.unit || "pcs"}
                                   </td>
-                                  <td className="whitespace-nowrap px-3 py-2.5 text-right font-mono text-xs font-semibold text-body dark:text-bodydark">
+                                  <td className="font-mono whitespace-nowrap px-3 py-2.5 text-right text-xs font-semibold text-body dark:text-bodydark">
                                     {Number(item.unit_price || 0) > 0 ? (
                                       `Rp ${Number(item.unit_price).toLocaleString("id-ID")}`
                                     ) : (
-                                      <span className="text-[10px] text-body dark:text-bodydark">Rp 0</span>
+                                      <span className="text-[10px] text-body dark:text-bodydark">
+                                        Rp 0
+                                      </span>
                                     )}
                                   </td>
-                                  <td className="whitespace-nowrap px-3 py-2.5 text-right font-mono font-bold text-black dark:text-white text-xs">
+                                  <td className="font-mono whitespace-nowrap px-3 py-2.5 text-right text-xs font-bold text-black dark:text-white">
                                     {Number(item.total_cost || 0) > 0 ? (
-                                      <span className="text-primary font-bold">
-                                        Rp {Number(item.total_cost).toLocaleString("id-ID")}
+                                      <span className="font-bold text-primary">
+                                        Rp{" "}
+                                        {Number(item.total_cost).toLocaleString(
+                                          "id-ID",
+                                        )}
                                       </span>
                                     ) : (
-                                      <span className="text-[10px] text-body dark:text-bodydark">Rp 0</span>
+                                      <span className="text-[10px] text-body dark:text-bodydark">
+                                        Rp 0
+                                      </span>
                                     )}
                                   </td>
                                   <td className="whitespace-nowrap px-3 py-2.5 text-xs text-body dark:text-bodydark">
                                     <span className="block font-medium text-black dark:text-white">
                                       {item.supplier || "-"}
                                     </span>
-                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                    <div className="mt-0.5 flex items-center gap-1.5">
                                       {item.dpm && item.dpm !== "-" && (
-                                        <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[9px] font-mono font-bold text-primary">
+                                        <span className="font-mono rounded-md bg-primary/10 px-1.5 py-0.5 text-[9px] font-bold text-primary">
                                           DPM #{item.dpm}
                                         </span>
                                       )}
                                       {item.source && (
-                                        <span className={`rounded-md px-1.5 py-0.5 text-[9px] font-medium ${
-                                          item.source.includes("DPM") || item.source.includes("Order")
-                                            ? "bg-meta-3/15 text-meta-3"
-                                            : "bg-gray-100 text-body dark:bg-meta-4/30 dark:text-bodydark"
-                                        }`}>
+                                        <span
+                                          className={`rounded-md px-1.5 py-0.5 text-[9px] font-medium ${
+                                            item.source.includes("DPM") ||
+                                            item.source.includes("Order")
+                                              ? "bg-meta-3/15 text-meta-3"
+                                              : "bg-gray-100 text-body dark:bg-meta-4/30 dark:text-bodydark"
+                                          }`}
+                                        >
                                           {item.source}
                                         </span>
                                       )}
@@ -1915,7 +2012,7 @@ export default function DetailAssetWeb({ idAsset }) {
                                   <td className="whitespace-nowrap px-3 py-2.5 text-body dark:text-bodydark">
                                     {item.location || "-"}
                                   </td>
-                                  <td className="font-mono px-3 py-2.5 text-body dark:text-bodydark font-bold">
+                                  <td className="font-mono px-3 py-2.5 font-bold text-body dark:text-bodydark">
                                     #{item.id_for}
                                   </td>
                                   <td className="max-w-xs truncate px-3 py-2.5 text-body dark:text-bodydark">
@@ -1926,14 +2023,15 @@ export default function DetailAssetWeb({ idAsset }) {
                             })}
 
                             {selectedUsageMonth !== "ALL" && (
-                              <tr className="bg-primary/5 font-bold dark:bg-primary/10 border-t-2 border-primary/20">
+                              <tr className="border-t-2 border-primary/20 bg-primary/5 font-bold dark:bg-primary/10">
                                 <td
                                   colSpan={5}
                                   className="px-3 py-2.5 text-right font-bold text-black dark:text-white"
                                 >
-                                  Total Biaya Part Bulan Ini ({selectedUsageMonth}):
+                                  Total Biaya Part Bulan Ini (
+                                  {selectedUsageMonth}):
                                 </td>
-                                <td className="px-3 py-2.5 text-center font-mono text-warning font-bold">
+                                <td className="font-mono px-3 py-2.5 text-center font-bold text-warning">
                                   -
                                   {currentFilteredHistory.reduce(
                                     (acc, it) => acc + (Number(it.qty) || 0),
@@ -1942,11 +2040,12 @@ export default function DetailAssetWeb({ idAsset }) {
                                   unit
                                 </td>
                                 <td></td>
-                                <td className="whitespace-nowrap px-3 py-2.5 text-right font-mono font-bold text-primary">
+                                <td className="font-mono whitespace-nowrap px-3 py-2.5 text-right font-bold text-primary">
                                   Rp{" "}
                                   {currentFilteredHistory
                                     .reduce(
-                                      (acc, it) => acc + (Number(it.total_cost) || 0),
+                                      (acc, it) =>
+                                        acc + (Number(it.total_cost) || 0),
                                       0,
                                     )
                                     .toLocaleString("id-ID")}
@@ -1997,44 +2096,6 @@ export default function DetailAssetWeb({ idAsset }) {
                         >
                           Berikutnya
                         </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Biaya Servis / Jasa Bengkel Luar Mesin Ini */}
-                  {currentMonthServices.length > 0 && (
-                    <div className="mt-4 rounded-xl border border-stroke p-4 dark:border-strokedark">
-                      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                        <h4 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-black dark:text-white">
-                          <HiOutlineWrenchScrewdriver className="text-warning text-sm" />
-                          Biaya Servis / Jasa Bengkel Luar Mesin Ini ({selectedUsageMonth === "ALL" ? "Semua Bulan" : currentMonthData?.month_label || selectedUsageMonth})
-                        </h4>
-                        <span className="font-mono text-xs font-bold text-warning">
-                          Total: Rp{" "}
-                          {currentMonthServices
-                            .reduce((sum, s) => sum + (Number(s.amount) || 0), 0)
-                            .toLocaleString("id-ID")}
-                        </span>
-                      </div>
-                      <div className="divide-y divide-stroke dark:divide-strokedark">
-                        {currentMonthServices.map((item, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center justify-between rounded-lg px-2 py-2 text-xs hover:bg-gray-50 dark:hover:bg-meta-4/20 transition-colors"
-                          >
-                            <div>
-                              <span className="block font-semibold text-black dark:text-white">
-                                {item.item || item.description || "Jasa Servis"}
-                              </span>
-                              <span className="text-[10px] text-body dark:text-bodydark">
-                                Vendor: {item.supplier || "-"} • Ref: #{item.id_register} {item.id_request ? `• Tiket: #${item.id_request}` : ""} {item.month_label ? `• Periode: ${item.month_label}` : ""}
-                              </span>
-                            </div>
-                            <span className="font-mono rounded-md bg-warning/10 px-2.5 py-1 font-bold text-warning">
-                              Rp {Number(item.amount || 0).toLocaleString("id-ID")}
-                            </span>
-                          </div>
-                        ))}
                       </div>
                     </div>
                   )}

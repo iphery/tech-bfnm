@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { registerFifoIn } from '@/lib/fifo';
 
 export async function POST(request) {
   try {
@@ -42,6 +43,24 @@ export async function POST(request) {
                VALUES (?, ?, ?, 'in', ?, ?, ?, ?)`,
               [od.id_part, id_stockin, od.quantity, created, idRegister, receiver, receive_date]
             );
+
+            // Register new FIFO batch layer
+            const unitPrice = Number(od.quantity) > 0 ? (Number(od.amount) / Number(od.quantity)) : 0;
+            try {
+              await registerFifoIn(pool, {
+                batchId: id_stockin,
+                idPart: od.id_part,
+                idOrder: idRegister,
+                dateReceived: receive_date || created,
+                quantity: od.quantity,
+                unitPrice,
+                totalAmount: od.amount,
+                seller: item.seller || od.seller,
+                source: 'PO',
+              });
+            } catch (errFifo) {
+              console.error(`Error registering FIFO batch ${id_stockin}:`, errFifo);
+            }
           }
         }
       }

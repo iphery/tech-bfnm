@@ -126,6 +126,28 @@ const REQUIRED_INDEXES = [
     name: "idx_assets_type",
     columns: ["Type"],
   },
+
+  // 8. FIFO Inventory Valuation (Crucial for stock_fifo_batches and stock_fifo_out_allocations)
+  {
+    table: "stock_fifo_batches",
+    name: "idx_fifo_part_rem",
+    columns: ["id_part", "qty_remaining"],
+  },
+  {
+    table: "stock_fifo_batches",
+    name: "idx_fifo_date_rec",
+    columns: ["date_received"],
+  },
+  {
+    table: "stock_fifo_out_allocations",
+    name: "idx_fifo_alloc_stockout",
+    columns: ["id_stock_out"],
+  },
+  {
+    table: "stock_out",
+    name: "idx_stockout_costs",
+    columns: ["id_part", "total_cost"],
+  },
 ];
 
 export async function GET() {

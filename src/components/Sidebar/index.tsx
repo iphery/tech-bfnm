@@ -58,18 +58,6 @@ const menuGroups = [
       },
 
       {
-        icon: <FaTools />,
-        label: "Joblist",
-        route: "#",
-        consumer: "private",
-        children: [
-          { label: "Service", route: "/listservice" },
-          { label: "Maintenance", route: "/listroutine" },
-          { label: "EDP", route: "/listedp" },
-        ],
-      },
-
-      {
         icon: <FaXbox />,
         label: "Asset",
         route: "/asset",
@@ -92,9 +80,13 @@ const menuGroups = [
             />
           </svg>
         ),
-        label: "Schedule",
-        route: "/schedule",
+        label: "Maintenance",
+        route: "#",
         consumer: "public",
+        children: [
+          { label: "Schedule", route: "/schedule" },
+          { label: "Activity", route: "/activity" },
+        ],
       },
 
       {
@@ -118,6 +110,7 @@ const menuGroups = [
         route: "#",
         consumer: "private",
         children: [
+          { label: "Presentation", route: "/reportpresentation" },
           { label: "Monthly Report", route: "/reportservice" },
           { label: "Quality Objective", route: "/qualityobjective" },
           { label: "Machine Utilize", route: "/machineutilize" },

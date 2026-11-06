@@ -11,7 +11,12 @@ import { PageLoader } from "./loader";
 import { CustomModal } from "./modal";
 import { ProgressCard, ProgressSummary } from "@/components/card";
 import { useProvider } from "@/app/appcontext";
-import { formatDateTime, formatDateLocal, getCurrentDate, getCurrentTime } from "@/utils/dateformat";
+import {
+  formatDateTime,
+  formatDateLocal,
+  getCurrentDate,
+  getCurrentTime,
+} from "@/utils/dateformat";
 import paginateData from "@/utils/pagination";
 import { NotifyError, NotifySuccess } from "@/utils/notify";
 import { RepairStatus } from "@/utils/repairstatus";
@@ -60,6 +65,9 @@ export default function DetailAssetMobile({ idAsset }) {
 
   const [dataAsset, setDataAsset] = useState({});
   const [dataService, setDataService] = useState([]);
+  const [mttr, setMttr] = useState(0);
+  const [totalRepairHours, setTotalRepairHours] = useState(0);
+  const [completedRepairsCount, setCompletedRepairsCount] = useState(0);
   const [firstLoading, setFirstLoading] = useState(true);
   const [secondLoading, setSecondLoading] = useState(false);
 
@@ -101,7 +109,8 @@ export default function DetailAssetMobile({ idAsset }) {
   const [modalPerawatan, setModalPerawatan] = useState(false);
 
   const [inputRequestPerbaikan, setInputRequestPerbaikan] = useState("");
-  const [inputRequestPerbaikanError, setInputRequestPerbaikanError] = useState(false);
+  const [inputRequestPerbaikanError, setInputRequestPerbaikanError] =
+    useState(false);
   const [onloadRequestPerbaikan, setOnloadRequestPerbaikan] = useState(false);
 
   const [inputKM, setInputKM] = useState("");
@@ -178,10 +187,16 @@ export default function DetailAssetMobile({ idAsset }) {
     setEditYear(dataAsset.Year_Manufacture || "");
 
     setEditImage(null);
-    setImagePreview(dataAsset.Image ? `${IMAGE_ASSET}/${dataAsset.Image}` : null);
+    setImagePreview(
+      dataAsset.Image ? `${IMAGE_ASSET}/${dataAsset.Image}` : null,
+    );
 
     setEditUserImage(null);
-    setUserImagePreview(dataAsset.Profile_Image ? `${IMAGE_USER}/${dataAsset.Profile_Image}` : null);
+    setUserImagePreview(
+      dataAsset.Profile_Image
+        ? `${IMAGE_USER}/${dataAsset.Profile_Image}`
+        : null,
+    );
 
     setIsCameraActive(false);
     setOpenEditAssetModalState(true);
@@ -204,7 +219,7 @@ export default function DetailAssetMobile({ idAsset }) {
         } else {
           setEditUserImage(screenshot);
           setUserImagePreview(screenshot);
-          NotifySuccess("Foto pemegang berhasil diambil");
+          NotifySuccess("Foto user berhasil diambil");
         }
         setIsCameraActive(false);
       } else {
@@ -338,6 +353,9 @@ export default function DetailAssetMobile({ idAsset }) {
 
       if (response.status === 200) {
         setDataService(response.data["service"] || []);
+        setMttr(response.data["mttr"] ?? 0);
+        setTotalRepairHours(response.data["total_repair_hours"] ?? 0);
+        setCompletedRepairsCount(response.data["completed_repairs_count"] ?? 0);
       }
     } catch (e) {
       console.error(e);
@@ -367,7 +385,8 @@ export default function DetailAssetMobile({ idAsset }) {
         setpmTempList([]);
         if (checkList && checkList !== "") {
           try {
-            const pmparsed = typeof checkList === "string" ? JSON.parse(checkList) : checkList;
+            const pmparsed =
+              typeof checkList === "string" ? JSON.parse(checkList) : checkList;
             setpmList(pmparsed);
             setpmTempList(pmparsed);
           } catch (err) {
@@ -395,12 +414,12 @@ export default function DetailAssetMobile({ idAsset }) {
 
   useEffect(() => {
     const filterService = dataService.filter((item) =>
-      (item["Problem"] || "").toLowerCase().includes(keyword.toLowerCase())
+      (item["Problem"] || "").toLowerCase().includes(keyword.toLowerCase()),
     );
     const { data, pageCurrent, pageLast } = paginateData(
       filterService,
       currentPage,
-      itemPerPage
+      itemPerPage,
     );
     setFilteredDataService(data);
     setLastPage(pageLast);
@@ -458,7 +477,9 @@ export default function DetailAssetMobile({ idAsset }) {
       });
 
       if (response.status === 200) {
-        NotifySuccess(response.data["message"] || "Permintaan perawatan dibuat");
+        NotifySuccess(
+          response.data["message"] || "Permintaan perawatan dibuat",
+        );
         fetch_data();
         fetch_data_service();
       }
@@ -490,37 +511,56 @@ export default function DetailAssetMobile({ idAsset }) {
   // Pagination & Filter calculations for Parts Usage (Mobile)
   const routineItems = partsUsage.routine_needs || [];
   const routineTotalPages = Math.max(1, Math.ceil(routineItems.length / 10));
-  const displayedRoutineItems = routineItems.slice((routinePage - 1) * 10, routinePage * 10);
-
-  const allHistoryItems = (partsUsage.monthly_breakdown || []).flatMap((m) =>
-    (m.parts || []).map((p) => ({ ...p, month_label: m.month_label }))
+  const displayedRoutineItems = routineItems.slice(
+    (routinePage - 1) * 10,
+    routinePage * 10,
   );
 
-  const currentFilteredHistory = selectedUsageMonth === "ALL"
-    ? allHistoryItems
-    : (partsUsage.monthly_breakdown?.find((m) => m.month_key === selectedUsageMonth)?.parts || []).map((p) => ({
-        ...p,
-        month_label: partsUsage.monthly_breakdown?.find((m) => m.month_key === selectedUsageMonth)?.month_label,
-      }));
+  const allHistoryItems = (partsUsage.monthly_breakdown || []).flatMap((m) =>
+    (m.parts || []).map((p) => ({ ...p, month_label: m.month_label })),
+  );
 
-  const currentMonthData = partsUsage.monthly_breakdown?.find((m) => m.month_key === selectedUsageMonth);
-  const currentMonthServices = selectedUsageMonth === "ALL"
-    ? (partsUsage.monthly_breakdown || []).flatMap((m) =>
-        (m.services || []).map((s) => ({ ...s, month_label: m.month_label }))
-      )
-    : (currentMonthData?.services || []).map((s) => ({
-        ...s,
-        month_label: currentMonthData?.month_label,
-      }));
+  const currentFilteredHistory =
+    selectedUsageMonth === "ALL"
+      ? allHistoryItems
+      : (
+          partsUsage.monthly_breakdown?.find(
+            (m) => m.month_key === selectedUsageMonth,
+          )?.parts || []
+        ).map((p) => ({
+          ...p,
+          month_label: partsUsage.monthly_breakdown?.find(
+            (m) => m.month_key === selectedUsageMonth,
+          )?.month_label,
+        }));
 
-  const historyTotalPages = Math.max(1, Math.ceil(currentFilteredHistory.length / 10));
-  const displayedHistoryItems = currentFilteredHistory.slice((historyPage - 1) * 10, historyPage * 10);
+  const currentMonthData = partsUsage.monthly_breakdown?.find(
+    (m) => m.month_key === selectedUsageMonth,
+  );
+  const currentMonthServices =
+    selectedUsageMonth === "ALL"
+      ? (partsUsage.monthly_breakdown || []).flatMap((m) =>
+          (m.services || []).map((s) => ({ ...s, month_label: m.month_label })),
+        )
+      : (currentMonthData?.services || []).map((s) => ({
+          ...s,
+          month_label: currentMonthData?.month_label,
+        }));
+
+  const historyTotalPages = Math.max(
+    1,
+    Math.ceil(currentFilteredHistory.length / 10),
+  );
+  const displayedHistoryItems = currentFilteredHistory.slice(
+    (historyPage - 1) * 10,
+    historyPage * 10,
+  );
 
   if (!isClient) return null;
 
   return (
     <UserAuth>
-      <div className="min-h-screen bg-whiten text-body dark:bg-boxdark-2 dark:text-bodydark pb-16">
+      <div className="min-h-screen bg-whiten pb-16 text-body dark:bg-boxdark-2 dark:text-bodydark">
         {firstLoading ? (
           <PageLoader />
         ) : (
@@ -536,7 +576,7 @@ export default function DetailAssetMobile({ idAsset }) {
                     router.back();
                   }
                 }}
-                className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-100 text-black hover:bg-gray-200 dark:bg-meta-4 dark:text-white transition-colors"
+                className="bg-gray-100 hover:bg-gray-200 flex h-9 w-9 items-center justify-center rounded-xl text-black transition-colors dark:bg-meta-4 dark:text-white"
               >
                 <HiArrowLeft className="text-lg" />
               </button>
@@ -555,7 +595,7 @@ export default function DetailAssetMobile({ idAsset }) {
                     type="button"
                     title="Edit Data & Foto Aset"
                     onClick={openEditAssetModal}
-                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary hover:bg-primary/20 dark:bg-primary/20 transition-colors"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors hover:bg-primary/20 dark:bg-primary/20"
                   >
                     <HiOutlinePencilSquare className="text-base" />
                   </button>
@@ -572,7 +612,9 @@ export default function DetailAssetMobile({ idAsset }) {
                           idAsset: dataAsset.ID_Asset,
                         });
                         if (response.status === 200) {
-                          NotifySuccess(response.data["message"] || "Status di-reset");
+                          NotifySuccess(
+                            response.data["message"] || "Status di-reset",
+                          );
                           fetch_data();
                         }
                       } catch (e) {
@@ -581,9 +623,11 @@ export default function DetailAssetMobile({ idAsset }) {
                         setResetAsset(false);
                       }
                     }}
-                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary hover:bg-primary/20 dark:bg-primary/20 transition-colors"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors hover:bg-primary/20 dark:bg-primary/20"
                   >
-                    <LuRefreshCw className={`text-base ${resetAsset ? "animate-spin" : ""}`} />
+                    <LuRefreshCw
+                      className={`text-base ${resetAsset ? "animate-spin" : ""}`}
+                    />
                   </button>
                 )}
                 {/* Pemanasan Quick Trigger */}
@@ -591,7 +635,7 @@ export default function DetailAssetMobile({ idAsset }) {
                   <button
                     type="button"
                     onClick={() => router.push("/pemanasan")}
-                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-danger/10 text-danger hover:bg-danger/20 transition-colors"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-danger/10 text-danger transition-colors hover:bg-danger/20"
                   >
                     <BsFire className="text-base" />
                   </button>
@@ -602,11 +646,13 @@ export default function DetailAssetMobile({ idAsset }) {
             {/* MAIN CONTENT: Either Detail Case Screen or Asset Overview */}
             {switchPage ? (
               /* ================= DETAIL SERVIS CASE VIEW ================= */
-              <div className="p-4 space-y-4">
+              <div className="space-y-4 p-4">
                 {loadDetailService ? (
-                  <div className="flex flex-col items-center justify-center py-16 gap-3">
+                  <div className="flex flex-col items-center justify-center gap-3 py-16">
                     <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                    <span className="text-sm text-body dark:text-bodydark">Memuat detail pengerjaan...</span>
+                    <span className="text-sm text-body dark:text-bodydark">
+                      Memuat detail pengerjaan...
+                    </span>
                   </div>
                 ) : (
                   <>
@@ -614,7 +660,7 @@ export default function DetailAssetMobile({ idAsset }) {
                     <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
                       <div className="flex items-start justify-between gap-2">
                         <div>
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="mb-1 flex items-center gap-2">
                             <span className="text-xs font-bold text-black dark:text-white">
                               {selectedCase.ID_Request}
                             </span>
@@ -625,17 +671,20 @@ export default function DetailAssetMobile({ idAsset }) {
                                   : "bg-danger/15 text-danger"
                               }`}
                             >
-                              {selectedCase.Maintenance_Type === "PM" ? "PM Rutin" : "Perbaikan"}
+                              {selectedCase.Maintenance_Type === "PM"
+                                ? "PM Rutin"
+                                : "Perbaikan"}
                             </span>
                           </div>
-                          <h3 className="text-base font-bold text-black dark:text-white leading-tight">
+                          <h3 className="text-base font-bold leading-tight text-black dark:text-white">
                             {selectedCase.Problem}
                           </h3>
                         </div>
-                        <div className="flex flex-col items-end gap-1 shrink-0">
+                        <div className="flex shrink-0 flex-col items-end gap-1">
                           <span
                             className={`rounded-full px-2.5 py-1 text-xs font-semibold text-white ${
-                              RepairStatus(selectedCase.Step)?.color || "bg-primary"
+                              RepairStatus(selectedCase.Step)?.color ||
+                              "bg-primary"
                             }`}
                           >
                             {RepairStatus(selectedCase.Step)?.status}
@@ -651,12 +700,17 @@ export default function DetailAssetMobile({ idAsset }) {
                                     onClick={async () => {
                                       setOnloadDelete(true);
                                       try {
-                                        const res = await axios.post("/api/deleterequest", {
-                                          idRequest: selectedCase.ID_Request,
-                                          idAsset: selectedCase.ID_Asset,
-                                        });
+                                        const res = await axios.post(
+                                          "/api/deleterequest",
+                                          {
+                                            idRequest: selectedCase.ID_Request,
+                                            idAsset: selectedCase.ID_Asset,
+                                          },
+                                        );
                                         if (res.status === 200) {
-                                          NotifySuccess(res.data.message || "Tiket dihapus");
+                                          NotifySuccess(
+                                            res.data.message || "Tiket dihapus",
+                                          );
                                           fetch_data();
                                           fetch_data_service();
                                           setSwitchPage(false);
@@ -672,11 +726,13 @@ export default function DetailAssetMobile({ idAsset }) {
                                   >
                                     {onloadDelete ? "..." : "Hapus"}
                                   </button>
-                                  <span className="text-stroke dark:text-strokedark">|</span>
+                                  <span className="text-stroke dark:text-strokedark">
+                                    |
+                                  </span>
                                   <button
                                     type="button"
                                     onClick={() => setSwitchDelete(false)}
-                                    className="font-medium text-body dark:text-bodydark hover:underline"
+                                    className="font-medium text-body hover:underline dark:text-bodydark"
                                   >
                                     Batal
                                   </button>
@@ -704,7 +760,9 @@ export default function DetailAssetMobile({ idAsset }) {
                         </div>
                         <div className="flex items-center gap-1.5">
                           <HiOutlineClock className="text-sm" />
-                          <span>{formatDateTime(selectedCase.Time_Request)}</span>
+                          <span>
+                            {formatDateTime(selectedCase.Time_Request)}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -722,7 +780,7 @@ export default function DetailAssetMobile({ idAsset }) {
                                   router.push("/scanner");
                                 }}
                                 disabled={caseLoaderReceived}
-                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 px-4 font-semibold text-white shadow-md hover:bg-opacity-90 active:scale-[0.99] transition-all"
+                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 font-semibold text-white shadow-md transition-all hover:bg-opacity-90 active:scale-[0.99]"
                               >
                                 <HiOutlineWrenchScrewdriver className="text-lg" />
                                 <span>Terima & Mulai Pengerjaan</span>
@@ -738,9 +796,11 @@ export default function DetailAssetMobile({ idAsset }) {
                                     setUpdatedStep("order_part");
                                   }}
                                   disabled={caseLoaderOrder}
-                                  className="rounded-xl border border-warning bg-warning/10 py-2.5 px-3 text-xs font-semibold text-warning hover:bg-warning/20 transition-all"
+                                  className="rounded-xl border border-warning bg-warning/10 px-3 py-2.5 text-xs font-semibold text-warning transition-all hover:bg-warning/20"
                                 >
-                                  {caseLoaderOrder ? "Menyimpan..." : "Order Spare Part"}
+                                  {caseLoaderOrder
+                                    ? "Menyimpan..."
+                                    : "Order Spare Part"}
                                 </button>
                                 <button
                                   type="button"
@@ -749,9 +809,11 @@ export default function DetailAssetMobile({ idAsset }) {
                                     setUpdatedStep("completed");
                                   }}
                                   disabled={caseLoaderCompleted}
-                                  className="rounded-xl bg-success py-2.5 px-3 text-xs font-semibold text-white shadow hover:bg-opacity-90 transition-all"
+                                  className="rounded-xl bg-success px-3 py-2.5 text-xs font-semibold text-white shadow transition-all hover:bg-opacity-90"
                                 >
-                                  {caseLoaderCompleted ? "Menyimpan..." : "Selesai Pengerjaan"}
+                                  {caseLoaderCompleted
+                                    ? "Menyimpan..."
+                                    : "Selesai Pengerjaan"}
                                 </button>
                               </div>
                             ) : null;
@@ -760,7 +822,7 @@ export default function DetailAssetMobile({ idAsset }) {
                               <button
                                 type="button"
                                 onClick={() => setModalReceivePart(true)}
-                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-meta-5 py-3 px-4 font-semibold text-white shadow hover:bg-opacity-90 transition-all"
+                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-meta-5 px-4 py-3 font-semibold text-white shadow transition-all hover:bg-opacity-90"
                               >
                                 <span>Konfirmasi Spare Part Tiba</span>
                               </button>
@@ -774,9 +836,13 @@ export default function DetailAssetMobile({ idAsset }) {
                                   setUpdatedStep("completed");
                                 }}
                                 disabled={caseLoaderCompleted}
-                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-success py-3 px-4 font-semibold text-white shadow hover:bg-opacity-90 transition-all"
+                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-success px-4 py-3 font-semibold text-white shadow transition-all hover:bg-opacity-90"
                               >
-                                <span>{caseLoaderCompleted ? "Menyimpan..." : "Selesaikan Pengerjaan"}</span>
+                                <span>
+                                  {caseLoaderCompleted
+                                    ? "Menyimpan..."
+                                    : "Selesaikan Pengerjaan"}
+                                </span>
                               </button>
                             ) : null;
                           case "5":
@@ -788,9 +854,13 @@ export default function DetailAssetMobile({ idAsset }) {
                                   setUpdatedStep("checked");
                                 }}
                                 disabled={caseLoaderCompleted}
-                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 px-4 font-semibold text-white shadow hover:bg-opacity-90 transition-all"
+                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 font-semibold text-white shadow transition-all hover:bg-opacity-90"
                               >
-                                <span>{caseLoaderCompleted ? "Menyimpan..." : "Verifikasi / Checked"}</span>
+                                <span>
+                                  {caseLoaderCompleted
+                                    ? "Menyimpan..."
+                                    : "Verifikasi / Checked"}
+                                </span>
                               </button>
                             ) : null;
                           case "6":
@@ -802,15 +872,21 @@ export default function DetailAssetMobile({ idAsset }) {
                                   setUpdatedStep("accepted");
                                 }}
                                 disabled={caseLoaderCompleted}
-                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-success py-3 px-4 font-semibold text-white shadow hover:bg-opacity-90 transition-all"
+                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-success px-4 py-3 font-semibold text-white shadow transition-all hover:bg-opacity-90"
                               >
-                                <span>{caseLoaderCompleted ? "Menyimpan..." : "Terima Unit / Accepted"}</span>
+                                <span>
+                                  {caseLoaderCompleted
+                                    ? "Menyimpan..."
+                                    : "Terima Unit / Accepted"}
+                                </span>
                               </button>
                             ) : null;
                           default:
                             return (
-                              <div className="text-center py-1 text-xs text-body dark:text-bodydark">
-                                Status pengerjaan: {RepairStatus(selectedCase.Step)?.status || "Selesai"}
+                              <div className="py-1 text-center text-xs text-body dark:text-bodydark">
+                                Status pengerjaan:{" "}
+                                {RepairStatus(selectedCase.Step)?.status ||
+                                  "Selesai"}
                               </div>
                             );
                         }
@@ -819,12 +895,13 @@ export default function DetailAssetMobile({ idAsset }) {
 
                     {/* Tindakan / Solusi Card */}
                     <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="mb-2 flex items-center justify-between">
                         <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-white">
                           Tindakan & Solusi
                         </span>
-                        {parseInt(selectedCase.Step) >= 2 && parseInt(selectedCase.Step) <= 6 && (
-                          solutionEditMode ? (
+                        {parseInt(selectedCase.Step) >= 2 &&
+                          parseInt(selectedCase.Step) <= 6 &&
+                          (solutionEditMode ? (
                             <button
                               type="button"
                               onClick={async () => {
@@ -848,7 +925,7 @@ export default function DetailAssetMobile({ idAsset }) {
                                   setOnloadSolution(false);
                                 }
                               }}
-                              className="flex items-center gap-1 rounded-lg bg-success px-2.5 py-1 text-xs font-semibold text-white shadow hover:bg-opacity-90 transition-all"
+                              className="flex items-center gap-1 rounded-lg bg-success px-2.5 py-1 text-xs font-semibold text-white shadow transition-all hover:bg-opacity-90"
                             >
                               <TfiSave className="text-xs" />
                               <span>Simpan</span>
@@ -860,13 +937,12 @@ export default function DetailAssetMobile({ idAsset }) {
                                 setCaseSolution(selectedCase.Solution || "");
                                 setSolutionEditMode(true);
                               }}
-                              className="flex items-center gap-1 rounded-lg bg-gray-100 dark:bg-meta-4 px-2.5 py-1 text-xs font-medium text-black dark:text-white hover:bg-gray-200 transition-colors"
+                              className="bg-gray-100 hover:bg-gray-200 flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium text-black transition-colors dark:bg-meta-4 dark:text-white"
                             >
                               <CiEdit className="text-sm" />
                               <span>Edit</span>
                             </button>
-                          )
-                        )}
+                          ))}
                       </div>
 
                       {solutionEditMode ? (
@@ -881,9 +957,9 @@ export default function DetailAssetMobile({ idAsset }) {
                           />
                         </div>
                       ) : (
-                        <div className="rounded-xl bg-gray-50 dark:bg-meta-4/20 p-3 text-xs leading-relaxed text-black dark:text-white min-h-[48px]">
+                        <div className="bg-gray-50 min-h-[48px] rounded-xl p-3 text-xs leading-relaxed text-black dark:bg-meta-4/20 dark:text-white">
                           {selectedCase.Solution || (
-                            <span className="italic text-body dark:text-bodydark opacity-60">
+                            <span className="italic text-body opacity-60 dark:text-bodydark">
                               Belum ada catatan solusi atau tindakan...
                             </span>
                           )}
@@ -893,14 +969,18 @@ export default function DetailAssetMobile({ idAsset }) {
 
                     {/* Progress Workflow Timeline */}
                     <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="mb-2 flex items-center justify-between">
                         <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-white">
                           Timeline Pengerjaan
                         </span>
                         {parseInt(userLevel) <= 1 && (
                           <button
                             type="button"
-                            onClick={() => router.push(`/asset/${idAsset}/${selectedCase.ID_Request}`)}
+                            onClick={() =>
+                              router.push(
+                                `/asset/${idAsset}/${selectedCase.ID_Request}`,
+                              )
+                            }
                             className="text-xs font-medium text-primary hover:underline"
                           >
                             Ubah Waktu
@@ -917,13 +997,17 @@ export default function DetailAssetMobile({ idAsset }) {
                         <ProgressCard
                           title="Response"
                           name={selectedCase.Technician}
-                          dateString={formatDateTime(selectedCase.Time_Response)}
+                          dateString={formatDateTime(
+                            selectedCase.Time_Response,
+                          )}
                           isActive={parseInt(selectedCase.Step) >= 2}
                         />
                         <ProgressCard
                           title="Completed"
                           name={selectedCase.Technician}
-                          dateString={formatDateTime(selectedCase.Time_Repair_Complete)}
+                          dateString={formatDateTime(
+                            selectedCase.Time_Repair_Complete,
+                          )}
                           isActive={parseInt(selectedCase.Step) >= 5}
                         />
                         <ProgressCard
@@ -943,7 +1027,7 @@ export default function DetailAssetMobile({ idAsset }) {
 
                     {/* Summary Durations */}
                     <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
-                      <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-white block mb-2">
+                      <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-black dark:text-white">
                         Durasi Penanganan
                       </span>
                       <div className="space-y-1">
@@ -963,25 +1047,34 @@ export default function DetailAssetMobile({ idAsset }) {
                     {/* Checklist if PM */}
                     {selectedCase.Maintenance_Type === "PM" && (
                       <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
-                        <div className="flex items-center justify-between mb-3">
+                        <div className="mb-3 flex items-center justify-between">
                           <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-white">
                             Checklist Perawatan Rutin
                           </span>
-                          {parseInt(selectedCase.Step) >= 2 && parseInt(selectedCase.Step) <= 6 && (
-                            pmList.length === 0 ? (
+                          {parseInt(selectedCase.Step) >= 2 &&
+                            parseInt(selectedCase.Step) <= 6 &&
+                            (pmList.length === 0 ? (
                               <button
                                 type="button"
                                 disabled={onloadAddChecklist}
                                 onClick={async () => {
                                   setOnloadAddChecklist(true);
                                   try {
-                                    const res = await axios.post("/api/addchecklist", {
-                                      idRequest: selectedCase.ID_Request,
-                                      idAsset: selectedCase.ID_Asset,
-                                    });
+                                    const res = await axios.post(
+                                      "/api/addchecklist",
+                                      {
+                                        idRequest: selectedCase.ID_Request,
+                                        idAsset: selectedCase.ID_Asset,
+                                      },
+                                    );
                                     if (res.status === 200) {
-                                      NotifySuccess(res.data.response || "Checklist ditambahkan");
-                                      fetch_detail_service(selectedCase.ID_Request);
+                                      NotifySuccess(
+                                        res.data.response ||
+                                          "Checklist ditambahkan",
+                                      );
+                                      fetch_detail_service(
+                                        selectedCase.ID_Request,
+                                      );
                                     }
                                   } catch (e) {
                                     NotifyError("Gagal menambahkan checklist");
@@ -992,7 +1085,11 @@ export default function DetailAssetMobile({ idAsset }) {
                                 className="flex items-center gap-1 rounded-lg bg-meta-3 px-2.5 py-1 text-xs font-semibold text-white shadow hover:bg-opacity-90"
                               >
                                 <MdAdd className="text-sm" />
-                                <span>{onloadAddChecklist ? "..." : "Tambah Checklist"}</span>
+                                <span>
+                                  {onloadAddChecklist
+                                    ? "..."
+                                    : "Tambah Checklist"}
+                                </span>
                               </button>
                             ) : pmEditMode ? (
                               <button
@@ -1005,7 +1102,9 @@ export default function DetailAssetMobile({ idAsset }) {
                                       idRequest: selectedCase.ID_Request,
                                       pmList: JSON.stringify(pmTempList),
                                     });
-                                    fetch_detail_service(selectedCase.ID_Request);
+                                    fetch_detail_service(
+                                      selectedCase.ID_Request,
+                                    );
                                     setpmEditMode(false);
                                     NotifySuccess("Checklist disimpan");
                                   } catch (e) {
@@ -1023,13 +1122,12 @@ export default function DetailAssetMobile({ idAsset }) {
                               <button
                                 type="button"
                                 onClick={() => setpmEditMode(true)}
-                                className="flex items-center gap-1 rounded-lg bg-gray-100 dark:bg-meta-4 px-2.5 py-1 text-xs font-medium text-black dark:text-white hover:bg-gray-200"
+                                className="bg-gray-100 hover:bg-gray-200 flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium text-black dark:bg-meta-4 dark:text-white"
                               >
                                 <CiEdit className="text-sm" />
                                 <span>Edit Checklist</span>
                               </button>
-                            )
-                          )}
+                            ))}
                         </div>
 
                         {pmList.length > 0 ? (
@@ -1037,19 +1135,28 @@ export default function DetailAssetMobile({ idAsset }) {
                             <table className="w-full text-left text-xs">
                               <thead>
                                 <tr className="border-b border-stroke/60 text-body dark:border-strokedark/60 dark:text-bodydark">
-                                  <th className="py-2 px-1 font-semibold">Kode</th>
-                                  <th className="py-2 px-2 font-semibold">Uraian</th>
-                                  <th className="py-2 px-1 text-center font-semibold">Status</th>
+                                  <th className="px-1 py-2 font-semibold">
+                                    Kode
+                                  </th>
+                                  <th className="px-2 py-2 font-semibold">
+                                    Uraian
+                                  </th>
+                                  <th className="px-1 py-2 text-center font-semibold">
+                                    Status
+                                  </th>
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-stroke/40 dark:divide-strokedark/40">
                                 {pmEditMode
                                   ? pmTempList.map((item, idx) => (
-                                      <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-meta-4/20">
-                                        <td className="py-2 px-1 font-mono text-black dark:text-white align-top">
+                                      <tr
+                                        key={idx}
+                                        className="hover:bg-gray-50 dark:hover:bg-meta-4/20"
+                                      >
+                                        <td className="font-mono px-1 py-2 align-top text-black dark:text-white">
                                           {item["code"]}
                                         </td>
-                                        <td className="py-2 px-2 text-black dark:text-white">
+                                        <td className="px-2 py-2 text-black dark:text-white">
                                           <div>{item["description"]}</div>
                                           {item["widget"] === "T" && (
                                             <input
@@ -1059,15 +1166,17 @@ export default function DetailAssetMobile({ idAsset }) {
                                                 const val = e.target.value;
                                                 setpmTempList((prev) =>
                                                   prev.map((el) =>
-                                                    el.code === item["code"] ? { ...el, value: val } : el
-                                                  )
+                                                    el.code === item["code"]
+                                                      ? { ...el, value: val }
+                                                      : el,
+                                                  ),
                                                 );
                                               }}
-                                              className="mt-1.5 w-full rounded-lg border border-stroke px-2 py-1 text-xs dark:border-strokedark dark:bg-boxdark-2 text-black dark:text-white"
+                                              className="mt-1.5 w-full rounded-lg border border-stroke px-2 py-1 text-xs text-black dark:border-strokedark dark:bg-boxdark-2 dark:text-white"
                                             />
                                           )}
                                         </td>
-                                        <td className="py-2 px-1 text-center align-top">
+                                        <td className="px-1 py-2 text-center align-top">
                                           {item["widget"] === "C" && (
                                             <input
                                               type="checkbox"
@@ -1075,27 +1184,35 @@ export default function DetailAssetMobile({ idAsset }) {
                                               onChange={() => {
                                                 setpmTempList((prev) =>
                                                   prev.map((el) =>
-                                                    el.code === item["code"] ? { ...el, checked: !el.checked } : el
-                                                  )
+                                                    el.code === item["code"]
+                                                      ? {
+                                                          ...el,
+                                                          checked: !el.checked,
+                                                        }
+                                                      : el,
+                                                  ),
                                                 );
                                               }}
-                                              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                                              className="border-gray-300 h-4 w-4 rounded text-primary focus:ring-primary"
                                             />
                                           )}
                                         </td>
                                       </tr>
                                     ))
                                   : pmList.map((item, idx) => (
-                                      <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-meta-4/20">
-                                        <td className="py-2 px-1 font-mono text-black dark:text-white align-top">
+                                      <tr
+                                        key={idx}
+                                        className="hover:bg-gray-50 dark:hover:bg-meta-4/20"
+                                      >
+                                        <td className="font-mono px-1 py-2 align-top text-black dark:text-white">
                                           {item["code"]}
                                         </td>
-                                        <td className="py-2 px-2 text-black dark:text-white">
+                                        <td className="px-2 py-2 text-black dark:text-white">
                                           {item["description"]}
                                         </td>
-                                        <td className="py-2 px-1 text-center align-top">
+                                        <td className="px-1 py-2 text-center align-top">
                                           {item["checked"] ? (
-                                            <FaCheckSquare className="inline text-success text-sm" />
+                                            <FaCheckSquare className="inline text-sm text-success" />
                                           ) : (
                                             <span className="font-mono text-black dark:text-white">
                                               {item["value"] || "-"}
@@ -1108,7 +1225,7 @@ export default function DetailAssetMobile({ idAsset }) {
                             </table>
                           </div>
                         ) : (
-                          <div className="py-4 text-center text-xs text-body dark:text-bodydark italic">
+                          <div className="py-4 text-center text-xs italic text-body dark:text-bodydark">
                             Belum ada checklist perawatan untuk tiket ini.
                           </div>
                         )}
@@ -1118,23 +1235,39 @@ export default function DetailAssetMobile({ idAsset }) {
                     {/* Spare Parts List */}
                     {partList.length > 0 && (
                       <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
-                        <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-white block mb-2">
+                        <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-black dark:text-white">
                           Spare Part Digunakan
                         </span>
                         <div className="divide-y divide-stroke/40 dark:divide-strokedark/40">
                           {partList.map((item, idx) => (
-                            <div key={idx} className="py-2 flex items-center justify-between text-xs">
+                            <div
+                              key={idx}
+                              className="flex items-center justify-between py-2 text-xs"
+                            >
                               <div>
-                                <span className="font-medium text-black dark:text-white block">
+                                <span className="block font-medium text-black dark:text-white">
                                   {item["description"]}
                                 </span>
                                 <span className="text-[10px] text-body dark:text-bodydark">
-                                  {item["dpm"] || "Internal"}
+                                  {item["dpm"] || "Internal"}{" "}
+                                  {item["source"] ? `• ${item["source"]}` : ""}
                                 </span>
                               </div>
-                              <span className="rounded-md bg-gray-100 dark:bg-meta-4 px-2 py-0.5 font-bold text-black dark:text-white">
-                                {item["quantity"]} pcs
-                              </span>
+                              <div className="text-right">
+                                {Number(
+                                  item["amount"] || item["total_cost"] || 0,
+                                ) > 0 && (
+                                  <span className="font-mono block text-[11px] font-bold text-success">
+                                    Rp{" "}
+                                    {Number(
+                                      item["amount"] || item["total_cost"] || 0,
+                                    ).toLocaleString("id-ID")}
+                                  </span>
+                                )}
+                                <span className="bg-gray-100 rounded-md px-2 py-0.5 text-[10px] font-bold text-black dark:bg-meta-4 dark:text-white">
+                                  {item["quantity"]} {item["unit"] || "pcs"}
+                                </span>
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -1144,21 +1277,24 @@ export default function DetailAssetMobile({ idAsset }) {
                     {/* External Service List */}
                     {servisList.length > 0 && (
                       <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
-                        <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-white block mb-2">
+                        <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-black dark:text-white">
                           Servis Pihak Luar
                         </span>
                         <div className="divide-y divide-stroke/40 dark:divide-strokedark/40">
                           {servisList.map((item, idx) => (
-                            <div key={idx} className="py-2 flex items-center justify-between text-xs">
+                            <div
+                              key={idx}
+                              className="flex items-center justify-between py-2 text-xs"
+                            >
                               <div>
-                                <span className="font-medium text-black dark:text-white block">
+                                <span className="block font-medium text-black dark:text-white">
                                   {item["item"]}
                                 </span>
                                 <span className="text-[10px] text-body dark:text-bodydark">
                                   {item["id_register"]}
                                 </span>
                               </div>
-                              <span className="rounded-md bg-gray-100 dark:bg-meta-4 px-2 py-0.5 font-bold text-black dark:text-white">
+                              <span className="bg-gray-100 rounded-md px-2 py-0.5 font-bold text-black dark:bg-meta-4 dark:text-white">
                                 {item["quantity"]}
                               </span>
                             </div>
@@ -1170,10 +1306,10 @@ export default function DetailAssetMobile({ idAsset }) {
                     {/* Gallery Images */}
                     {galleryList.length > 0 && (
                       <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
-                        <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-white block mb-2">
+                        <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-black dark:text-white">
                           Foto Dokumentasi
                         </span>
-                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+                        <div className="scrollbar-thin flex gap-2 overflow-x-auto pb-2">
                           {galleryList.map((item, idx) => (
                             <div
                               key={idx}
@@ -1198,7 +1334,7 @@ export default function DetailAssetMobile({ idAsset }) {
                 {/* Hero Asset Card */}
                 <div className="overflow-hidden rounded-2xl border border-stroke bg-white shadow-sm dark:border-strokedark dark:bg-boxdark">
                   {/* Asset Photo Banner */}
-                  <div className="relative h-52 w-full bg-gray-100 dark:bg-meta-4">
+                  <div className="bg-gray-100 relative h-52 w-full dark:bg-meta-4">
                     {dataAsset.Image ? (
                       <img
                         alt="Asset"
@@ -1208,12 +1344,14 @@ export default function DetailAssetMobile({ idAsset }) {
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-body dark:text-bodydark">
                         <HiSparkles className="text-3xl opacity-30" />
-                        <span className="ml-2 text-sm opacity-50">Belum ada foto aset</span>
+                        <span className="ml-2 text-sm opacity-50">
+                          Belum ada foto aset
+                        </span>
                       </div>
                     )}
 
                     {/* Camera Trigger Buttons (Overlay Top Right) */}
-                    <div className="absolute top-3 right-3 flex items-center gap-2">
+                    <div className="absolute right-3 top-3 flex items-center gap-2">
                       <button
                         type="button"
                         title="Foto Aset"
@@ -1222,7 +1360,7 @@ export default function DetailAssetMobile({ idAsset }) {
                           setGlobalIdAsset(dataAsset.ID_Asset);
                           router.push("/camera");
                         }}
-                        className="flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-md hover:bg-black/70 shadow transition-colors"
+                        className="flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white shadow backdrop-blur-md transition-colors hover:bg-black/70"
                       >
                         <MdOutlinePhotoCamera className="text-lg" />
                       </button>
@@ -1234,7 +1372,7 @@ export default function DetailAssetMobile({ idAsset }) {
                           setGlobalIdAsset(dataAsset.ID_Asset);
                           router.push("/camera");
                         }}
-                        className="flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-md hover:bg-black/70 shadow transition-colors"
+                        className="flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white shadow backdrop-blur-md transition-colors hover:bg-black/70"
                       >
                         <MdOutlinePhotoCameraFront className="text-lg" />
                       </button>
@@ -1246,7 +1384,7 @@ export default function DetailAssetMobile({ idAsset }) {
                     {/* Asset Title Bottom Overlay */}
                     <div className="absolute bottom-3 left-3 right-20 text-white">
                       <div className="flex items-center gap-2">
-                        <span className="rounded-md bg-primary px-2 py-0.5 font-mono text-xs font-bold">
+                        <span className="font-mono rounded-md bg-primary px-2 py-0.5 text-xs font-bold">
                           {dataAsset.ID_Asset}
                         </span>
                         <span className="rounded-md bg-white/20 px-2 py-0.5 text-[10px] font-semibold backdrop-blur-sm">
@@ -1257,13 +1395,14 @@ export default function DetailAssetMobile({ idAsset }) {
                         {dataAsset.Description || "Tanpa Deskripsi"}
                       </h2>
                       <p className="text-xs text-white/80">
-                        {dataAsset.Manufacture} {dataAsset.Model ? `• ${dataAsset.Model}` : ""}
+                        {dataAsset.Manufacture}{" "}
+                        {dataAsset.Model ? `• ${dataAsset.Model}` : ""}
                       </p>
                     </div>
 
                     {/* User Avatar Badge (Bottom Right) */}
                     <div className="absolute bottom-3 right-3">
-                      <div className="h-13 w-13 rounded-full border-2 border-white shadow-lg overflow-hidden bg-white dark:bg-boxdark flex items-center justify-center">
+                      <div className="flex h-13 w-13 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-white shadow-lg dark:bg-boxdark">
                         {dataAsset.Profile_Image ? (
                           <img
                             alt="User"
@@ -1278,79 +1417,105 @@ export default function DetailAssetMobile({ idAsset }) {
                   </div>
 
                   {/* Asset Key Attributes & Status */}
-                  <div className="p-4 space-y-3">
+                  <div className="space-y-3 p-4">
                     {/* Status Pill */}
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-body dark:text-bodydark">Status Kesiapan</span>
+                      <span className="text-xs font-medium text-body dark:text-bodydark">
+                        Status Kesiapan
+                      </span>
                       <span
                         className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                           dataAsset.Available === 1 && dataAsset.Reserve === 1
                             ? "bg-warning/15 text-warning"
-                            : dataAsset.Available === 0 && dataAsset.Reserve === 1
-                            ? "bg-danger/15 text-danger"
-                            : "bg-success/15 text-success"
+                            : dataAsset.Available === 0 &&
+                                dataAsset.Reserve === 1
+                              ? "bg-danger/15 text-danger"
+                              : "bg-success/15 text-success"
                         }`}
                       >
                         {dataAsset.Available === 1 && dataAsset.Reserve === 1
                           ? "Reserved for service"
                           : dataAsset.Available === 0 && dataAsset.Reserve === 1
-                          ? "Dalam Pengerjaan"
-                          : "Siap Digunakan (Ready)"}
+                            ? "Dalam Pengerjaan"
+                            : "Siap Digunakan (Ready)"}
                       </span>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="flex items-center gap-2 rounded-xl bg-gray-50 dark:bg-meta-4/20 p-2.5">
-                        <HiUser className="text-base text-primary shrink-0" />
+                      <div className="bg-gray-50 flex items-center gap-2 rounded-xl p-2.5 dark:bg-meta-4/20">
+                        <HiUser className="shrink-0 text-base text-primary" />
                         <div className="min-w-0">
-                          <span className="block text-[10px] text-body dark:text-bodydark">Penanggung Jawab</span>
-                          <span className="font-semibold text-black dark:text-white truncate block">
+                          <span className="block text-[10px] text-body dark:text-bodydark">
+                            Penanggung Jawab
+                          </span>
+                          <span className="block truncate font-semibold text-black dark:text-white">
                             {dataAsset.User || "-"}
                           </span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 rounded-xl bg-gray-50 dark:bg-meta-4/20 p-2.5">
-                        <HiLocationMarker className="text-base text-meta-5 shrink-0" />
+                      <div className="bg-gray-50 flex items-center gap-2 rounded-xl p-2.5 dark:bg-meta-4/20">
+                        <HiLocationMarker className="shrink-0 text-base text-meta-5" />
                         <div className="min-w-0">
-                          <span className="block text-[10px] text-body dark:text-bodydark">Lokasi Unit</span>
-                          <span className="font-semibold text-black dark:text-white truncate block">
+                          <span className="block text-[10px] text-body dark:text-bodydark">
+                            Lokasi Unit
+                          </span>
+                          <span className="block truncate font-semibold text-black dark:text-white">
                             {dataAsset.Location || "-"}
                           </span>
                         </div>
                       </div>
 
                       {dataAsset.Type === "K" && dataAsset.Based === "KM" && (
-                        <div className="flex items-center gap-2 rounded-xl bg-gray-50 dark:bg-meta-4/20 p-2.5">
-                          <BsFillFuelPumpFill className="text-base text-warning shrink-0" />
+                        <div className="bg-gray-50 flex items-center gap-2 rounded-xl p-2.5 dark:bg-meta-4/20">
+                          <BsFillFuelPumpFill className="shrink-0 text-base text-warning" />
                           <div className="min-w-0">
-                            <span className="block text-[10px] text-body dark:text-bodydark">Bahan Bakar</span>
-                            <span className="font-semibold text-black dark:text-white truncate block">
+                            <span className="block text-[10px] text-body dark:text-bodydark">
+                              Bahan Bakar
+                            </span>
+                            <span className="block truncate font-semibold text-black dark:text-white">
                               {lastSeen || "-"} ({ratio || "-"})
                             </span>
                           </div>
                         </div>
                       )}
 
-                      <div className="flex items-center gap-2 rounded-xl bg-gray-50 dark:bg-meta-4/20 p-2.5">
-                        <FaCalendarAlt className="text-base text-meta-3 shrink-0" />
+                      <div className="bg-gray-50 flex items-center gap-2 rounded-xl p-2.5 dark:bg-meta-4/20">
+                        <FaCalendarAlt className="shrink-0 text-base text-meta-3" />
                         <div className="min-w-0">
-                          <span className="block text-[10px] text-body dark:text-bodydark">Jadwal Servis Berikut</span>
-                          <span className="font-semibold text-black dark:text-white truncate block">
+                          <span className="block text-[10px] text-body dark:text-bodydark">
+                            Jadwal Servis Berikut
+                          </span>
+                          <span className="block truncate font-semibold text-black dark:text-white">
                             {nextService || "-"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="bg-gray-50 flex items-center gap-2 rounded-xl p-2.5 dark:bg-meta-4/20">
+                        <HiOutlineClock className="shrink-0 text-base text-warning" />
+                        <div className="min-w-0">
+                          <span className="block text-[10px] text-body dark:text-bodydark">
+                            MTTR (Rata-rata Servis)
+                          </span>
+                          <span className="font-mono block truncate font-semibold text-black dark:text-white">
+                            {mttr} Jam{" "}
+                            <span className="text-[10px] font-normal text-body dark:text-bodydark">
+                              ({completedRepairsCount}x)
+                            </span>
                           </span>
                         </div>
                       </div>
                     </div>
 
                     {/* Action Triggers: Request Perbaikan & Request Perawatan */}
-                    <div className="flex items-center gap-2 pt-2 border-t border-stroke/60 dark:border-strokedark/60">
+                    <div className="flex items-center gap-2 border-t border-stroke/60 pt-2 dark:border-strokedark/60">
                       {/* Request Perbaikan (Corrective) */}
                       {openService !== 1 && parseInt(userLevel) === 4 && (
                         <button
                           type="button"
                           onClick={() => setModalPerbaikan(true)}
-                          className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-danger py-2.5 px-3 text-xs font-semibold text-white shadow-sm hover:bg-opacity-90 active:scale-[0.99] transition-all"
+                          className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-danger px-3 py-2.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-opacity-90 active:scale-[0.99]"
                         >
                           <MdMedicalServices className="text-base" />
                           <span>Lapor Kerusakan</span>
@@ -1360,7 +1525,9 @@ export default function DetailAssetMobile({ idAsset }) {
                       {/* Request Perawatan (Preventive) */}
                       {openMaintenance !== 1 &&
                         (parseInt(userLevel) <= 2 ||
-                          (dataAsset.Type === "K" && dataAsset.Based === "KM" && parseInt(userLevel) === 4)) && (
+                          (dataAsset.Type === "K" &&
+                            dataAsset.Based === "KM" &&
+                            parseInt(userLevel) === 4)) && (
                           <button
                             type="button"
                             disabled={onloadRequestPerawatan}
@@ -1371,11 +1538,13 @@ export default function DetailAssetMobile({ idAsset }) {
                                 create_maintenance(dataAsset.ID_Asset);
                               }
                             }}
-                            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-meta-3 py-2.5 px-3 text-xs font-semibold text-white shadow-sm hover:bg-opacity-90 active:scale-[0.99] transition-all"
+                            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-meta-3 px-3 py-2.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-opacity-90 active:scale-[0.99]"
                           >
                             <RiCalendarScheduleFill className="text-base" />
                             <span>
-                              {onloadRequestPerawatan ? "Mengirim..." : "Jadwalkan Perawatan"}
+                              {onloadRequestPerawatan
+                                ? "Mengirim..."
+                                : "Jadwalkan Perawatan"}
                             </span>
                           </button>
                         )}
@@ -1391,9 +1560,14 @@ export default function DetailAssetMobile({ idAsset }) {
                         Riwayat Perbaikan & Servis
                       </h3>
                       <span className="text-[11px] text-body dark:text-bodydark">
-                        Total {dataService.length} catatan pengerjaan (F.BFNM.026/0)
+                        Total {dataService.length} catatan pengerjaan
+                        (F.BFNM.026/0)
                       </span>
                     </div>
+                    <span className="inline-flex items-center gap-1 rounded-md border border-warning/20 bg-warning/10 px-2 py-0.5 text-[10px] font-bold text-warning">
+                      <HiOutlineClock className="text-xs" />
+                      MTTR: {mttr} Jam
+                    </span>
                   </div>
 
                   {/* Search Bar */}
@@ -1431,11 +1605,14 @@ export default function DetailAssetMobile({ idAsset }) {
                             onClick={() => {
                               setSwitchPage(true);
                               fetch_detail_service(item["ID_Request"]);
-                              localStorage.setItem("selected_idRequest", item["ID_Request"]);
+                              localStorage.setItem(
+                                "selected_idRequest",
+                                item["ID_Request"],
+                              );
                             }}
-                            className="group cursor-pointer rounded-2xl border border-stroke bg-white p-3.5 shadow-sm hover:border-primary hover:shadow dark:border-strokedark dark:bg-boxdark dark:hover:border-primary transition-all active:scale-[0.99]"
+                            className="group cursor-pointer rounded-2xl border border-stroke bg-white p-3.5 shadow-sm transition-all hover:border-primary hover:shadow active:scale-[0.99] dark:border-strokedark dark:bg-boxdark dark:hover:border-primary"
                           >
-                            <div className="flex items-center justify-between mb-1.5">
+                            <div className="mb-1.5 flex items-center justify-between">
                               <div className="flex items-center gap-1.5">
                                 <span className="font-mono text-xs font-bold text-black dark:text-white">
                                   {item["ID_Request"]}
@@ -1455,7 +1632,7 @@ export default function DetailAssetMobile({ idAsset }) {
                               </span>
                             </div>
 
-                            <p className="text-xs font-medium text-black dark:text-white line-clamp-2 mb-2">
+                            <p className="mb-2 line-clamp-2 text-xs font-medium text-black dark:text-white">
                               {item["Problem"]}
                             </p>
 
@@ -1464,9 +1641,19 @@ export default function DetailAssetMobile({ idAsset }) {
                                 <HiOutlineUser className="text-xs" />
                                 <span>{item["Requestor"]}</span>
                               </div>
-                              <div className="flex items-center gap-1">
-                                <HiOutlineClock className="text-xs" />
-                                <span>{formatDateTime(item["Time_Request"])}</span>
+                              <div className="flex items-center gap-2">
+                                {item["repair_hours"] !== null &&
+                                  item["repair_hours"] !== undefined && (
+                                    <span className="font-mono text-[10px] font-bold text-warning">
+                                      {item["repair_hours"]} Jam
+                                    </span>
+                                  )}
+                                <div className="flex items-center gap-1">
+                                  <HiOutlineClock className="text-xs" />
+                                  <span>
+                                    {formatDateTime(item["Time_Request"])}
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -1478,7 +1665,7 @@ export default function DetailAssetMobile({ idAsset }) {
                       <button
                         type="button"
                         onClick={() => setItemPerPage((prev) => prev + 5)}
-                        className="w-full rounded-xl border border-stroke bg-white py-2.5 text-center text-xs font-semibold text-primary shadow-sm hover:bg-gray-50 dark:border-strokedark dark:bg-boxdark dark:hover:bg-meta-4/30 transition-colors"
+                        className="hover:bg-gray-50 w-full rounded-xl border border-stroke bg-white py-2.5 text-center text-xs font-semibold text-primary shadow-sm transition-colors dark:border-strokedark dark:bg-boxdark dark:hover:bg-meta-4/30"
                       >
                         Muat Lebih Banyak...
                       </button>
@@ -1490,10 +1677,10 @@ export default function DetailAssetMobile({ idAsset }) {
                 <div className="space-y-3">
                   {/* Card 0: Tren Biaya Maintenance & Analisis Cost */}
                   <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
-                    <div className="flex items-center justify-between border-b border-stroke/60 pb-2.5 dark:border-strokedark/60 mb-3">
+                    <div className="mb-3 flex items-center justify-between border-b border-stroke/60 pb-2.5 dark:border-strokedark/60">
                       <div>
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-black dark:text-white flex items-center gap-1.5">
-                          <HiOutlineChartBar className="text-primary text-base" />
+                        <h3 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-black dark:text-white">
+                          <HiOutlineChartBar className="text-base text-primary" />
                           Tren Biaya Pemeliharaan (Cost)
                         </h3>
                         <p className="text-[10px] text-body dark:text-bodydark">
@@ -1516,10 +1703,10 @@ export default function DetailAssetMobile({ idAsset }) {
 
                   {/* Card 1: Perkiraan Kebutuhan Suku Cadang Rutin Mesin (Tabel & Paginasi 10/hal) */}
                   <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
-                    <div className="flex items-center justify-between border-b border-stroke/60 pb-2.5 dark:border-strokedark/60 mb-3">
+                    <div className="mb-3 flex items-center justify-between border-b border-stroke/60 pb-2.5 dark:border-strokedark/60">
                       <div>
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-black dark:text-white flex items-center gap-1.5">
-                          <HiOutlineWrenchScrewdriver className="text-primary text-base" />
+                        <h3 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-black dark:text-white">
+                          <HiOutlineWrenchScrewdriver className="text-base text-primary" />
                           Kebutuhan Part Rutin Mesin
                         </h3>
                         <p className="text-[10px] text-body dark:text-bodydark">
@@ -1542,62 +1729,92 @@ export default function DetailAssetMobile({ idAsset }) {
                         <div className="overflow-x-auto">
                           <table className="w-full table-auto text-left text-xs">
                             <thead>
-                              <tr className="border-b border-stroke bg-gray-50 text-body dark:border-strokedark dark:bg-meta-4/20 dark:text-bodydark">
-                                <th className="py-2 px-2.5 font-semibold text-center w-8">No</th>
-                                <th className="py-2 px-2.5 font-semibold">Part / Kode</th>
-                                <th className="py-2 px-2.5 font-semibold text-center">Total</th>
-                                <th className="py-2 px-2.5 font-semibold text-center">Laju/Bln</th>
-                                <th className="py-2 px-2.5 font-semibold text-center">Est/Bln</th>
-                                <th className="py-2 px-2.5 font-semibold text-right">Est. Biaya/Bln</th>
-                                <th className="py-2 px-2.5 font-semibold text-center">Stok</th>
+                              <tr className="bg-gray-50 border-b border-stroke text-body dark:border-strokedark dark:bg-meta-4/20 dark:text-bodydark">
+                                <th className="w-8 px-2.5 py-2 text-center font-semibold">
+                                  No
+                                </th>
+                                <th className="px-2.5 py-2 font-semibold">
+                                  Part / Kode
+                                </th>
+                                <th className="px-2.5 py-2 text-center font-semibold">
+                                  Total
+                                </th>
+                                <th className="px-2.5 py-2 text-center font-semibold">
+                                  Laju/Bln
+                                </th>
+                                <th className="px-2.5 py-2 text-center font-semibold">
+                                  Est/Bln
+                                </th>
+                                <th className="px-2.5 py-2 text-right font-semibold">
+                                  Est. Biaya/Bln
+                                </th>
+                                <th className="px-2.5 py-2 text-center font-semibold">
+                                  Stok
+                                </th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-stroke dark:divide-strokedark">
                               {displayedRoutineItems.map((part, pIdx) => {
-                                const isWarehouseReady = Number(part.available || 0) >= Number(part.recommended_monthly_stock || 1);
-                                const rowNumber = (routinePage - 1) * 10 + pIdx + 1;
+                                const isWarehouseReady =
+                                  Number(part.available || 0) >=
+                                  Number(part.recommended_monthly_stock || 1);
+                                const rowNumber =
+                                  (routinePage - 1) * 10 + pIdx + 1;
                                 return (
                                   <tr
                                     key={part.id_part || pIdx}
-                                    onClick={() => router.push(`/parts/${part.id_part}`)}
-                                    className="cursor-pointer hover:bg-gray-50 dark:hover:bg-meta-4/10 transition-colors"
+                                    onClick={() =>
+                                      router.push(`/parts/${part.id_part}`)
+                                    }
+                                    className="hover:bg-gray-50 cursor-pointer transition-colors dark:hover:bg-meta-4/10"
                                   >
-                                    <td className="py-2 px-2.5 text-center text-body dark:text-bodydark font-mono text-[11px]">
+                                    <td className="font-mono px-2.5 py-2 text-center text-[11px] text-body dark:text-bodydark">
                                       {rowNumber}
                                     </td>
-                                    <td className="py-2 px-2.5">
-                                      <span className="font-mono text-[10px] font-bold text-primary block truncate max-w-[120px]">
+                                    <td className="px-2.5 py-2">
+                                      <span className="font-mono block max-w-[120px] truncate text-[10px] font-bold text-primary">
                                         {part.vendor_code || part.id_part}
                                       </span>
-                                      <span className="font-semibold text-[11px] text-black dark:text-white truncate block max-w-[120px]">
+                                      <span className="block max-w-[120px] truncate text-[11px] font-semibold text-black dark:text-white">
                                         {part.description}
                                       </span>
                                       {Number(part.unit_price || 0) > 0 && (
-                                        <span className="text-[9px] text-meta-3 font-mono font-semibold block">
-                                          @Rp {Number(part.unit_price).toLocaleString("id-ID")}
+                                        <span className="font-mono block text-[9px] font-semibold text-meta-3">
+                                          @Rp{" "}
+                                          {Number(
+                                            part.unit_price,
+                                          ).toLocaleString("id-ID")}
                                         </span>
                                       )}
                                     </td>
-                                    <td className="py-2 px-2.5 text-center whitespace-nowrap font-mono font-bold text-[11px] text-black dark:text-white">
+                                    <td className="font-mono whitespace-nowrap px-2.5 py-2 text-center text-[11px] font-bold text-black dark:text-white">
                                       {part.total_qty} {part.unit}
                                     </td>
-                                    <td className="py-2 px-2.5 text-center whitespace-nowrap font-mono font-bold text-[11px] text-meta-5">
+                                    <td className="font-mono whitespace-nowrap px-2.5 py-2 text-center text-[11px] font-bold text-meta-5">
                                       ~{part.monthly_rate}
                                     </td>
-                                    <td className="py-2 px-2.5 text-center whitespace-nowrap font-mono font-bold text-[11px] text-primary">
-                                      {part.recommended_monthly_stock} {part.unit}
+                                    <td className="font-mono whitespace-nowrap px-2.5 py-2 text-center text-[11px] font-bold text-primary">
+                                      {part.recommended_monthly_stock}{" "}
+                                      {part.unit}
                                     </td>
-                                    <td className="py-2 px-2.5 text-right whitespace-nowrap font-mono font-bold text-[11px] text-primary">
-                                      {Number(part.est_monthly_cost || 0) > 0 ? (
+                                    <td className="font-mono whitespace-nowrap px-2.5 py-2 text-right text-[11px] font-bold text-primary">
+                                      {Number(part.est_monthly_cost || 0) >
+                                      0 ? (
                                         `Rp ${Number(part.est_monthly_cost).toLocaleString("id-ID")}`
                                       ) : (
-                                        <span className="text-body dark:text-bodydark font-normal">Rp 0</span>
+                                        <span className="font-normal text-body dark:text-bodydark">
+                                          Rp 0
+                                        </span>
                                       )}
                                     </td>
-                                    <td className="py-2 px-2.5 text-center whitespace-nowrap">
-                                      <span className={`inline-block rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
-                                        isWarehouseReady ? "bg-success/15 text-success" : "bg-danger/15 text-danger"
-                                      }`}>
+                                    <td className="whitespace-nowrap px-2.5 py-2 text-center">
+                                      <span
+                                        className={`inline-block rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
+                                          isWarehouseReady
+                                            ? "bg-success/15 text-success"
+                                            : "bg-danger/15 text-danger"
+                                        }`}
+                                      >
                                         {part.available}
                                       </span>
                                     </td>
@@ -1610,7 +1827,7 @@ export default function DetailAssetMobile({ idAsset }) {
 
                         {/* Pagination Part Rutin Mobile */}
                         {routineTotalPages > 1 && (
-                          <div className="flex items-center justify-between pt-2.5 border-t border-stroke/60 dark:border-strokedark/60 text-[11px] mt-2">
+                          <div className="mt-2 flex items-center justify-between border-t border-stroke/60 pt-2.5 text-[11px] dark:border-strokedark/60">
                             <span className="text-body dark:text-bodydark">
                               Hal {routinePage} / {routineTotalPages}
                             </span>
@@ -1618,7 +1835,11 @@ export default function DetailAssetMobile({ idAsset }) {
                               <button
                                 type="button"
                                 disabled={routinePage === 1}
-                                onClick={() => setRoutinePage((prev) => Math.max(1, prev - 1))}
+                                onClick={() =>
+                                  setRoutinePage((prev) =>
+                                    Math.max(1, prev - 1),
+                                  )
+                                }
                                 className="rounded-lg border border-stroke px-2 py-1 text-[11px] font-semibold disabled:opacity-40 dark:border-strokedark"
                               >
                                 Prev
@@ -1626,7 +1847,11 @@ export default function DetailAssetMobile({ idAsset }) {
                               <button
                                 type="button"
                                 disabled={routinePage === routineTotalPages}
-                                onClick={() => setRoutinePage((prev) => Math.min(routineTotalPages, prev + 1))}
+                                onClick={() =>
+                                  setRoutinePage((prev) =>
+                                    Math.min(routineTotalPages, prev + 1),
+                                  )
+                                }
                                 className="rounded-lg border border-stroke px-2 py-1 text-[11px] font-semibold disabled:opacity-40 dark:border-strokedark"
                               >
                                 Next
@@ -1640,10 +1865,10 @@ export default function DetailAssetMobile({ idAsset }) {
 
                   {/* Card 2: Riwayat Pemakaian Part per Bulan (Dropdown Bulan & Paginasi 10/hal) */}
                   <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
-                    <div className="flex flex-col gap-2 border-b border-stroke/60 pb-2.5 dark:border-strokedark/60 mb-3">
+                    <div className="mb-3 flex flex-col gap-2 border-b border-stroke/60 pb-2.5 dark:border-strokedark/60">
                       <div className="flex items-center justify-between">
-                        <h3 className="text-xs font-bold uppercase tracking-wider text-black dark:text-white flex items-center gap-1.5">
-                          <HiOutlineCalendar className="text-meta-5 text-base" />
+                        <h3 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-black dark:text-white">
+                          <HiOutlineCalendar className="text-base text-meta-5" />
                           Riwayat Pemakaian Part
                         </h3>
                         <span className="text-[10px] text-body dark:text-bodydark">
@@ -1658,7 +1883,7 @@ export default function DetailAssetMobile({ idAsset }) {
                           setSelectedUsageMonth(e.target.value);
                           setHistoryPage(1);
                         }}
-                        className="w-full rounded-xl border border-stroke bg-gray-50 px-3 py-1.5 text-xs font-semibold text-black outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4/20 dark:text-white transition-colors cursor-pointer"
+                        className="bg-gray-50 w-full cursor-pointer rounded-xl border border-stroke px-3 py-1.5 text-xs font-semibold text-black outline-none transition-colors focus:border-primary dark:border-strokedark dark:bg-meta-4/20 dark:text-white"
                       >
                         <option value="ALL">
                           Semua Bulan ({allHistoryItems.length} transaksi • Rp{" "}
@@ -1670,8 +1895,8 @@ export default function DetailAssetMobile({ idAsset }) {
                         {partsUsage.monthly_breakdown?.map((m) => (
                           <option key={m.month_key} value={m.month_key}>
                             {m.month_label} (Rp{" "}
-                            {Number(m.total_cost || 0).toLocaleString("id-ID")} •{" "}
-                            {m.total_qty} part)
+                            {Number(m.total_cost || 0).toLocaleString("id-ID")}{" "}
+                            • {m.total_qty} part)
                           </option>
                         ))}
                       </select>
@@ -1687,69 +1912,97 @@ export default function DetailAssetMobile({ idAsset }) {
                         <div className="overflow-x-auto">
                           <table className="w-full table-auto text-left text-xs">
                             <thead>
-                              <tr className="border-b border-stroke bg-gray-50 text-body dark:border-strokedark dark:bg-meta-4/20 dark:text-bodydark">
-                                <th className="py-2 px-2.5 font-semibold text-center w-8">No</th>
-                                <th className="py-2 px-2.5 font-semibold">Tanggal / Part</th>
-                                <th className="py-2 px-2.5 font-semibold text-center">Jumlah</th>
-                                <th className="py-2 px-2.5 font-semibold text-right">Biaya</th>
-                                <th className="py-2 px-2.5 font-semibold">Tiket</th>
+                              <tr className="bg-gray-50 border-b border-stroke text-body dark:border-strokedark dark:bg-meta-4/20 dark:text-bodydark">
+                                <th className="w-8 px-2.5 py-2 text-center font-semibold">
+                                  No
+                                </th>
+                                <th className="px-2.5 py-2 font-semibold">
+                                  Tanggal / Part
+                                </th>
+                                <th className="px-2.5 py-2 text-center font-semibold">
+                                  Jumlah
+                                </th>
+                                <th className="px-2.5 py-2 text-right font-semibold">
+                                  Biaya
+                                </th>
+                                <th className="px-2.5 py-2 font-semibold">
+                                  Tiket
+                                </th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-stroke dark:divide-strokedark">
                               {displayedHistoryItems.map((item, idx) => {
-                                const rowNumber = (historyPage - 1) * 10 + idx + 1;
+                                const rowNumber =
+                                  (historyPage - 1) * 10 + idx + 1;
                                 return (
                                   <tr
                                     key={idx}
-                                    onClick={() => router.push(`/parts/${item.id_part}`)}
-                                    className="cursor-pointer hover:bg-gray-50 dark:hover:bg-meta-4/10 transition-colors"
+                                    onClick={() =>
+                                      router.push(`/parts/${item.id_part}`)
+                                    }
+                                    className="hover:bg-gray-50 cursor-pointer transition-colors dark:hover:bg-meta-4/10"
                                   >
-                                    <td className="py-2 px-2.5 text-center text-body dark:text-bodydark font-mono text-[11px]">
+                                    <td className="font-mono px-2.5 py-2 text-center text-[11px] text-body dark:text-bodydark">
                                       {rowNumber}
                                     </td>
-                                    <td className="py-2 px-2.5">
-                                      <span className="text-[10px] text-body dark:text-bodydark block">
+                                    <td className="px-2.5 py-2">
+                                      <span className="block text-[10px] text-body dark:text-bodydark">
                                         {formatDateLocal(item.date)}
                                       </span>
-                                      <span className="font-semibold text-xs text-black dark:text-white block truncate max-w-[140px]">
+                                      <span className="block max-w-[140px] truncate text-xs font-semibold text-black dark:text-white">
                                         {item.description}
                                       </span>
-                                      <div className="flex items-center gap-1.5 flex-wrap">
-                                        <span className="font-mono text-[10px] text-primary block truncate max-w-[110px]">
+                                      <div className="flex flex-wrap items-center gap-1.5">
+                                        <span className="font-mono block max-w-[110px] truncate text-[10px] text-primary">
                                           {item.vendor_code || item.id_part}
                                         </span>
-                                        {item.supplier && item.supplier !== "-" && (
-                                          <span className="text-[9px] text-body dark:text-bodydark block truncate max-w-[100px]">
-                                            • {item.supplier}
-                                          </span>
-                                        )}
+                                        {item.supplier &&
+                                          item.supplier !== "-" && (
+                                            <span className="block max-w-[100px] truncate text-[9px] text-body dark:text-bodydark">
+                                              • {item.supplier}
+                                            </span>
+                                          )}
                                       </div>
                                     </td>
-                                    <td className="py-2 px-2.5 text-center font-bold text-warning whitespace-nowrap text-xs font-mono">
+                                    <td className="font-mono whitespace-nowrap px-2.5 py-2 text-center text-xs font-bold text-warning">
                                       -{item.qty} {item.unit || "pcs"}
                                     </td>
-                                    <td className="py-2 px-2.5 text-right font-bold text-black dark:text-white whitespace-nowrap text-xs font-mono">
+                                    <td className="font-mono whitespace-nowrap px-2.5 py-2 text-right text-xs font-bold text-black dark:text-white">
                                       {Number(item.total_cost || 0) > 0 ? (
-                                        <span className="text-primary font-bold">
-                                          Rp {Number(item.total_cost).toLocaleString("id-ID")}
+                                        <span className="font-bold text-primary">
+                                          Rp{" "}
+                                          {Number(
+                                            item.total_cost,
+                                          ).toLocaleString("id-ID")}
                                         </span>
                                       ) : (
-                                        <span className="text-[10px] text-body dark:text-bodydark font-normal">Rp 0</span>
+                                        <span className="text-[10px] font-normal text-body dark:text-bodydark">
+                                          Rp 0
+                                        </span>
                                       )}
                                       {Number(item.unit_price || 0) > 0 && (
-                                        <span className="block text-[9px] text-body dark:text-bodydark font-normal">
-                                          @Rp {Number(item.unit_price).toLocaleString("id-ID")}
+                                        <span className="block text-[9px] font-normal text-body dark:text-bodydark">
+                                          @Rp{" "}
+                                          {Number(
+                                            item.unit_price,
+                                          ).toLocaleString("id-ID")}
                                         </span>
                                       )}
                                     </td>
-                                    <td className="py-2 px-2.5 font-mono text-[10px] text-body dark:text-bodydark whitespace-nowrap">
-                                      <span className="block font-bold">#{item.id_for}</span>
+                                    <td className="font-mono whitespace-nowrap px-2.5 py-2 text-[10px] text-body dark:text-bodydark">
+                                      <span className="block font-bold">
+                                        #{item.id_for}
+                                      </span>
                                       {item.dpm && item.dpm !== "-" && (
-                                        <span className="block text-[9px] text-primary">DPM #{item.dpm}</span>
+                                        <span className="block text-[9px] text-primary">
+                                          DPM #{item.dpm}
+                                        </span>
                                       )}
                                       {item.source && (
-                                        <span className="block text-[8px] text-body dark:text-bodydark opacity-75">
-                                          {item.source.includes("DPM") ? "DPM" : "Gudang"}
+                                        <span className="block text-[8px] text-body opacity-75 dark:text-bodydark">
+                                          {item.source.includes("DPM")
+                                            ? "DPM"
+                                            : "Gudang"}
                                         </span>
                                       )}
                                     </td>
@@ -1758,25 +2011,26 @@ export default function DetailAssetMobile({ idAsset }) {
                               })}
 
                               {selectedUsageMonth !== "ALL" && (
-                                <tr className="bg-primary/5 font-bold dark:bg-primary/10 border-t-2 border-primary/20">
+                                <tr className="border-t-2 border-primary/20 bg-primary/5 font-bold dark:bg-primary/10">
                                   <td
                                     colSpan={2}
-                                    className="py-2 px-2.5 text-right font-bold text-black dark:text-white text-[11px]"
+                                    className="px-2.5 py-2 text-right text-[11px] font-bold text-black dark:text-white"
                                   >
                                     Total Bulan Ini:
                                   </td>
-                                  <td className="py-2 px-2.5 text-center font-mono text-warning font-bold text-xs">
+                                  <td className="font-mono px-2.5 py-2 text-center text-xs font-bold text-warning">
                                     -
                                     {currentFilteredHistory.reduce(
                                       (acc, it) => acc + (Number(it.qty) || 0),
                                       0,
                                     )}
                                   </td>
-                                  <td className="py-2 px-2.5 text-right font-mono text-primary font-bold text-xs whitespace-nowrap">
+                                  <td className="font-mono whitespace-nowrap px-2.5 py-2 text-right text-xs font-bold text-primary">
                                     Rp{" "}
                                     {currentFilteredHistory
                                       .reduce(
-                                        (acc, it) => acc + (Number(it.total_cost) || 0),
+                                        (acc, it) =>
+                                          acc + (Number(it.total_cost) || 0),
                                         0,
                                       )
                                       .toLocaleString("id-ID")}
@@ -1790,7 +2044,7 @@ export default function DetailAssetMobile({ idAsset }) {
 
                         {/* Pagination Riwayat Pemakaian Mobile */}
                         {historyTotalPages > 1 && (
-                          <div className="flex items-center justify-between pt-2.5 border-t border-stroke/60 dark:border-strokedark/60 text-[11px] mt-2">
+                          <div className="mt-2 flex items-center justify-between border-t border-stroke/60 pt-2.5 text-[11px] dark:border-strokedark/60">
                             <span className="text-body dark:text-bodydark">
                               Hal {historyPage} / {historyTotalPages}
                             </span>
@@ -1798,7 +2052,11 @@ export default function DetailAssetMobile({ idAsset }) {
                               <button
                                 type="button"
                                 disabled={historyPage === 1}
-                                onClick={() => setHistoryPage((prev) => Math.max(1, prev - 1))}
+                                onClick={() =>
+                                  setHistoryPage((prev) =>
+                                    Math.max(1, prev - 1),
+                                  )
+                                }
                                 className="rounded-lg border border-stroke px-2 py-1 text-[11px] font-semibold disabled:opacity-40 dark:border-strokedark"
                               >
                                 Prev
@@ -1806,7 +2064,11 @@ export default function DetailAssetMobile({ idAsset }) {
                               <button
                                 type="button"
                                 disabled={historyPage === historyTotalPages}
-                                onClick={() => setHistoryPage((prev) => Math.min(historyTotalPages, prev + 1))}
+                                onClick={() =>
+                                  setHistoryPage((prev) =>
+                                    Math.min(historyTotalPages, prev + 1),
+                                  )
+                                }
                                 className="rounded-lg border border-stroke px-2 py-1 text-[11px] font-semibold disabled:opacity-40 dark:border-strokedark"
                               >
                                 Next
@@ -1815,44 +2077,6 @@ export default function DetailAssetMobile({ idAsset }) {
                           </div>
                         )}
                       </>
-                    )}
-
-                    {/* Biaya Servis / Jasa Luar Mesin Ini (Mobile) */}
-                    {currentMonthServices.length > 0 && (
-                      <div className="mt-3 rounded-xl border border-stroke p-3 dark:border-strokedark">
-                        <div className="mb-2 flex items-center justify-between">
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-black dark:text-white flex items-center gap-1">
-                            <HiOutlineWrenchScrewdriver className="text-warning text-xs" />
-                            Jasa Bengkel Luar
-                          </span>
-                          <span className="font-mono text-xs font-bold text-warning">
-                            Rp{" "}
-                            {currentMonthServices
-                              .reduce((sum, s) => sum + (Number(s.amount) || 0), 0)
-                              .toLocaleString("id-ID")}
-                          </span>
-                        </div>
-                        <div className="divide-y divide-stroke dark:divide-strokedark">
-                          {currentMonthServices.map((item, index) => (
-                            <div
-                              key={index}
-                              className="flex items-center justify-between py-1.5 text-xs"
-                            >
-                              <div className="pr-2">
-                                <span className="block font-semibold text-black dark:text-white truncate max-w-[170px]">
-                                  {item.item || item.description || "Jasa Servis"}
-                                </span>
-                                <span className="text-[10px] text-body dark:text-bodydark">
-                                  {item.supplier || "-"} • Ref #{item.id_register}
-                                </span>
-                              </div>
-                              <span className="font-mono rounded bg-warning/10 px-1.5 py-0.5 text-[11px] font-bold text-warning whitespace-nowrap">
-                                Rp {Number(item.amount || 0).toLocaleString("id-ID")}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
                     )}
                   </div>
                 </div>
@@ -1956,11 +2180,14 @@ export default function DetailAssetMobile({ idAsset }) {
                 setInputKMError(false);
                 setOnloadRequestPerawatan(true);
                 try {
-                  const res = await axios.post("/api/createvehiclemaintenance", {
-                    idAsset: idAsset,
-                    km: inputKM,
-                    uid: uid,
-                  });
+                  const res = await axios.post(
+                    "/api/createvehiclemaintenance",
+                    {
+                      idAsset: idAsset,
+                      km: inputKM,
+                      uid: uid,
+                    },
+                  );
                   if (res.data?.error === 1) {
                     NotifyError(res.data.message);
                   } else {
@@ -2044,8 +2271,8 @@ export default function DetailAssetMobile({ idAsset }) {
         >
           <div className="flex items-center justify-between border-b border-stroke px-4 py-3 dark:border-strokedark">
             <div>
-              <h3 className="text-sm font-bold uppercase tracking-wider text-black dark:text-white flex items-center gap-1.5">
-                <HiOutlinePencilSquare className="text-primary text-base" />
+              <h3 className="flex items-center gap-1.5 text-sm font-bold uppercase tracking-wider text-black dark:text-white">
+                <HiOutlinePencilSquare className="text-base text-primary" />
                 Edit Data & Foto #{dataAsset.ID_Asset}
               </h3>
               <span className="text-[11px] text-body dark:text-bodydark">
@@ -2055,31 +2282,32 @@ export default function DetailAssetMobile({ idAsset }) {
             <button
               type="button"
               onClick={() => setOpenEditAssetModalState(false)}
-              className="text-body hover:text-black dark:text-bodydark dark:hover:text-white p-1"
+              className="p-1 text-body hover:text-black dark:text-bodydark dark:hover:text-white"
             >
               <MdOutlineClose className="text-lg" />
             </button>
           </div>
 
-          <div className="p-4 space-y-4 overflow-y-auto max-h-[75vh] text-xs">
+          <div className="max-h-[75vh] space-y-4 overflow-y-auto p-4 text-xs">
             {/* 1. JIKA KAMERA SEDANG AKTIF: TAMPILKAN LIVE WEBCAM VIEWFINDER */}
             {isCameraActive ? (
-              <div className="relative overflow-hidden rounded-2xl border-2 border-primary/60 bg-black shadow-lg p-2 space-y-2">
-                <div className="flex items-center justify-between text-white text-xs px-2 py-1">
-                  <span className="font-bold flex items-center gap-1.5">
-                    <HiOutlineCamera className="text-primary text-base" />
-                    Kamera: {cameraTarget === "asset" ? "Foto Aset" : "Foto Pemegang"}
+              <div className="relative space-y-2 overflow-hidden rounded-2xl border-2 border-primary/60 bg-black p-2 shadow-lg">
+                <div className="flex items-center justify-between px-2 py-1 text-xs text-white">
+                  <span className="flex items-center gap-1.5 font-bold">
+                    <HiOutlineCamera className="text-base text-primary" />
+                    Kamera:{" "}
+                    {cameraTarget === "asset" ? "Foto Aset" : "Foto User"}
                   </span>
                   <button
                     type="button"
                     onClick={() => setIsCameraActive(false)}
-                    className="rounded-lg bg-white/20 hover:bg-white/30 px-2 py-1 text-[11px] transition-colors"
+                    className="rounded-lg bg-white/20 px-2 py-1 text-[11px] transition-colors hover:bg-white/30"
                   >
                     Tutup
                   </button>
                 </div>
 
-                <div className="relative rounded-xl overflow-hidden bg-black flex items-center justify-center">
+                <div className="relative flex items-center justify-center overflow-hidden rounded-xl bg-black">
                   <Webcam
                     audio={false}
                     ref={webcamRef}
@@ -2095,25 +2323,29 @@ export default function DetailAssetMobile({ idAsset }) {
                       NotifyError("Izin kamera ditolak. Silakan pilih berkas.");
                       setIsCameraActive(false);
                     }}
-                    className="w-full h-56 sm:h-64 object-cover"
+                    className="h-56 w-full object-cover sm:h-64"
                   />
 
                   {/* Framing Guide */}
-                  <div className="absolute inset-3 pointer-events-none rounded-xl border border-white/30 border-dashed flex items-center justify-center">
-                    <span className="text-[10px] font-medium text-white/80 bg-black/50 px-2.5 py-1 rounded-full backdrop-blur-sm">
-                      {cameraTarget === "asset" ? "Arahkan ke mesin / aset" : "Arahkan ke wajah pengguna"}
+                  <div className="pointer-events-none absolute inset-3 flex items-center justify-center rounded-xl border border-dashed border-white/30">
+                    <span className="rounded-full bg-black/50 px-2.5 py-1 text-[10px] font-medium text-white/80 backdrop-blur-sm">
+                      {cameraTarget === "asset"
+                        ? "Arahkan ke mesin / aset"
+                        : "Arahkan ke wajah pengguna"}
                     </span>
                   </div>
                 </div>
 
                 {/* Camera Action Buttons */}
-                <div className="flex items-center justify-between pt-1 px-1">
+                <div className="flex items-center justify-between px-1 pt-1">
                   <button
                     type="button"
                     onClick={() =>
-                      setCameraFacing((prev) => (prev === "environment" ? "user" : "environment"))
+                      setCameraFacing((prev) =>
+                        prev === "environment" ? "user" : "environment",
+                      )
                     }
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-semibold transition-colors"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-white/20 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-white/30"
                   >
                     <HiOutlineArrowPath className="text-sm" />
                     <span>Putar</span>
@@ -2122,7 +2354,7 @@ export default function DetailAssetMobile({ idAsset }) {
                   <button
                     type="button"
                     onClick={handleCapturePhoto}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-white text-xs font-bold shadow-md transition-all active:scale-95"
+                    className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white shadow-md transition-all hover:bg-primary/90 active:scale-95"
                   >
                     <div className="h-3 w-3 rounded-full border-2 border-white bg-white/30" />
                     <span>Jepret Foto</span>
@@ -2130,15 +2362,15 @@ export default function DetailAssetMobile({ idAsset }) {
                 </div>
               </div>
             ) : (
-              /* 2. DUA KARTU FOTO: FOTO ASET DAN FOTO PEMEGANG / USER */
+              /* 2. DUA KARTU FOTO: FOTO ASET DAN FOTO USER */
               <div className="grid grid-cols-1 gap-3">
                 {/* Foto Aset */}
-                <div className="rounded-xl border border-stroke p-3 dark:border-strokedark bg-gray-50/50 dark:bg-meta-4/10">
-                  <span className="block text-[11px] font-bold text-black dark:text-white mb-2">
+                <div className="bg-gray-50/50 rounded-xl border border-stroke p-3 dark:border-strokedark dark:bg-meta-4/10">
+                  <span className="mb-2 block text-[11px] font-bold text-black dark:text-white">
                     Foto Unit Aset
                   </span>
                   <div className="flex items-center gap-3">
-                    <div className="relative h-18 w-18 rounded-xl border border-stroke dark:border-strokedark overflow-hidden bg-white dark:bg-boxdark flex items-center justify-center shrink-0 shadow-sm">
+                    <div className="relative flex h-18 w-18 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-stroke bg-white shadow-sm dark:border-strokedark dark:bg-boxdark">
                       {imagePreview ? (
                         <img
                           src={imagePreview}
@@ -2154,13 +2386,13 @@ export default function DetailAssetMobile({ idAsset }) {
                       <button
                         type="button"
                         onClick={() => handleStartCamera("asset")}
-                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-primary/90 transition-colors"
+                        className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-primary px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-primary/90"
                       >
                         <HiOutlineCamera className="text-sm" />
                         <span>Ambil dari Kamera</span>
                       </button>
 
-                      <label className="w-full inline-flex items-center justify-center gap-1.5 cursor-pointer rounded-xl border border-stroke bg-white px-2.5 py-1.5 text-xs font-semibold text-body hover:bg-gray-100 dark:border-strokedark dark:bg-boxdark dark:text-bodydark dark:hover:bg-meta-4 transition-colors">
+                      <label className="hover:bg-gray-100 inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-stroke bg-white px-2.5 py-1.5 text-xs font-semibold text-body transition-colors dark:border-strokedark dark:bg-boxdark dark:text-bodydark dark:hover:bg-meta-4">
                         <HiOutlinePhoto className="text-sm" />
                         <span>Pilih Berkas Galeri</span>
                         <input
@@ -2174,13 +2406,13 @@ export default function DetailAssetMobile({ idAsset }) {
                   </div>
                 </div>
 
-                {/* Foto Pemegang / User Profile */}
-                <div className="rounded-xl border border-stroke p-3 dark:border-strokedark bg-gray-50/50 dark:bg-meta-4/10">
-                  <span className="block text-[11px] font-bold text-black dark:text-white mb-2">
-                    Foto Pemegang / User
+                {/* Foto User Profile */}
+                <div className="bg-gray-50/50 rounded-xl border border-stroke p-3 dark:border-strokedark dark:bg-meta-4/10">
+                  <span className="mb-2 block text-[11px] font-bold text-black dark:text-white">
+                    Foto User
                   </span>
                   <div className="flex items-center gap-3">
-                    <div className="relative h-18 w-18 rounded-full border border-stroke dark:border-strokedark overflow-hidden bg-white dark:bg-boxdark flex items-center justify-center shrink-0 shadow-sm">
+                    <div className="relative flex h-18 w-18 shrink-0 items-center justify-center overflow-hidden rounded-full border border-stroke bg-white shadow-sm dark:border-strokedark dark:bg-boxdark">
                       {userImagePreview ? (
                         <img
                           src={userImagePreview}
@@ -2196,13 +2428,13 @@ export default function DetailAssetMobile({ idAsset }) {
                       <button
                         type="button"
                         onClick={() => handleStartCamera("user")}
-                        className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-meta-5 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-meta-5/90 transition-colors"
+                        className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-meta-5 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-meta-5/90"
                       >
                         <HiOutlineCamera className="text-sm" />
                         <span>Ambil dari Kamera</span>
                       </button>
 
-                      <label className="w-full inline-flex items-center justify-center gap-1.5 cursor-pointer rounded-xl border border-stroke bg-white px-2.5 py-1.5 text-xs font-semibold text-body hover:bg-gray-100 dark:border-strokedark dark:bg-boxdark dark:text-bodydark dark:hover:bg-meta-4 transition-colors">
+                      <label className="hover:bg-gray-100 inline-flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-stroke bg-white px-2.5 py-1.5 text-xs font-semibold text-body transition-colors dark:border-strokedark dark:bg-boxdark dark:text-bodydark dark:hover:bg-meta-4">
                         <HiOutlinePhoto className="text-sm" />
                         <span>Pilih Berkas Galeri</span>
                         <input
@@ -2221,7 +2453,7 @@ export default function DetailAssetMobile({ idAsset }) {
             {/* Grid Input Form Fields */}
             <div className="space-y-3">
               <div>
-                <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
                   Deskripsi / Nama Aset <span className="text-danger">*</span>
                 </label>
                 <CommonInput
@@ -2234,7 +2466,7 @@ export default function DetailAssetMobile({ idAsset }) {
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                  <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
                     Manufaktur / Brand
                   </label>
                   <CommonInput
@@ -2246,7 +2478,7 @@ export default function DetailAssetMobile({ idAsset }) {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                  <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
                     Model / Seri
                   </label>
                   <CommonInput
@@ -2260,7 +2492,7 @@ export default function DetailAssetMobile({ idAsset }) {
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                  <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
                     No. Polisi / No. Unit
                   </label>
                   <CommonInput
@@ -2272,7 +2504,7 @@ export default function DetailAssetMobile({ idAsset }) {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                  <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
                     Lokasi / Area
                   </label>
                   <CommonInput
@@ -2286,7 +2518,7 @@ export default function DetailAssetMobile({ idAsset }) {
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                  <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
                     Penanggung Jawab / User
                   </label>
                   <CommonInput
@@ -2298,7 +2530,7 @@ export default function DetailAssetMobile({ idAsset }) {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                  <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
                     Kategori PM
                   </label>
                   <CommonInput
@@ -2312,7 +2544,7 @@ export default function DetailAssetMobile({ idAsset }) {
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                  <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
                     Kapasitas
                   </label>
                   <CommonInput
@@ -2324,7 +2556,7 @@ export default function DetailAssetMobile({ idAsset }) {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                  <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
                     Daya (Power)
                   </label>
                   <CommonInput
@@ -2338,7 +2570,7 @@ export default function DetailAssetMobile({ idAsset }) {
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                  <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
                     Tegangan (Voltage)
                   </label>
                   <CommonInput
@@ -2350,7 +2582,7 @@ export default function DetailAssetMobile({ idAsset }) {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                  <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
                     Tahun Pembuatan
                   </label>
                   <CommonInput
@@ -2363,7 +2595,7 @@ export default function DetailAssetMobile({ idAsset }) {
               </div>
 
               <div>
-                <label className="block text-[10px] font-semibold text-body dark:text-bodydark mb-1">
+                <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
                   Nomor Seri (Serial No)
                 </label>
                 <CommonInput
@@ -2377,12 +2609,12 @@ export default function DetailAssetMobile({ idAsset }) {
           </div>
 
           {/* Footer Actions */}
-          <div className="flex items-center justify-end gap-2 border-t border-stroke px-4 py-3 dark:border-strokedark bg-gray-50/50 dark:bg-meta-4/20">
+          <div className="bg-gray-50/50 flex items-center justify-end gap-2 border-t border-stroke px-4 py-3 dark:border-strokedark dark:bg-meta-4/20">
             <button
               type="button"
               disabled={savingAsset}
               onClick={() => setOpenEditAssetModalState(false)}
-              className="rounded-xl border border-stroke px-3 py-2 text-xs font-semibold text-body hover:bg-gray-100 dark:border-strokedark dark:text-bodydark dark:hover:bg-meta-4 transition-all"
+              className="hover:bg-gray-100 rounded-xl border border-stroke px-3 py-2 text-xs font-semibold text-body transition-all dark:border-strokedark dark:text-bodydark dark:hover:bg-meta-4"
             >
               Batal
             </button>
@@ -2390,7 +2622,7 @@ export default function DetailAssetMobile({ idAsset }) {
               type="button"
               disabled={savingAsset}
               onClick={handleSaveAsset}
-              className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-primary/90 disabled:opacity-50 transition-all"
+              className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-primary/90 disabled:opacity-50"
             >
               {savingAsset ? "Menyimpan..." : "Simpan Perubahan Aset"}
             </button>

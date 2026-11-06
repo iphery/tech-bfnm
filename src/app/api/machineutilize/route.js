@@ -12,16 +12,17 @@ const holidays = [
   "2026-06-18", "2026-06-26", "2026-06-27", "2026-08-17", "2026-08-25",
 ];
 
-function getWorkDays(year, month) {
+function getWorkDays(year, month, dynamicHolidays = []) {
   const workDays = [];
   const daysInMonth = new Date(year, month, 0).getDate();
+  const allHolidays = [...holidays, ...dynamicHolidays];
 
   for (let day = 1; day <= daysInMonth; day++) {
     const d = new Date(year, month - 1, day);
     const dayOfWeek = d.getDay(); // 0 is Sunday
     const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
-    if (dayOfWeek !== 0 && !holidays.includes(dateStr)) {
+    if (dayOfWeek !== 0 && !allHolidays.includes(dateStr)) {
       workDays.push(dateStr);
     }
   }
@@ -46,7 +47,22 @@ export async function GET(req) {
 
     const m = Number(bulan);
     const y = Number(tahun);
-    const workDays = getWorkDays(y, m);
+
+    // Fetch dynamic holidays from database if exists
+    let dynamicHolidays = [];
+    try {
+      const [hRows] = await db.query(
+        "SELECT DATE_FORMAT(date, '%Y-%m-%d') as holiday_date FROM Holidays WHERE (year = ? OR YEAR(date) = ?)",
+        [y, y]
+      );
+      if (hRows && hRows.length > 0) {
+        dynamicHolidays = hRows.map((r) => r.holiday_date);
+      }
+    } catch {
+      // ignore if holidays table not yet queried
+    }
+
+    const workDays = getWorkDays(y, m, dynamicHolidays);
     const jamKerja = workDays.length * 8;
 
     // Fetch active production machines (MP)

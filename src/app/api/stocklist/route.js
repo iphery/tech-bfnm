@@ -104,15 +104,24 @@ async function handleStockList(request) {
     let data_asset = [];
     let pending = [];
     if (!shouldPaginate || currentPage === 1) {
-      const [assets] = await pool.query('SELECT ID_Asset, Description, Manufacture, Model, No, User, Type FROM Assets');
+      const [assets] = await pool.query('SELECT ID_Asset, Description, Manufacture, Model, No, User, Type, Location FROM Assets');
       data_asset = assets.map((asset) => ({
         id_asset: asset.ID_Asset,
+        ID_Asset: asset.ID_Asset,
         description: asset.Description,
+        Description: asset.Description,
         manufacture: asset.Manufacture,
+        Manufacture: asset.Manufacture,
         model: asset.Model,
+        Model: asset.Model,
         no: asset.No,
+        No: asset.No,
         user: asset.User,
+        User: asset.User,
         type: asset.Type,
+        Type: asset.Type,
+        location: asset.Location || '',
+        Location: asset.Location || '',
       }));
 
       const [pendingResult] = await pool.query(`

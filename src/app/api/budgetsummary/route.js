@@ -94,40 +94,34 @@ async function handleBudgetSummary(request) {
     });
 
     // Helper to find target budget for a pos code
-    const getTargetAmount = (code) => {
+    const getTargetAmount = (posCode) => {
       if (!budgetSetRows || budgetSetRows.length === 0) return 0;
       
-      // Look for a row that has pos matching code and year matching queryYear
+      const targetNorm = String(posCode || '').trim().toUpperCase();
+      let sumAmount = 0;
+      let matchedCount = 0;
+
       for (const row of budgetSetRows) {
-        // Case 1: Row has fields like pos/code/pos_anggaran/budget_pos
-        const rowPos = row.pos || row.code || row.budget_pos || row.budget_code || row.id_pos || '';
-        const rowYear = row.year || row.Year || row.tahun || row.periode || row.period || queryYear;
+        // Match by code/pos and tahun/year
+        const rowCode = String(row.code || row.pos || row.budget_pos || '').trim().toUpperCase();
+        const rowYear = String(row.tahun || row.year || row.Year || queryYear).trim();
 
-        if (String(rowPos).toUpperCase() === code && Number(rowYear) === queryYear) {
-          return Number(row.amount || row.target || row.budget || row.nominal || row.value || 0);
-        }
+        // Normalize code mapping:
+        // ME1 -> ME01, ME2 -> ME03 (Budget Service Mesin), ME3 -> ME02 (Budget Service Kendaraan), ME4 -> ME04, ME5 -> ME05
+        let normRowCode = rowCode;
+        if (rowCode === 'ME1') normRowCode = 'ME01';
+        else if (rowCode === 'ME2') normRowCode = 'ME03';
+        else if (rowCode === 'ME3') normRowCode = 'ME02';
+        else if (rowCode === 'ME4') normRowCode = 'ME04';
+        else if (rowCode === 'ME5') normRowCode = 'ME05';
 
-        // Case 2: Column name is ME01, ME02, etc.
-        if (row[code] !== undefined) {
-          const rowY = row.year || row.Year || row.tahun || queryYear;
-          if (Number(rowY) === queryYear) {
-            return Number(row[code] || 0);
-          }
+        if ((normRowCode === targetNorm || rowCode === targetNorm) && rowYear === String(queryYear)) {
+          sumAmount += Number(row.value ?? row.amount ?? row.target ?? row.budget ?? 0);
+          matchedCount++;
         }
       }
 
-      // Fallback matching without strict year if only 1 set exists
-      for (const row of budgetSetRows) {
-        const rowPos = row.pos || row.code || row.budget_pos || row.budget_code || row.id_pos || '';
-        if (String(rowPos).toUpperCase() === code) {
-          return Number(row.amount || row.target || row.budget || row.nominal || row.value || 0);
-        }
-        if (row[code] !== undefined) {
-          return Number(row[code] || 0);
-        }
-      }
-
-      return 0;
+      return sumAmount;
     };
 
     // Construct detailed summary per pos

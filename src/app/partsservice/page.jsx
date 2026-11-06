@@ -331,16 +331,29 @@ export default function PartService() {
                                   </span>
                                 </td>
                                 <td className="py-3 px-4 text-center">
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      router.push(`/partsservice/${item.id_register}`);
-                                    }}
-                                    className="rounded-lg border border-stroke px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-primary hover:text-white dark:border-strokedark transition-colors"
-                                  >
-                                    Rincian
-                                  </button>
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        router.push(`/partsservice/${item.id_register}`);
+                                      }}
+                                      className="rounded-lg border border-stroke px-2 py-1 text-[11px] font-semibold text-primary hover:bg-primary hover:text-white dark:border-strokedark transition-colors"
+                                    >
+                                      Rincian
+                                    </button>
+                                    <button
+                                      type="button"
+                                      title="Edit Form DPS"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        router.push(`/new_service?edit=${item.id_register}`);
+                                      }}
+                                      className="rounded-lg border border-stroke px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-100 dark:border-strokedark dark:text-slate-300 dark:hover:bg-meta-4 transition-colors"
+                                    >
+                                      Edit
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             );

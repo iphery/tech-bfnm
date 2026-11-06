@@ -8,7 +8,13 @@ import {
   HiOutlineExclamationTriangle,
   HiOutlineSparkles,
 } from "react-icons/hi2";
-import { FaGasPump, FaTruck, FaIndustry, FaCogs, FaOilCan } from "react-icons/fa";
+import {
+  FaGasPump,
+  FaTruck,
+  FaIndustry,
+  FaCogs,
+  FaOilCan,
+} from "react-icons/fa";
 
 export default function BudgetPosOverview() {
   const currentYear = new Date().getFullYear();
@@ -51,7 +57,7 @@ export default function BudgetPosOverview() {
   };
 
   return (
-    <div className="rounded-2xl border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-boxdark/90 space-y-4">
+    <div className="space-y-4 rounded-2xl border border-slate-200/80 bg-white/90 p-5 shadow-sm backdrop-blur-sm dark:border-slate-800 dark:bg-boxdark/90">
       {/* Header Widget */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stroke pb-3 dark:border-strokedark">
         <div>
@@ -60,7 +66,8 @@ export default function BudgetPosOverview() {
             Monitoring Anggaran Pemeliharaan (Budget Pos)
           </h3>
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-            Realisasi pengadaan & servis per pos anggaran terhadap target tahunan (Tabel Budget_Set)
+            Realisasi pengadaan & servis per pos anggaran terhadap target
+            tahunan
           </p>
         </div>
 
@@ -69,7 +76,7 @@ export default function BudgetPosOverview() {
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(Number(e.target.value))}
-            className="rounded-xl border border-stroke bg-gray-50 px-3 py-1.5 text-xs font-bold text-black outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4/20 dark:text-white cursor-pointer"
+            className="bg-gray-50 cursor-pointer rounded-xl border border-stroke px-3 py-1.5 text-xs font-bold text-black outline-none focus:border-primary dark:border-strokedark dark:bg-meta-4/20 dark:text-white"
           >
             {[currentYear - 1, currentYear, currentYear + 1].map((y) => (
               <option key={y} value={y}>
@@ -81,40 +88,41 @@ export default function BudgetPosOverview() {
       </div>
 
       {/* Grand Target Summary Bar */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="rounded-xl border border-stroke bg-gray-50/70 p-3 dark:border-strokedark dark:bg-meta-4/10">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="bg-gray-50/70 rounded-xl border border-stroke p-3 dark:border-strokedark dark:bg-meta-4/10">
           <span className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400">
             Total Target Anggaran ({selectedYear})
           </span>
-          <span className="text-sm font-bold font-mono text-black dark:text-white">
+          <span className="font-mono text-sm font-bold text-black dark:text-white">
             Rp {Number(grandSummary.grand_target || 0).toLocaleString("id-ID")}
           </span>
         </div>
 
-        <div className="rounded-xl border border-stroke bg-gray-50/70 p-3 dark:border-strokedark dark:bg-meta-4/10">
+        <div className="bg-gray-50/70 rounded-xl border border-stroke p-3 dark:border-strokedark dark:bg-meta-4/10">
           <span className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400">
             Total Realisasi Terpakai
           </span>
-          <span className="text-sm font-bold font-mono text-primary">
+          <span className="font-mono text-sm font-bold text-primary">
             Rp {Number(grandSummary.grand_actual || 0).toLocaleString("id-ID")}
           </span>
-          <span className="text-[10px] text-body dark:text-bodydark block mt-0.5">
+          <span className="mt-0.5 block text-[10px] text-body dark:text-bodydark">
             Serapan: <strong>{grandSummary.grand_percentage}%</strong>
           </span>
         </div>
 
-        <div className="rounded-xl border border-stroke bg-gray-50/70 p-3 dark:border-strokedark dark:bg-meta-4/10">
+        <div className="bg-gray-50/70 rounded-xl border border-stroke p-3 dark:border-strokedark dark:bg-meta-4/10">
           <span className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400">
             Sisa Anggaran Tersedia
           </span>
-          <span className="text-sm font-bold font-mono text-success">
-            Rp {Number(grandSummary.grand_remaining || 0).toLocaleString("id-ID")}
+          <span className="font-mono text-sm font-bold text-success">
+            Rp{" "}
+            {Number(grandSummary.grand_remaining || 0).toLocaleString("id-ID")}
           </span>
         </div>
       </div>
 
       {/* Grid Pos Cards (ME01 s/d ME05) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {loading ? (
           <div className="col-span-full py-6 text-center text-xs text-body dark:text-bodydark">
             Memuat data budget...
@@ -132,53 +140,64 @@ export default function BudgetPosOverview() {
             return (
               <div
                 key={pos.code}
-                className="flex flex-col justify-between rounded-xl border border-stroke bg-white p-3 shadow-xs dark:border-strokedark dark:bg-boxdark hover:border-primary/50 transition-all"
+                className="shadow-xs flex flex-col justify-between rounded-xl border border-stroke bg-white p-3 transition-all hover:border-primary/50 dark:border-strokedark dark:bg-boxdark"
               >
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="inline-flex items-center gap-1.5 font-mono text-xs font-bold text-primary">
+                  <div className="mb-1.5 flex items-center justify-between">
+                    <span className="font-mono inline-flex items-center gap-1.5 text-xs font-bold text-primary">
                       {posIcons[pos.code] || <FaCogs />}
                       {pos.code}
                     </span>
                     <span
-                      className={`rounded-full px-1.5 py-0.2 text-[9px] font-bold ${
+                      className={`py-0.2 rounded-full px-1.5 text-[9px] font-bold ${
                         pos.is_overbudget
                           ? "bg-danger/15 text-danger"
                           : pos.percentage_used >= 75
-                          ? "bg-warning/15 text-warning"
-                          : "bg-success/15 text-success"
+                            ? "bg-warning/15 text-warning"
+                            : "bg-success/15 text-success"
                       }`}
                     >
                       {pos.percentage_used}%
                     </span>
                   </div>
 
-                  <h4 className="text-xs font-bold text-black dark:text-white line-clamp-1">
+                  <h4 className="line-clamp-1 text-xs font-bold text-black dark:text-white">
                     {pos.name}
                   </h4>
-                  <span className="text-[10px] text-body dark:text-bodydark block mb-2">
+                  <span className="mb-2 block text-[10px] text-body dark:text-bodydark">
                     {pos.category}
                   </span>
 
-                  <div className="space-y-1 text-[11px] pt-1 border-t border-stroke/60 dark:border-strokedark/60">
+                  <div className="space-y-1 border-t border-stroke/60 pt-1 text-[11px] dark:border-strokedark/60">
                     <div className="flex justify-between">
-                      <span className="text-body dark:text-bodydark text-[10px]">Realisasi:</span>
+                      <span className="text-[10px] text-body dark:text-bodydark">
+                        Realisasi:
+                      </span>
                       <span className="font-mono font-bold text-black dark:text-white">
-                        Rp {Number(pos.actual_total || 0).toLocaleString("id-ID")}
+                        Rp{" "}
+                        {Number(pos.actual_total || 0).toLocaleString("id-ID")}
                       </span>
                     </div>
 
                     <div className="flex justify-between">
-                      <span className="text-body dark:text-bodydark text-[10px]">Target:</span>
+                      <span className="text-[10px] text-body dark:text-bodydark">
+                        Target:
+                      </span>
                       <span className="font-mono text-body dark:text-bodydark">
-                        Rp {Number(pos.target_budget || 0).toLocaleString("id-ID")}
+                        Rp{" "}
+                        {Number(pos.target_budget || 0).toLocaleString("id-ID")}
                       </span>
                     </div>
 
                     <div className="flex justify-between">
-                      <span className="text-body dark:text-bodydark text-[10px]">Sisa:</span>
+                      <span className="text-[10px] text-body dark:text-bodydark">
+                        Sisa:
+                      </span>
                       <span className="font-mono font-semibold text-success">
-                        Rp {Number(pos.remaining_budget || 0).toLocaleString("id-ID")}
+                        Rp{" "}
+                        {Number(pos.remaining_budget || 0).toLocaleString(
+                          "id-ID",
+                        )}
                       </span>
                     </div>
                   </div>
@@ -186,7 +205,7 @@ export default function BudgetPosOverview() {
 
                 {/* Progress Bar */}
                 <div className="mt-3 pt-2">
-                  <div className="h-1.5 w-full rounded-full bg-gray-200 dark:bg-meta-4 overflow-hidden">
+                  <div className="bg-gray-200 h-1.5 w-full overflow-hidden rounded-full dark:bg-meta-4">
                     <div
                       className={`h-full rounded-full ${barColor} transition-all duration-500`}
                       style={{ width: `${pct}%` }}
@@ -201,4 +220,3 @@ export default function BudgetPosOverview() {
     </div>
   );
 }
-

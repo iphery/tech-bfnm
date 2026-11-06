@@ -48,18 +48,27 @@ export async function POST(req) {
       repairTime = Math.max(0, totalRepairTime - orderTime);
     }
 
-    // Parts UNION query
+    // Parts UNION query with FIFO pricing
     let parts = [];
     try {
       const [partRows] = await db.query(
-        `SELECT d.id_part, d.id_register, d.description, d.quantity, COALESCE(m.dpm, d.id_register) as dpm 
+        `SELECT d.id_part, d.id_register, d.description, d.quantity, 
+                COALESCE(m.dpm, d.id_register) as dpm,
+                COALESCE(d.amount, 0) as amount,
+                ROUND(COALESCE(d.amount, 0) / NULLIF(d.quantity, 0)) as unit_price,
+                'PO' as source,
+                COALESCE(d.unit, 'pcs') as unit
          FROM order_detail d
          LEFT JOIN order_main m ON m.id_register = d.id_register
          WHERE d.id_service = ?
          UNION
          SELECT so.id_part, so.id_register, 
                 CONCAT(COALESCE(p.description, ''), ' ', COALESCE(p.vendor_code, '')) AS description, 
-                so.quantity, so.id_register AS dpm 
+                so.quantity, so.id_register AS dpm,
+                COALESCE(so.total_cost, 0) as amount,
+                COALESCE(so.unit_cost, 0) as unit_price,
+                'Gudang (FIFO)' as source,
+                COALESCE(p.unit, 'pcs') as unit
          FROM stock_out so
          LEFT JOIN parts p ON p.id_part = so.id_part
          WHERE so.id_service = ?`,

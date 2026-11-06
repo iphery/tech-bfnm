@@ -19,6 +19,7 @@ import {
   HiOutlineTrash,
   HiOutlineWrenchScrewdriver,
   HiOutlinePrinter,
+  HiOutlinePencilSquare,
 } from "react-icons/hi2";
 
 export default function ServiceDetail({ params }) {
@@ -217,6 +218,15 @@ export default function ServiceDetail({ params }) {
           <div className="flex items-center gap-2">
             <button
               type="button"
+              onClick={() => router.push(`/new_service?edit=${idRegister}`)}
+              className="flex items-center gap-1.5 rounded-xl border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 dark:bg-primary/20 transition-colors"
+            >
+              <HiOutlinePencilSquare className="text-sm" />
+              <span>Edit Form DPS</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => router.push(`/partsservice/print?id=${idRegister}`)}
               className="flex items-center gap-1 rounded-xl border border-stroke px-3 py-1.5 text-xs font-medium text-black hover:bg-gray-50 dark:border-strokedark dark:text-white dark:hover:bg-meta-4/20 transition-colors"
             >
@@ -321,13 +331,39 @@ export default function ServiceDetail({ params }) {
                 className="rounded-xl border border-stroke p-3 dark:border-strokedark bg-gray-50/50 dark:bg-meta-4/10 text-xs space-y-2.5"
               >
                 <div className="flex items-start justify-between gap-2">
-                  <div>
+                  <div className="space-y-1">
                     <span className="font-semibold text-black dark:text-white text-sm block">
                       {item.item || item.description}
                     </span>
-                    <span className="text-[11px] text-body dark:text-bodydark">
-                      {item.id_asset ? `Aset: ${item.id_asset}` : ""} {item.Problem ? `• Keluhan: ${item.Problem}` : ""}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                      {item.id_part ? (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                          📦 Masuk Stok Gudang: {item.part_name || item.id_part}
+                        </span>
+                      ) : item.id_request ? (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-meta-3/15 px-2 py-0.5 text-[10px] font-bold text-meta-3">
+                          🔧 Tiket Kerusakan: #{item.id_request} {item.ID_Asset ? `(${item.ID_Asset})` : ""}
+                        </span>
+                      ) : item.id_asset ? (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-warning/15 px-2 py-0.5 text-[10px] font-bold text-warning">
+                          ⚙️ Aset Mesin: {item.id_asset} {item.asset_name ? `• ${item.asset_name}` : ""}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-gray-100 dark:bg-meta-4 px-2 py-0.5 text-[10px] font-medium text-slate-500">
+                          🏢 Beban Umum / Fasilitas Pabrik
+                        </span>
+                      )}
+                      {item.Problem && (
+                        <span className="text-[10px] text-body dark:text-bodydark">
+                          • Keluhan: {item.Problem}
+                        </span>
+                      )}
+                    </div>
+                    {item.id_part && !isClosed && (
+                      <span className="text-[10px] text-primary italic block">
+                        *Saat konfirmasi terima, barang ini otomatis menambah stok gudang dan terdaftar di batch FIFO
+                      </span>
+                    )}
                   </div>
                   <span className="rounded-lg bg-primary/10 px-2.5 py-1 font-mono font-bold text-primary shrink-0">
                     {item.quantity} {item.unit || "unit"}

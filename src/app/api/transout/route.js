@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
+import { allocateFifoOut } from '@/lib/fifo';
 
 export async function POST(request) {
   try {
@@ -38,6 +39,18 @@ export async function POST(request) {
            VALUES (?, ?, ?, 'out', ?, '', ?, ?)`,
           [id_register, order.id_part, order.quantity, created, uid, date]
         );
+
+        // Allocate FIFO cost immediately for this withdrawal
+        try {
+          await allocateFifoOut(pool, {
+            idStockOut: id_register,
+            idPart: order.id_part,
+            quantity: order.quantity,
+            date,
+          });
+        } catch (errFifo) {
+          console.error(`Error allocating FIFO for ${id_register}:`, errFifo);
+        }
       }
     }
 

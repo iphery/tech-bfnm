@@ -33,13 +33,12 @@ async function handleAssetPartsUsage(request) {
       return NextResponse.json({ error: 'idAsset is required' }, { status: 400 });
     }
 
-    // 1. Fetch latest purchase price per part from order_detail (global cache by id_part & item name)
+    // 1. Fetch purchase prices per part from order_detail (global cache by id_part & description)
     let priceMap = new Map();
     let itemNamePriceMap = new Map();
     try {
       const [allOrderPrices] = await pool.query(
         `SELECT od.id_part, 
-                od.item, 
                 od.description, 
                 od.amount, 
                 od.quantity,
@@ -47,21 +46,25 @@ async function handleAssetPartsUsage(request) {
                 od.seller
          FROM order_detail od
          WHERE od.amount > 0 AND od.quantity > 0
-         ORDER BY od.ids DESC`
+         ORDER BY od.amount DESC, od.ids DESC`
       );
       (allOrderPrices || []).forEach((p) => {
         const uPrice = Number(p.unit_price) || (Number(p.amount) / Math.max(1, Number(p.quantity || 1)));
         const seller = p.seller || '';
-        if (p.id_part && !priceMap.has(p.id_part)) {
-          priceMap.set(p.id_part, { unit_price: uPrice, seller });
-        }
-        const cleanItem = (p.item || '').trim().toLowerCase();
-        if (cleanItem && !itemNamePriceMap.has(cleanItem)) {
-          itemNamePriceMap.set(cleanItem, { unit_price: uPrice, seller });
-        }
         const cleanDesc = (p.description || '').trim().toLowerCase();
-        if (cleanDesc && !itemNamePriceMap.has(cleanDesc)) {
-          itemNamePriceMap.set(cleanDesc, { unit_price: uPrice, seller });
+
+        if (p.id_part) {
+          const curr = priceMap.get(p.id_part);
+          // Prefer realistic price (> 10) over dummy nominal numbers (1, 5)
+          if (!curr || (curr.unit_price <= 10 && uPrice > 10)) {
+            priceMap.set(p.id_part, { unit_price: uPrice, seller });
+          }
+        }
+        if (cleanDesc) {
+          const curr = itemNamePriceMap.get(cleanDesc);
+          if (!curr || (curr.unit_price <= 10 && uPrice > 10)) {
+            itemNamePriceMap.set(cleanDesc, { unit_price: uPrice, seller });
+          }
         }
       });
     } catch (e) {
@@ -76,7 +79,6 @@ async function handleAssetPartsUsage(request) {
         `SELECT od.ids, 
                 od.id_register, 
                 od.id_part, 
-                od.item, 
                 od.description, 
                 od.amount, 
                 od.seller, 
@@ -84,22 +86,22 @@ async function handleAssetPartsUsage(request) {
                 od.stock,
                 od.id_service,
                 od.id_service as request_id,
-                COALESCE(p.description, od.item, od.description, 'Suku Cadang') as part_name,
+                COALESCE(p.description, od.description, 'Suku Cadang') as part_name,
                 COALESCE(p.vendor_code, od.id_part, '-') as vendor_code,
                 COALESCE(p.unit, 'pcs') as unit,
                 COALESCE(p.location, '-') as location,
                 COALESCE(m.dpm, od.id_register) as dpm,
-                COALESCE(m.date, r.Time_Request, NOW()) as date,
+                COALESCE(r.Time_Request, m.receive_date, m.date, NOW()) as date,
                 r.Problem as subject,
                 ROUND(od.amount / NULLIF(od.quantity, 0)) as unit_price,
-                DATE_FORMAT(COALESCE(m.date, r.Time_Request, NOW()), '%Y-%m') as month_key,
-                DATE_FORMAT(COALESCE(m.date, r.Time_Request, NOW()), '%M %Y') as month_label,
-                DATE_FORMAT(COALESCE(m.date, r.Time_Request, NOW()), '%Y') as year_val,
-                DATE_FORMAT(COALESCE(m.date, r.Time_Request, NOW()), '%m') as month_val
+                DATE_FORMAT(COALESCE(r.Time_Request, m.receive_date, m.date, NOW()), '%Y-%m') as month_key,
+                DATE_FORMAT(COALESCE(r.Time_Request, m.receive_date, m.date, NOW()), '%M %Y') as month_label,
+                DATE_FORMAT(COALESCE(r.Time_Request, m.receive_date, m.date, NOW()), '%Y') as year_val,
+                DATE_FORMAT(COALESCE(r.Time_Request, m.receive_date, m.date, NOW()), '%m') as month_val
          FROM order_detail od
          INNER JOIN Request r ON (TRIM(r.ID_Request) = TRIM(od.id_service) OR TRIM(r.ID_Request) = TRIM(od.id_register))
          LEFT JOIN order_main m ON TRIM(m.id_register) = TRIM(od.id_register)
-         LEFT JOIN parts p ON (p.id_part = od.id_part OR (od.id_part IS NOT NULL AND od.id_part != '' AND p.id_part = od.id_part) OR p.description = od.item OR p.description = od.description)
+         LEFT JOIN parts p ON (p.id_part = od.id_part OR (od.id_part IS NOT NULL AND od.id_part != '' AND p.id_part = od.id_part) OR p.description = od.description)
          WHERE r.ID_Asset = ?
          ORDER BY od.ids DESC`,
         [idAsset]
@@ -115,33 +117,27 @@ async function handleAssetPartsUsage(request) {
           quantity: Number(mo.quantity) || 1,
           seller: mo.seller || '',
           dpm: mo.dpm || mo.id_register || '',
+          stock: mo.stock || '',
           matched: false,
         };
 
         const reqId = (mo.id_service || '').trim();
         const partId = (mo.id_part || '').trim();
-        const itemClean = (mo.item || '').trim().toLowerCase();
         const descClean = (mo.description || '').trim().toLowerCase();
 
         if (reqId && partId) {
           ticketPartCosts.set(`${reqId}_${partId}`, costObj);
         }
-        if (reqId && itemClean) {
-          ticketPartCosts.set(`${reqId}_${itemClean}`, costObj);
-        }
         if (reqId && descClean) {
           ticketPartCosts.set(`${reqId}_${descClean}`, costObj);
-        }
-        if (reqId && !ticketPartCosts.has(reqId)) {
-          ticketPartCosts.set(reqId, costObj);
         }
 
         // Also enrich fallback price map if this machine has order pricing
         if (partId && (!priceMap.has(partId) || priceMap.get(partId).unit_price === 0)) {
           priceMap.set(partId, { unit_price: uPrice, seller: mo.seller || '' });
         }
-        if (itemClean && (!itemNamePriceMap.has(itemClean) || itemNamePriceMap.get(itemClean).unit_price === 0)) {
-          itemNamePriceMap.set(itemClean, { unit_price: uPrice, seller: mo.seller || '' });
+        if (descClean && (!itemNamePriceMap.has(descClean) || itemNamePriceMap.get(descClean).unit_price === 0)) {
+          itemNamePriceMap.set(descClean, { unit_price: uPrice, seller: mo.seller || '' });
         }
       });
     } catch (e) {
@@ -177,12 +173,16 @@ async function handleAssetPartsUsage(request) {
            stock_summary.id_for,
            stock_summary.id_for as request_id,
            stock_summary.subject,
+           stock_summary.id_transaction,
+           COALESCE(so.unit_cost, 0) as fifo_unit_cost,
+           COALESCE(so.total_cost, 0) as fifo_total_cost,
            DATE_FORMAT(stock_summary.date, '%Y-%m') as month_key,
            DATE_FORMAT(stock_summary.date, '%M %Y') as month_label,
            DATE_FORMAT(stock_summary.date, '%Y') as year_val,
            DATE_FORMAT(stock_summary.date, '%m') as month_val
          FROM stock_summary
          INNER JOIN parts ON parts.id_part = stock_summary.id_part
+         LEFT JOIN stock_out so ON so.id_register = stock_summary.id_transaction
          WHERE (stock_summary.id_asset = ? OR stock_summary.id_for IN (SELECT ID_Request FROM Request WHERE ID_Asset = ?)) 
            AND stock_summary.qty < 0
          ${dateFilter}
@@ -210,8 +210,6 @@ async function handleAssetPartsUsage(request) {
         ticketCost = ticketPartCosts.get(`${reqId}_${partId}`);
       } else if (reqId && partDesc && ticketPartCosts.has(`${reqId}_${partDesc}`)) {
         ticketCost = ticketPartCosts.get(`${reqId}_${partDesc}`);
-      } else if (reqId && ticketPartCosts.has(reqId)) {
-        ticketCost = ticketPartCosts.get(reqId);
       }
 
       if (ticketCost) {
@@ -219,10 +217,19 @@ async function handleAssetPartsUsage(request) {
       }
 
       const fallbackPrice = priceMap.get(partId) || itemNamePriceMap.get(partDesc);
-      const unitPrice = ticketCost?.unit_price || fallbackPrice?.unit_price || 0;
-      const partCost = Math.round(qty * unitPrice);
+      const fifoUnit = Number(row.fifo_unit_cost || 0);
+      const fifoTotal = Number(row.fifo_total_cost || 0);
+
+      const unitPrice = fifoUnit > 0
+        ? fifoUnit
+        : (ticketCost?.unit_price || fallbackPrice?.unit_price || 0);
+
+      const partCost = fifoTotal > 0
+        ? fifoTotal
+        : Math.round(qty * unitPrice);
+
       const supplier = ticketCost?.seller || fallbackPrice?.seller || '-';
-      const dpm = ticketCost?.dpm || '-';
+      const dpm = row.id_transaction || ticketCost?.dpm || '-';
 
       allCombinedLogs.push({
         id_part: row.id_part,
@@ -237,7 +244,7 @@ async function handleAssetPartsUsage(request) {
         total_cost: partCost,
         supplier: supplier,
         dpm: dpm,
-        source: 'Gudang (Stock)',
+        source: 'Gudang (FIFO)',
         date: row.date,
         id_for: reqId || '-',
         request_id: reqId || '-',
@@ -254,13 +261,16 @@ async function handleAssetPartsUsage(request) {
     machineOrders.forEach((mo) => {
       const reqId = (mo.id_service || '').trim();
       const partId = (mo.id_part || '').trim();
-      const itemDesc = (mo.item || mo.description || '').trim().toLowerCase();
+      const itemDesc = (mo.description || '').trim().toLowerCase();
 
       const costObj = (partId && ticketPartCosts.get(`${reqId}_${partId}`)) ||
-                      (itemDesc && ticketPartCosts.get(`${reqId}_${itemDesc}`)) ||
-                      ticketPartCosts.get(reqId);
+                      (itemDesc && ticketPartCosts.get(`${reqId}_${itemDesc}`));
 
-      if (!costObj || !costObj.matched) {
+      // Non-Stock orders NEVER come from warehouse inventory (stock_summary), so they must ALWAYS be included.
+      const isNonStock = (mo.stock || '').toLowerCase().includes('non');
+      const alreadyMatched = !isNonStock && costObj && costObj.matched;
+
+      if (!alreadyMatched) {
         // If date filter active, check month and year
         if (month && year) {
           if (parseInt(mo.year_val, 10) !== parseInt(year, 10) || parseInt(mo.month_val, 10) !== parseInt(month, 10)) {
@@ -274,8 +284,8 @@ async function handleAssetPartsUsage(request) {
 
         allCombinedLogs.push({
           id_part: mo.id_part || String(mo.ids),
-          description: mo.item || mo.description || 'Suku Cadang DPM',
-          part_name: mo.part_name || mo.item || 'Suku Cadang DPM',
+          description: mo.description || 'Suku Cadang DPM',
+          part_name: mo.part_name || mo.description || 'Suku Cadang DPM',
           vendor_code: mo.vendor_code || mo.id_part || '-',
           unit: mo.unit || 'pcs',
           location: mo.location || '-',
@@ -285,7 +295,7 @@ async function handleAssetPartsUsage(request) {
           total_cost: totalCost,
           supplier: mo.seller || '-',
           dpm: mo.dpm || mo.id_register || '-',
-          source: mo.stock === 'Stock' ? 'Order Stok' : 'Pengadaan DPM (Non-Stock)',
+          source: isNonStock ? 'Pengadaan DPM (Non-Stock)' : 'Order Stok',
           date: mo.date,
           id_for: reqId || '-',
           request_id: reqId || '-',
@@ -314,17 +324,18 @@ async function handleAssetPartsUsage(request) {
            sd.quantity,
            sd.supplier,
            sd.id_request,
+           sd.id_asset,
            COALESCE(s.date_issued, r.Time_Request, NOW()) as date,
            DATE_FORMAT(COALESCE(s.date_issued, r.Time_Request, NOW()), '%Y-%m') as month_key,
            DATE_FORMAT(COALESCE(s.date_issued, r.Time_Request, NOW()), '%M %Y') as month_label,
            DATE_FORMAT(COALESCE(s.date_issued, r.Time_Request, NOW()), '%Y') as year_val,
            DATE_FORMAT(COALESCE(s.date_issued, r.Time_Request, NOW()), '%m') as month_val
          FROM service_detail sd
-         INNER JOIN Request r ON (TRIM(r.ID_Request) = TRIM(sd.id_request) OR TRIM(r.ID_Request) = TRIM(sd.id_register))
+         LEFT JOIN Request r ON (TRIM(r.ID_Request) = TRIM(sd.id_request) OR TRIM(r.ID_Request) = TRIM(sd.id_register))
          LEFT JOIN service s ON TRIM(s.id_register) = TRIM(sd.id_register)
-         WHERE r.ID_Asset = ? AND sd.amount > 0
+         WHERE (r.ID_Asset = ? OR sd.id_asset = ?) AND sd.amount > 0
          ORDER BY COALESCE(s.date_issued, r.Time_Request) DESC`,
-        [idAsset]
+        [idAsset, idAsset]
       );
       externalServices = serviceRows || [];
     } catch (e) {
