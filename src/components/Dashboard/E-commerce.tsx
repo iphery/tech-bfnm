@@ -341,6 +341,7 @@ const ECommerce: React.FC = () => {
       <ModalNewAsset
         isVisible={showModalNewAsset}
         onClose={() => setShowModalNewAsset(false)}
+        onSuccess={() => {}}
       />
     </div>
   );

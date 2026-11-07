@@ -24,7 +24,11 @@ const MAINTENANCE_BASED_OPTIONS = [
   { label: "KM Based", value: "KM" },
 ];
 
-export default function ModalNewAsset({ isVisible, onClose, onSuccess }) {
+export default function ModalNewAsset({
+  isVisible,
+  onClose,
+  onSuccess,
+}) {
   const [loadingInit, setLoadingInit] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 

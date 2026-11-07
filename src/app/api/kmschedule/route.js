@@ -3,7 +3,7 @@ import pool from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-export function getMaintenanceByFlag(flag) {
+function getMaintenanceByFlag(flag) {
   const f = Number(flag);
   switch (f) {
     case 0:
