@@ -29,6 +29,7 @@ const ECommerce: React.FC = () => {
   const [inMonth, setInMonth] = useState(0);
   const [waitingPart, setWaitingPart] = useState(0);
   const [openOrder, setOpenOrder] = useState(0);
+  const [userLevel, setUserLevel] = useState("");
 
   const { dataMaintenance, dataOutstanding, outCount, mainCount } =
     useProvider();
@@ -49,6 +50,17 @@ const ECommerce: React.FC = () => {
   };
 
   useEffect(() => {
+    const user = localStorage.getItem("info");
+    if (user != null) {
+      try {
+        const parseUser = JSON.parse(user);
+        if (parseUser && parseUser[0]) {
+          setUserLevel(parseUser[0]["Level"] ?? "");
+        }
+      } catch (e) {
+        console.error("Parse user level error:", e);
+      }
+    }
     fetch_data();
   }, []);
 
@@ -73,8 +85,10 @@ const ECommerce: React.FC = () => {
         </CardDataStats>
       </div>
 
-      {/* Monitoring Anggaran Pemeliharaan (Budget Pos) */}
-      <BudgetPosOverview />
+      {/* Monitoring Anggaran Pemeliharaan (Budget Pos) - Khusus Role <= 2 */}
+      {userLevel !== "" && parseInt(userLevel) <= 2 && (
+        <BudgetPosOverview />
+      )}
 
       {/* Main Grid: Chart + Sidebar Panels test*/}
       <div className="grid grid-cols-12 gap-6">

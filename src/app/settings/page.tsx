@@ -70,6 +70,7 @@ const REPAIR_TARGET_LIST = [
 export default function SettingsPage() {
   const router = useRouter();
   const isSmallScreen = useMediaQuery({ query: "(max-width: 640px)" });
+  const [userLevel, setUserLevel] = useState("");
 
   // Tab State
   const [activeTab, setActiveTab] = useState<
@@ -212,6 +213,15 @@ export default function SettingsPage() {
   };
 
   useEffect(() => {
+    const user = localStorage.getItem("info");
+    if (user) {
+      try {
+        const parseUser = JSON.parse(user);
+        setUserLevel(parseUser[0]?.Level ?? "");
+      } catch (err) {
+        console.error("Parse user level in settings error:", err);
+      }
+    }
     fetchSettings();
   }, []);
 
@@ -1738,6 +1748,28 @@ export default function SettingsPage() {
       )}
     </div>
   );
+
+  if (userLevel !== "" && parseInt(userLevel) > 2) {
+    return (
+      <UserAuth>
+        <div className="flex min-h-screen flex-col items-center justify-center p-6 text-center bg-whiten dark:bg-boxdark-2 text-black dark:text-white">
+          <div className="rounded-2xl border border-stroke bg-white p-8 shadow-sm dark:border-strokedark dark:bg-boxdark max-w-md">
+            <HiOutlineCog6Tooth className="mx-auto text-4xl text-warning mb-3" />
+            <h2 className="text-lg font-bold mb-1">Akses Khusus Tim Pemeliharaan</h2>
+            <p className="text-xs text-body dark:text-bodydark mb-5 leading-relaxed">
+              Pengaturan sistem hanya dapat diakses oleh Administrator, Supervisor, dan Tim Engineering (Role Level 0, 1, 2).
+            </p>
+            <button
+              onClick={() => router.push("/")}
+              className="inline-flex items-center justify-center rounded-xl bg-primary px-5 py-2.5 text-xs font-semibold text-white shadow-md hover:bg-opacity-90 transition-all"
+            >
+              Kembali ke Dashboard
+            </button>
+          </div>
+        </div>
+      </UserAuth>
+    );
+  }
 
   return (
     <UserAuth>

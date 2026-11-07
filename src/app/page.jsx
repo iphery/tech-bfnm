@@ -532,8 +532,10 @@ export default function Home() {
               )}
             </div>
 
-            {/* Monitoring Anggaran Pemeliharaan (Budget Pos) Mobile */}
-            <BudgetPosOverview />
+            {/* Monitoring Anggaran Pemeliharaan (Budget Pos) Mobile (Hanya untuk Role <= 2) */}
+            {userLevel !== "" && parseInt(userLevel) <= 2 && (
+              <BudgetPosOverview />
+            )}
           </main>
 
           {/* Floating Modern Bottom Dock Bar */}

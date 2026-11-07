@@ -120,7 +120,7 @@ const menuGroups = [
         icon: <FaCog className="h-5 w-5" />,
         label: "Pengaturan",
         route: "/settings",
-        consumer: "public",
+        consumer: "private",
       },
       /*
       {
