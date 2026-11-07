@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import axios from "axios";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/app/firebase-config";
 import { toast } from "react-toastify";
 import {
@@ -16,6 +17,7 @@ import {
 } from "react-icons/hi";
 
 const SignIn = () => {
+  const router = useRouter();
   const [inputEmail, setInputEmail] = useState("");
   const [inputPassword, setInputPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -36,6 +38,18 @@ const SignIn = () => {
     } catch {
       // ignore local storage error if restricted
     }
+
+    // Jika pengguna sedang membuka URL /signin dan sudah ada session info tersimpan serta auth aktif, langsung arahkan ke Dashboard
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user && typeof window !== "undefined") {
+        const info = localStorage.getItem("info");
+        if (info) {
+          window.location.href = "/";
+        }
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const getFirebaseErrorMessage = (errorCode) => {
@@ -83,10 +97,11 @@ const SignIn = () => {
     return isValid;
   };
 
-  const fetch_data = async (uid) => {
+  const fetch_data = async (uid, email) => {
     try {
       const response = await axios.post("/api/fetchuser", {
         uid: uid,
+        email: email || inputEmail.trim(),
       });
 
       if (
@@ -107,7 +122,7 @@ const SignIn = () => {
         });
 
         setTimeout(() => {
-          window.location.reload();
+          window.location.href = "/";
         }, 300);
       } else {
         const errMsg = "Data akun pengguna tidak ditemukan di database.";
@@ -141,7 +156,7 @@ const SignIn = () => {
         inputPassword,
       );
 
-      await fetch_data(userCredential.user.uid);
+      await fetch_data(userCredential.user.uid, userCredential.user.email);
     } catch (error) {
       console.error("Login error:", error);
       const friendlyMessage = getFirebaseErrorMessage(error?.code);
