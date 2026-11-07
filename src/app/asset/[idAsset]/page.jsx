@@ -6,7 +6,7 @@ import { CommonInput } from "@/components/input";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import { API_URL, IMAGE_ASSET, IMAGE_USER } from "@/utils/constant";
 import axios from "axios";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { HiAcademicCap, HiLocationMarker, HiSearch } from "react-icons/hi";
 import {

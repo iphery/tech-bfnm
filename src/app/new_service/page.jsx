@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, Suspense } from "react";
 import axios from "axios";
 import { useMediaQuery } from "react-responsive";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
@@ -22,7 +22,7 @@ import {
   FiCpu,
 } from "react-icons/fi";
 
-export default function NewServicePage() {
+function NewServiceContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editId = searchParams ? searchParams.get("edit") : null;
@@ -1141,5 +1141,13 @@ export default function NewServicePage() {
         </div>
       )}
     </UserAuth>
+  );
+}
+
+export default function NewServicePage() {
+  return (
+    <Suspense fallback={null}>
+      <NewServiceContent />
+    </Suspense>
   );
 }
