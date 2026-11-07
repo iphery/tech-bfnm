@@ -251,10 +251,11 @@ export default function ListAsset() {
                 items.map((item, index) => {
                   const mfg = item["Manufacture"] ? ` ${item["Manufacture"]}` : "";
                   const mdl = item["Model"] ? ` ${item["Model"]}` : "";
-                  const title =
-                    item["Type"] === "K"
-                      ? `${item["Model"] || item["Description"] || "Kendaraan"} (${item["No"] || "-"})`
-                      : `${item["Description"] || ""}${mfg}${mdl}`.trim();
+                  const isKendaraan = item["Type"] === "K";
+                  const platNo = item["No"] ? String(item["No"]).trim() : "";
+                  const title = isKendaraan
+                    ? `${item["Manufacture"] || ""} ${item["Model"] || item["Description"] || "Kendaraan"}`.trim()
+                    : `${item["Description"] || ""}${mfg}${mdl}`.trim();
                   const image = item["Image"] ? `${IMAGE_ASSET}/${item["Image"]}` : null;
                   const isBreakdown = item["Reserve"] === 1;
 
@@ -293,9 +294,16 @@ export default function ListAsset() {
                           <span className="text-[11px] font-black tracking-tight text-primary">
                             {item["ID_Asset"]}
                           </span>
-                          <span className="rounded bg-slate-100 px-1.5 py-0.2 text-[10px] font-semibold text-slate-600 dark:bg-boxdark-2 dark:text-slate-300">
-                            {item["Class"] || item["Type"] || "-"}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            {isKendaraan && platNo && (
+                              <span className="rounded bg-amber-500/10 px-1.5 py-0.5 font-mono text-[10px] font-bold text-amber-600 dark:bg-amber-400/10 dark:text-amber-400 border border-amber-500/20">
+                                {platNo}
+                              </span>
+                            )}
+                            <span className="rounded bg-slate-100 px-1.5 py-0.2 text-[10px] font-semibold text-slate-600 dark:bg-boxdark-2 dark:text-slate-300">
+                              {item["Class"] || item["Type"] || "-"}
+                            </span>
+                          </div>
                         </div>
 
                         <h3 className="mt-0.5 truncate text-xs font-bold text-slate-900 dark:text-white" title={title}>
@@ -422,6 +430,8 @@ export default function ListAsset() {
                       <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                         {items.map((item, idx) => {
                           const isBreakdown = item["Reserve"] === 1;
+                          const isKendaraan = item["Type"] === "K";
+                          const platNo = item["No"] ? String(item["No"]).trim() : "";
 
                           return (
                             <tr
@@ -432,7 +442,14 @@ export default function ListAsset() {
                                 {item["ID_Asset"]}
                               </td>
                               <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-white">
-                                {item["Description"] || item["No"] || "-"}
+                                <div>{item["Description"] || (isKendaraan ? "Kendaraan" : "-")}</div>
+                                {isKendaraan && platNo && (
+                                  <div className="mt-0.5">
+                                    <span className="inline-block rounded bg-amber-500/10 px-1.5 py-0.5 font-mono text-[10px] font-bold text-amber-600 dark:bg-amber-400/10 dark:text-amber-400 border border-amber-500/20">
+                                      {platNo}
+                                    </span>
+                                  </div>
+                                )}
                               </td>
                               <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300">
                                 {item["Manufacture"] || "-"}

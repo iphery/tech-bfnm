@@ -36,9 +36,9 @@ export async function POST(request) {
           const unitPrice = qty > 0 ? (totalAmt / qty) : 0;
           const id_stockin = `DPS${Date.now()}${Math.floor(Math.random() * 1000)}`;
 
-          // 1. Insert into stockin
+          // 1. Insert into stock_in
           await pool.query(
-            `INSERT INTO stockin (id_register, id_order, id_part, quantity, id_user, created_at)
+            `INSERT INTO stock_in (id_register, id_order, id_part, quantity, id_user, created_at)
              VALUES (?, ?, ?, ?, ?, ?)`,
             [id_stockin, idRegister, sd.id_part, qty, receiver, created]
           );

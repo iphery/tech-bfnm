@@ -33,7 +33,7 @@ export async function POST(request) {
             const id_stockin = `PO${Date.now()}${Math.floor(Math.random() * 1000)}`;
 
             await pool.query(
-              `INSERT INTO stockin (id_register, id_order, id_part, quantity, id_user, created_at)
+              `INSERT INTO stock_in (id_register, id_order, id_part, quantity, id_user, created_at)
                VALUES (?, ?, ?, ?, ?, ?)`,
               [id_stockin, idRegister, od.id_part, od.quantity, receiver, created]
             );
