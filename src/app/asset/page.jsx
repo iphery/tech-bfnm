@@ -24,6 +24,7 @@ import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import UserAuth from "@/components/auth";
 import useColorMode from "@/hooks/useColorMode";
 import { IMAGE_ASSET } from "@/utils/constant";
+import ModalNewAsset from "@/components/modalNewAsset";
 
 const CATEGORIES = [
   { label: "Kendaraan", types: ["K"], icon: <MdOutlineDirectionsCar /> },
@@ -70,6 +71,7 @@ export default function ListAsset() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("Semua");
   const [ready, setReady] = useState(false);
+  const [showModalNewAsset, setShowModalNewAsset] = useState(false);
 
   const observerTarget = useRef(null);
   const activeCategoryRef = useRef(activeCategory);
@@ -209,17 +211,29 @@ export default function ListAsset() {
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setColorMode(colorMode === "light" ? "dark" : "light")}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-slate-700 transition dark:border-slate-700 dark:bg-boxdark-2 dark:text-warning"
-              >
-                {colorMode === "dark" ? (
-                  <MdOutlineLightMode className="h-4 w-4" />
-                ) : (
-                  <MdOutlineDarkMode className="h-4 w-4" />
-                )}
-              </button>
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setShowModalNewAsset(true)}
+                  className="flex h-9 items-center space-x-1 rounded-xl bg-primary px-2.5 text-xs font-bold text-white shadow-sm transition active:scale-95"
+                  title="Tambah Aset"
+                >
+                  <span className="text-base leading-none">+</span>
+                  <span>Aset</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setColorMode(colorMode === "light" ? "dark" : "light")}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-slate-700 transition dark:border-slate-700 dark:bg-boxdark-2 dark:text-warning"
+                >
+                  {colorMode === "dark" ? (
+                    <MdOutlineLightMode className="h-4 w-4" />
+                  ) : (
+                    <MdOutlineDarkMode className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </header>
 
             {/* Search Input Bar */}
@@ -375,7 +389,7 @@ export default function ListAsset() {
 
                   <button
                     type="button"
-                    onClick={() => router.push("/new_asset")}
+                    onClick={() => setShowModalNewAsset(true)}
                     className="rounded-xl bg-primary px-3.5 py-1.5 text-xs font-bold text-white shadow-sm hover:bg-primary/90 transition"
                   >
                     + Tambah Aset
@@ -526,6 +540,16 @@ export default function ListAsset() {
             </div>
           </DefaultLayout>
         )}
+
+        {/* Modal Tambah Aset Baru */}
+        <ModalNewAsset
+          isVisible={showModalNewAsset}
+          onClose={() => setShowModalNewAsset(false)}
+          onSuccess={() => {
+            setPage(1);
+            fetchAssets(1, activeCategory, search, false);
+          }}
+        />
       </div>
     </UserAuth>
   );

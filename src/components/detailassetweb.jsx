@@ -46,8 +46,9 @@ import {
 } from "react-icons/hi2";
 import { FaPlus, FaCheckSquare } from "react-icons/fa";
 import { MdCheckBox, MdCheckBoxOutlineBlank } from "react-icons/md";
-import { BsBoxSeam, BsGearWideConnected } from "react-icons/bs";
+import { BsBoxSeam, BsGearWideConnected, BsFire } from "react-icons/bs";
 import { RepairStatus } from "@/utils/repairstatus";
+import Pemanasan from "@/components/pemanasan";
 import { NotifySuccess, NotifyError } from "@/utils/notify";
 import AssetMaintenanceCostChart from "@/components/Charts/AssetMaintenanceCostChart";
 
@@ -1018,6 +1019,30 @@ export default function DetailAssetWeb({ idAsset }) {
                 </button>
               </div>
             </CustomModal>
+
+            {/* KHUSUS ASSET GENSET BFNMF0402: MENU & RIWAYAT PEMANASAN */}
+            {dataAsset.ID_Asset === "BFNMF0402" && (
+              <PageCard>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between border-b border-stroke pb-3 dark:border-strokedark">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-danger text-white shadow-md">
+                        <BsFire className="text-lg" />
+                      </div>
+                      <div>
+                        <h2 className="text-base font-bold text-black dark:text-white">
+                          Pemanasan Rutin Genset
+                        </h2>
+                        <p className="text-xs text-body dark:text-bodydark">
+                          Jadwal verifikasi scan dan catatan riwayat operasi pemanasan genset
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <Pemanasan />
+                </div>
+              </PageCard>
+            )}
 
             {/* 1. DATA PERBAIKAN: Kartu Riwayat Perawatan & Perbaikan (F.BFNM.026/0) */}
             <PageCardLimited>

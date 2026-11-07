@@ -22,6 +22,7 @@ import { useProvider } from "@/app/appcontext";
 import { formatTime, shortDate } from "@/utils/dateformat";
 import { IMAGE_ASSET } from "@/utils/constant";
 import BudgetPosOverview from "./BudgetPosOverview";
+import ModalNewAsset from "../modalNewAsset";
 
 const ECommerce: React.FC = () => {
   const [series, setSeries] = useState([]);
@@ -30,6 +31,7 @@ const ECommerce: React.FC = () => {
   const [waitingPart, setWaitingPart] = useState(0);
   const [openOrder, setOpenOrder] = useState(0);
   const [userLevel, setUserLevel] = useState("");
+  const [showModalNewAsset, setShowModalNewAsset] = useState(false);
 
   const { dataMaintenance, dataOutstanding, outCount, mainCount } =
     useProvider();
@@ -222,15 +224,16 @@ const ECommerce: React.FC = () => {
             </p>
 
             <div className="mt-4 grid grid-cols-2 gap-2.5">
-              <Link
-                href="/new_asset"
+              <button
+                type="button"
+                onClick={() => setShowModalNewAsset(true)}
                 className="flex flex-col items-center justify-center rounded-xl border border-white/10 bg-white/10 p-3 text-center transition hover:bg-white/20"
               >
                 <MdOutlineAddBox className="h-6 w-6 text-emerald-400" />
                 <span className="mt-1.5 text-xs font-semibold">
                   Tambah Aset
                 </span>
-              </Link>
+              </button>
 
               <Link
                 href="/scanner"
@@ -333,6 +336,12 @@ const ECommerce: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal Tambah Aset Baru */}
+      <ModalNewAsset
+        isVisible={showModalNewAsset}
+        onClose={() => setShowModalNewAsset(false)}
+      />
     </div>
   );
 };

@@ -564,127 +564,159 @@ export default function ListPart() {
         {/* Modal New Part */}
         <CustomModal
           isVisible={modalNewPart}
-          isSmallWidth="sm"
+          isSmallWidth="md"
+          title="Registrasi Part Baru"
           onClose={() => setModalNewPart(false)}
         >
           <div className="space-y-4">
-            <div>
-              <h4 className="text-base font-bold text-black dark:text-white">
-                Registrasi Part Baru
-              </h4>
-              <p className="text-xs text-body dark:text-bodydark">
-                Lengkapi rincian suku cadang untuk dimasukkan ke dalam katalog master.
-              </p>
-            </div>
+            <p className="text-xs text-body dark:text-bodydark pb-2 border-b border-stroke/60 dark:border-strokedark/60">
+              Lengkapi rincian suku cadang untuk dimasukkan ke dalam katalog master sistem inventaris.
+            </p>
 
-            <CommonInput
-              placeholder="Deskripsi / Nama Part"
-              input={inputNewData.description}
-              onInputChange={(val) =>
-                setInputNewData((prev) => ({ ...prev, description: val }))
-              }
-              error={inputNewDataError.descriptionError}
-              errorMessage="Deskripsi wajib diisi"
-              onChg={() =>
-                setInputNewDataError((prev) => ({ ...prev, descriptionError: false }))
-              }
-            />
-
-            <CommonInput
-              placeholder="Part Number / Detail Vendor"
-              input={inputNewData.vendor_code}
-              onInputChange={(val) =>
-                setInputNewData((prev) => ({ ...prev, vendor_code: val }))
-              }
-              error={inputNewDataError.codeError}
-              errorMessage="Part Number wajib diisi"
-              onChg={() =>
-                setInputNewDataError((prev) => ({ ...prev, codeError: false }))
-              }
-            />
-
-            <div className="grid grid-cols-2 gap-2">
-              <CommonInput
-                placeholder="Satuan (Pcs, Box, Ltr)"
-                input={inputNewData.unit}
-                onInputChange={(val) =>
-                  setInputNewData((prev) => ({ ...prev, unit: val }))
-                }
-                error={inputNewDataError.unitError}
-                errorMessage="Wajib"
-                onChg={() =>
-                  setInputNewDataError((prev) => ({ ...prev, unitError: false }))
-                }
-              />
-              <CommonInput
-                placeholder="Lokasi Rak / Gudang"
-                input={inputNewData.location}
-                onInputChange={(val) =>
-                  setInputNewData((prev) => ({ ...prev, location: val }))
-                }
-                error={inputNewDataError.locationError}
-                errorMessage="Wajib"
-                onChg={() =>
-                  setInputNewDataError((prev) => ({ ...prev, locationError: false }))
-                }
-              />
-            </div>
-
-            <CommonInput
-              placeholder="Catatan / Remark"
-              input={inputNewData.remark}
-              onInputChange={(val) =>
-                setInputNewData((prev) => ({ ...prev, remark: val }))
-              }
-              error={inputNewDataError.remarkError}
-              errorMessage="Catatan wajib diisi"
-              onChg={() =>
-                setInputNewDataError((prev) => ({ ...prev, remarkError: false }))
-              }
-            />
-
-            <CommonButtonFull
-              label="Simpan Part Baru"
-              onload={onloadNew}
-              disabled={onloadNew}
-              onClick={async () => {
-                let hasErr = false;
-                const errState = {
-                  descriptionError: !inputNewData.description.trim(),
-                  codeError: !inputNewData.vendor_code.trim(),
-                  unitError: !inputNewData.unit.trim(),
-                  locationError: !inputNewData.location.trim(),
-                  remarkError: !inputNewData.remark.trim(),
-                };
-                if (Object.values(errState).some(Boolean)) {
-                  setInputNewDataError(errState);
-                  return;
-                }
-
-                setOnloadNew(true);
-                try {
-                  const res = await axios.post("/api/newpart", {
-                    data: inputNewData,
-                  });
-                  if (res.status === 200) {
-                    NotifySuccess(res.data.response || "Part berhasil ditambahkan");
-                    setModalNewPart(false);
-                    setInputNewData({
-                      description: "",
-                      vendor_code: "",
-                      unit: "",
-                      location: "",
-                      remark: "",
-                    });
-                    fetch_data();
+            <div className="space-y-3.5">
+              <div>
+                <label className="block text-[11px] font-semibold text-black dark:text-white mb-1">
+                  Deskripsi / Nama Part <span className="text-danger">*</span>
+                </label>
+                <CommonInput
+                  placeholder="Contoh: Bearing 6205, Filter Oli, dsb..."
+                  input={inputNewData.description}
+                  onInputChange={(val) =>
+                    setInputNewData((prev) => ({ ...prev, description: val }))
                   }
-                } catch (e) {
-                  NotifyError("Gagal menyimpan part baru");
-                } finally {
-                  setOnloadNew(false);
-                }
-              }}
-            />
+                  error={inputNewDataError.descriptionError}
+                  errorMessage="Deskripsi wajib diisi"
+                  onChg={() =>
+                    setInputNewDataError((prev) => ({ ...prev, descriptionError: false }))
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-black dark:text-white mb-1">
+                  Part Number / Detail Vendor <span className="text-danger">*</span>
+                </label>
+                <CommonInput
+                  placeholder="Nomor part vendor / kode pabrikan..."
+                  input={inputNewData.vendor_code}
+                  onInputChange={(val) =>
+                    setInputNewData((prev) => ({ ...prev, vendor_code: val }))
+                  }
+                  error={inputNewDataError.codeError}
+                  errorMessage="Part Number wajib diisi"
+                  onChg={() =>
+                    setInputNewDataError((prev) => ({ ...prev, codeError: false }))
+                  }
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-semibold text-black dark:text-white mb-1">
+                    Satuan Unit <span className="text-danger">*</span>
+                  </label>
+                  <CommonInput
+                    placeholder="Contoh: Pcs, Box, Ltr, Roll"
+                    input={inputNewData.unit}
+                    onInputChange={(val) =>
+                      setInputNewData((prev) => ({ ...prev, unit: val }))
+                    }
+                    error={inputNewDataError.unitError}
+                    errorMessage="Satuan wajib diisi"
+                    onChg={() =>
+                      setInputNewDataError((prev) => ({ ...prev, unitError: false }))
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold text-black dark:text-white mb-1">
+                    Lokasi Rak / Gudang <span className="text-danger">*</span>
+                  </label>
+                  <CommonInput
+                    placeholder="Contoh: Rak A-02, Gudang 1"
+                    input={inputNewData.location}
+                    onInputChange={(val) =>
+                      setInputNewData((prev) => ({ ...prev, location: val }))
+                    }
+                    error={inputNewDataError.locationError}
+                    errorMessage="Lokasi wajib diisi"
+                    onChg={() =>
+                      setInputNewDataError((prev) => ({ ...prev, locationError: false }))
+                    }
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-black dark:text-white mb-1">
+                  Catatan / Remark <span className="text-danger">*</span>
+                </label>
+                <CommonInput
+                  placeholder="Catatan spesifikasi / peruntukan part..."
+                  input={inputNewData.remark}
+                  onInputChange={(val) =>
+                    setInputNewData((prev) => ({ ...prev, remark: val }))
+                  }
+                  error={inputNewDataError.remarkError}
+                  errorMessage="Catatan wajib diisi"
+                  onChg={() =>
+                    setInputNewDataError((prev) => ({ ...prev, remarkError: false }))
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-stroke/60 dark:border-strokedark/60 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setModalNewPart(false)}
+                className="rounded-xl border border-stroke px-4 py-2.5 text-xs font-semibold text-body hover:bg-gray-100 dark:border-strokedark dark:text-bodydark dark:hover:bg-meta-4 transition"
+              >
+                Batal
+              </button>
+              <CommonButtonFull
+                label="Simpan Part Baru"
+                onload={onloadNew}
+                disabled={onloadNew}
+                onClick={async () => {
+                  let hasErr = false;
+                  const errState = {
+                    descriptionError: !inputNewData.description.trim(),
+                    codeError: !inputNewData.vendor_code.trim(),
+                    unitError: !inputNewData.unit.trim(),
+                    locationError: !inputNewData.location.trim(),
+                    remarkError: !inputNewData.remark.trim(),
+                  };
+                  if (Object.values(errState).some(Boolean)) {
+                    setInputNewDataError(errState);
+                    return;
+                  }
+
+                  setOnloadNew(true);
+                  try {
+                    const res = await axios.post("/api/newpart", {
+                      data: inputNewData,
+                    });
+                    if (res.status === 200) {
+                      NotifySuccess(res.data.response || "Part berhasil ditambahkan");
+                      setModalNewPart(false);
+                      setInputNewData({
+                        description: "",
+                        vendor_code: "",
+                        unit: "",
+                        location: "",
+                        remark: "",
+                      });
+                      fetch_data();
+                    }
+                  } catch (e) {
+                    NotifyError("Gagal menyimpan part baru");
+                  } finally {
+                    setOnloadNew(false);
+                  }
+                }}
+              />
+            </div>
           </div>
         </CustomModal>
       </div>

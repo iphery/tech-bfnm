@@ -630,16 +630,6 @@ export default function DetailAssetMobile({ idAsset }) {
                     />
                   </button>
                 )}
-                {/* Pemanasan Quick Trigger */}
-                {dataAsset.ID_Asset === "BFNMF0402" && (
-                  <button
-                    type="button"
-                    onClick={() => router.push("/pemanasan")}
-                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-danger/10 text-danger transition-colors hover:bg-danger/20"
-                  >
-                    <BsFire className="text-base" />
-                  </button>
-                )}
               </div>
             </div>
 
@@ -1551,6 +1541,28 @@ export default function DetailAssetMobile({ idAsset }) {
                     </div>
                   </div>
                 </div>
+
+                {/* KHUSUS ASSET GENSET BFNMF0402: MENU & RIWAYAT PEMANASAN */}
+                {dataAsset.ID_Asset === "BFNMF0402" && (
+                  <div className="rounded-2xl border border-warning/30 bg-warning/5 p-4 shadow-sm dark:border-warning/20 dark:bg-warning/10">
+                    <div className="mb-3 flex items-center justify-between border-b border-warning/20 pb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-danger text-white shadow-sm">
+                          <BsFire className="text-sm" />
+                        </div>
+                        <div>
+                          <h3 className="text-xs font-bold text-black dark:text-white">
+                            Pemanasan Rutin Genset
+                          </h3>
+                          <span className="text-[10px] text-body dark:text-bodydark">
+                            Jadwal & verifikasi scan pemanasan genset
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <Pemanasan />
+                  </div>
+                )}
 
                 {/* 1. DATA PERBAIKAN: Riwayat Pengerjaan & Perbaikan (F.BFNM.026/0) */}
                 <div className="space-y-3">

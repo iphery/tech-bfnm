@@ -95,7 +95,7 @@ const menuGroups = [
         route: "#",
         consumer: "private",
         children: [
-          { label: "List", route: "/parts" },
+          { label: "Inventory", route: "/parts" },
           { label: "Usage Summary", route: "/partsusage" },
           { label: "Transaction", route: "/partstransaction" },
           { label: "Order", route: "/partsorder" },
@@ -119,8 +119,12 @@ const menuGroups = [
       {
         icon: <FaCog className="h-5 w-5" />,
         label: "Pengaturan",
-        route: "/settings",
+        route: "#",
         consumer: "private",
+        children: [
+          { label: "Sistem", route: "/settings/system" },
+          { label: "Schedule", route: "/settings/schedule" },
+        ],
       },
       /*
       {
@@ -403,7 +407,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
         }`}
       >
         {/* <!-- SIDEBAR HEADER --> */}
-        <div className="flex items-center justify-between gap-3 px-6 py-5 border-b border-slate-800">
+        <div className="flex items-center justify-between gap-3 border-b border-slate-800 px-6 py-5">
           <Link href="/" className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-primary to-blue-500 shadow-md">
               <Image
@@ -415,8 +419,10 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               />
             </div>
             <div>
-              <div className="text-base font-black tracking-wider text-white">MITA</div>
-              <div className="text-[10px] font-semibold tracking-wider text-slate-400 uppercase">
+              <div className="text-base font-black tracking-wider text-white">
+                MITA
+              </div>
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                 Maintenance Ops
               </div>
             </div>

@@ -176,6 +176,17 @@ export default function Page() {
       });
 
       if (response.status == 200) {
+        if (selectedBased === "KM") {
+          try {
+            const checkRes = await axios.get("/api/getallasset?limit=1&page=1");
+            const latestAsset = checkRes.data?.data?.[0];
+            if (latestAsset?.ID_Asset && latestAsset?.Based === "KM") {
+              await axios.post("/api/registerkmbased", { idAsset: latestAsset.ID_Asset });
+            }
+          } catch (kmErr) {
+            console.error("Auto register KMbasedSchedule error:", kmErr);
+          }
+        }
         console.log("ok");
         router.push("/");
       }

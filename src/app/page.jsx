@@ -45,6 +45,7 @@ import Notifikasi from "@/components/notifikasi";
 import ECommerce from "@/components/Dashboard/E-commerce";
 import BudgetPosOverview from "@/components/Dashboard/BudgetPosOverview";
 import useColorMode from "@/hooks/useColorMode";
+import ModalNewAsset from "@/components/modalNewAsset";
 
 export default function Home() {
   const [isClient, setIsClient] = useState(false);
@@ -52,6 +53,7 @@ export default function Home() {
   const router = useRouter();
   const [openScanner, setOpenScanner] = useState(false);
   const [colorMode, setColorMode] = useColorMode();
+  const [showModalNewAsset, setShowModalNewAsset] = useState(false);
 
   const {
     dataMaintenance,
@@ -197,7 +199,7 @@ export default function Home() {
               {/* New Asset Button */}
               <button
                 type="button"
-                onClick={() => router.push("/new_asset")}
+                onClick={() => setShowModalNewAsset(true)}
                 className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-slate-700 transition hover:bg-slate-200 dark:border-slate-700 dark:bg-boxdark-2 dark:text-slate-200"
                 title="Tambah Asset Baru"
               >
@@ -600,6 +602,12 @@ export default function Home() {
           </DefaultLayout>
         </div>
       )}
+
+      {/* Modal Tambah Aset Baru */}
+      <ModalNewAsset
+        isVisible={showModalNewAsset}
+        onClose={() => setShowModalNewAsset(false)}
+      />
     </UserAuth>
   );
 }

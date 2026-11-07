@@ -483,8 +483,27 @@ export default function ReportPresentationPage() {
 
           {/* ================= MAIN CONTENT ================= */}
           {loading && !presentationData ? (
-            <div className="flex h-64 items-center justify-center">
-              <PageLoader />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-pulse">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-boxdark space-y-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="h-12 w-12 rounded-2xl bg-slate-200/80 dark:bg-slate-700/60" />
+                    <div className="h-6 w-16 rounded-full bg-slate-200/80 dark:bg-slate-700/60" />
+                  </div>
+                  <div className="space-y-2 pt-2">
+                    <div className="h-3 w-14 rounded bg-slate-200/80 dark:bg-slate-700/60" />
+                    <div className="h-5 w-4/5 rounded bg-slate-300/80 dark:bg-slate-700/70" />
+                    <div className="h-4 w-3/5 rounded bg-slate-200/70 dark:bg-slate-700/50" />
+                  </div>
+                  <div className="border-t border-slate-100 pt-3 dark:border-slate-800 flex items-center justify-between">
+                    <div className="h-3 w-20 rounded bg-slate-200/70 dark:bg-slate-700/50" />
+                    <div className="h-5 w-24 rounded bg-slate-300/80 dark:bg-slate-700/70" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             /* ================= 7 CLEAN KPI CARDS (TITLE + TARGET ONLY) ================= */
