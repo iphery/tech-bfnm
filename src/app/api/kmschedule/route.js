@@ -1,21 +1,21 @@
-import { NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import { NextResponse } from "next/server";
+import pool from "@/lib/db";
 
-export const dynamic = 'force-dynamic';
-
+export const dynamic = "force-dynamic";
+//for
 function getMaintenanceByFlag(flag) {
   const f = Number(flag);
   switch (f) {
     case 0:
-      return { current: 'Minor Service', next: 'Intermediate Service' };
+      return { current: "Minor Service", next: "Intermediate Service" };
     case 1:
-      return { current: 'Intermediate Service', next: 'Minor Service' };
+      return { current: "Intermediate Service", next: "Minor Service" };
     case 2:
-      return { current: 'Minor Service', next: 'Full Service' };
+      return { current: "Minor Service", next: "Full Service" };
     case 3:
-      return { current: 'Full Service', next: 'Minor Service' };
+      return { current: "Full Service", next: "Minor Service" };
     default:
-      return { current: 'Minor Service', next: 'Intermediate Service' };
+      return { current: "Minor Service", next: "Intermediate Service" };
   }
 }
 
@@ -23,7 +23,7 @@ function getMaintenanceByFlag(flag) {
 export async function GET(request) {
   try {
     const url = new URL(request.url);
-    const search = url.searchParams.get('search') || '';
+    const search = url.searchParams.get("search") || "";
 
     let sql = `
       SELECT 
@@ -65,10 +65,13 @@ export async function GET(request) {
       data: rows,
     });
   } catch (error) {
-    console.error('GET /api/kmschedule error:', error);
+    console.error("GET /api/kmschedule error:", error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Gagal memuat matrix KMbasedSchedule' },
-      { status: 500 }
+      {
+        success: false,
+        error: error.message || "Gagal memuat matrix KMbasedSchedule",
+      },
+      { status: 500 },
     );
   }
 }
@@ -81,33 +84,46 @@ export async function POST(request) {
 
     if (!idAsset) {
       return NextResponse.json(
-        { success: false, error: 'ID_Asset wajib disertakan' },
-        { status: 400 }
+        { success: false, error: "ID_Asset wajib disertakan" },
+        { status: 400 },
       );
     }
 
     // Ambil data lama
     const [existing] = await pool.query(
-      'SELECT * FROM KMbasedSchedule WHERE ID_Asset = ? LIMIT 1',
-      [idAsset]
+      "SELECT * FROM KMbasedSchedule WHERE ID_Asset = ? LIMIT 1",
+      [idAsset],
     );
 
     if (existing.length === 0) {
       return NextResponse.json(
-        { success: false, error: `Record KMbasedSchedule untuk aset ${idAsset} tidak ditemukan` },
-        { status: 404 }
+        {
+          success: false,
+          error: `Record KMbasedSchedule untuk aset ${idAsset} tidak ditemukan`,
+        },
+        { status: 404 },
       );
     }
 
     const currentRecord = existing[0];
 
     // Nilai baru atau fallback lama
-    const newFlag = flagKm !== undefined && flagKm !== null ? Number(flagKm) : currentRecord.Flag_KM;
-    const newCurrentKm = currentKm !== undefined && currentKm !== null ? Number(currentKm) : currentRecord.Current_KM;
-    const newScheduleKm = scheduleKm !== undefined && scheduleKm !== null ? Number(scheduleKm) : currentRecord.Schedule_KM;
+    const newFlag =
+      flagKm !== undefined && flagKm !== null
+        ? Number(flagKm)
+        : currentRecord.Flag_KM;
+    const newCurrentKm =
+      currentKm !== undefined && currentKm !== null
+        ? Number(currentKm)
+        : currentRecord.Current_KM;
+    const newScheduleKm =
+      scheduleKm !== undefined && scheduleKm !== null
+        ? Number(scheduleKm)
+        : currentRecord.Schedule_KM;
 
     // Kalkulasi maintenance otomatis berdasarkan Flag_KM
-    const { current: curMaint, next: nextMaint } = getMaintenanceByFlag(newFlag);
+    const { current: curMaint, next: nextMaint } =
+      getMaintenanceByFlag(newFlag);
 
     // Hitung Late_KM (jika current > schedule)
     const lateKm = Number(newCurrentKm) - Number(newScheduleKm);
@@ -121,7 +137,15 @@ export async function POST(request) {
            Next_Maintenance = ?,
            Late_KM = ?
        WHERE ID_Asset = ?`,
-      [newFlag, newCurrentKm, newScheduleKm, curMaint, nextMaint, lateKm, idAsset]
+      [
+        newFlag,
+        newCurrentKm,
+        newScheduleKm,
+        curMaint,
+        nextMaint,
+        lateKm,
+        idAsset,
+      ],
     );
 
     return NextResponse.json({
@@ -138,10 +162,10 @@ export async function POST(request) {
       },
     });
   } catch (error) {
-    console.error('POST /api/kmschedule error:', error);
+    console.error("POST /api/kmschedule error:", error);
     return NextResponse.json(
-      { success: false, error: error.message || 'Gagal memperbarui matrix KM' },
-      { status: 500 }
+      { success: false, error: error.message || "Gagal memperbarui matrix KM" },
+      { status: 500 },
     );
   }
 }
