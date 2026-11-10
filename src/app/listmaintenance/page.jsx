@@ -12,6 +12,7 @@ import {
   MdOutlineLightMode,
   MdOutlineDarkMode,
 } from "react-icons/md";
+import { HiOutlineCalendar, HiOutlineWrenchScrewdriver } from "react-icons/hi2";
 import { LiaUser } from "react-icons/lia";
 import { AiTwotonePicture } from "react-icons/ai";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
@@ -117,40 +118,61 @@ export default function Page() {
       {isSmallScreen ? (
         <div className="pb-16">
           {/* Mobile Sticky Header */}
-          <header className="sticky top-0 z-40 flex items-center justify-between border-b border-slate-200/80 bg-white/90 px-4 py-3 backdrop-blur-md dark:border-slate-800 dark:bg-boxdark/90">
-            <div className="flex items-center space-x-3">
+          <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 px-4 py-3 backdrop-blur-md dark:border-slate-800 dark:bg-boxdark/95">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <button
+                  type="button"
+                  onClick={() => router.back()}
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-slate-700 transition active:scale-95 dark:border-slate-700 dark:bg-boxdark-2 dark:text-slate-200"
+                >
+                  <MdArrowBack className="h-5 w-5" />
+                </button>
+                <div>
+                  <h1 className="text-sm font-bold text-slate-900 dark:text-white">
+                    Maintenance
+                  </h1>
+                  <p className="text-[11px] text-slate-400">
+                    {counts.all} Servis Berkala (PM)
+                  </p>
+                </div>
+              </div>
+
               <button
                 type="button"
-                onClick={() => router.back()}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-slate-700 transition active:scale-95 dark:border-slate-700 dark:bg-boxdark-2 dark:text-slate-200"
+                onClick={() => setColorMode(colorMode === "light" ? "dark" : "light")}
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-slate-700 transition dark:border-slate-700 dark:bg-boxdark-2 dark:text-warning"
               >
-                <MdArrowBack className="h-5 w-5" />
+                {colorMode === "dark" ? (
+                  <MdOutlineLightMode className="h-4 w-4" />
+                ) : (
+                  <MdOutlineDarkMode className="h-4 w-4" />
+                )}
               </button>
-              <div>
-                <h1 className="text-sm font-bold text-slate-900 dark:text-white">
-                  Servis Berkala (PM)
-                </h1>
-                <p className="text-[11px] text-slate-400">
-                  {counts.all} Jadwal Maintenance
-                </p>
-              </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setColorMode(colorMode === "light" ? "dark" : "light")}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-slate-700 transition dark:border-slate-700 dark:bg-boxdark-2 dark:text-warning"
-            >
-              {colorMode === "dark" ? (
-                <MdOutlineLightMode className="h-4 w-4" />
-              ) : (
-                <MdOutlineDarkMode className="h-4 w-4" />
-              )}
-            </button>
+            {/* Main Navigation Segmented Tabs: Schedule & Activity */}
+            <div className="mt-3 grid grid-cols-2 gap-1.5 rounded-xl border border-slate-200/90 bg-slate-100/90 p-1 dark:border-slate-700 dark:bg-boxdark-2">
+              <button
+                type="button"
+                onClick={() => router.push("/schedule")}
+                className="flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-bold text-slate-600 transition hover:text-slate-900 active:scale-95 dark:text-slate-400 dark:hover:text-white"
+              >
+                <HiOutlineCalendar className="text-sm" />
+                <span>Schedule</span>
+              </button>
+              <button
+                type="button"
+                className="flex items-center justify-center gap-1.5 rounded-lg bg-sky-500 py-1.5 text-xs font-bold text-white shadow-sm"
+              >
+                <HiOutlineWrenchScrewdriver className="text-sm" />
+                <span>Activity</span>
+              </button>
+            </div>
           </header>
 
           {/* Filter Tabs */}
-          <div className="sticky top-[57px] z-30 flex space-x-2 overflow-x-auto border-b border-slate-200/80 bg-white/80 px-4 py-2.5 backdrop-blur-md scrollbar-none dark:border-slate-800 dark:bg-boxdark/80">
+          <div className="sticky top-[108px] z-30 flex space-x-2 overflow-x-auto border-b border-slate-200/80 bg-white/80 px-4 py-2.5 backdrop-blur-md scrollbar-none dark:border-slate-800 dark:bg-boxdark/80">
             {tabs.map((tab) => (
               <button
                 key={tab.key}

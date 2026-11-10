@@ -10,9 +10,16 @@ import { PageLoader } from "@/components/loader";
 import { NotifyError } from "@/utils/notify";
 import { formatDateLocal } from "@/utils/dateformat";
 import { RepairStatus } from "@/utils/repairstatus";
+import useColorMode from "@/hooks/useColorMode";
 
 // Icons
 import {
+  MdArrowBack,
+  MdOutlineLightMode,
+  MdOutlineDarkMode,
+} from "react-icons/md";
+import {
+  HiOutlineCalendar,
   HiOutlineWrenchScrewdriver,
   HiOutlineClock,
   HiOutlineMagnifyingGlass,
@@ -35,6 +42,7 @@ import {
 export default function MaintenanceActivityPage() {
   const router = useRouter();
   const isSmallScreen = useMediaQuery({ query: "(max-width: 768px)" });
+  const [colorMode, setColorMode] = useColorMode();
 
   // Tab State: 'CM' (Perbaikan) | 'PM' (Maintenance)
   const [activeTab, setActiveTab] = useState("CM");
@@ -112,26 +120,81 @@ export default function MaintenanceActivityPage() {
     setSearchQuery("");
   };
 
-  return (
-    <UserAuth>
-      <DefaultLayout>
-        <div className="space-y-5 pb-12">
-          {/* ================= HEADER SECTION ================= */}
-          <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white via-slate-50 to-primary/5 p-5 sm:p-6 shadow-sm backdrop-blur-md dark:border-slate-800 dark:from-boxdark dark:via-boxdark-2 dark:to-primary/10">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              {/* Title & Info */}
-              <div className="space-y-1.5">
-                <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-bold text-primary">
-                  <FaTools className="text-xs" />
-                  <span>ONGOING WORK ORDER &amp; ACTIVITY</span>
-                </div>
-                <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white sm:text-3xl">
-                  Aktivitas Maintenance &amp; Perbaikan
+  const content = (
+    <div className="space-y-5 pb-12">
+      {/* Mobile Sticky Header (matches listmaintenance mobile header) */}
+      <div className="block md:hidden">
+        <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/95 px-4 py-3 backdrop-blur-md dark:border-slate-800 dark:bg-boxdark/95">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <button
+                type="button"
+                onClick={() => router.back()}
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-slate-700 transition active:scale-95 dark:border-slate-700 dark:bg-boxdark-2 dark:text-slate-200"
+              >
+                <MdArrowBack className="h-5 w-5" />
+              </button>
+              <div>
+                <h1 className="text-sm font-bold text-slate-900 dark:text-white">
+                  Maintenance
                 </h1>
-                <p className="text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
-                  Daftar tiket pengerjaan yang sedang berjalan (aktif) di lapangan. Pantau progres perbaikan dan perawatan rutin secara real-time.
+                <p className="text-[11px] text-slate-400">
+                  {counts.total || 0} Servis Berkala (PM)
                 </p>
               </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setColorMode(colorMode === "light" ? "dark" : "light")}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-slate-100 text-slate-700 transition dark:border-slate-700 dark:bg-boxdark-2 dark:text-warning"
+            >
+              {colorMode === "dark" ? (
+                <MdOutlineLightMode className="h-4 w-4" />
+              ) : (
+                <MdOutlineDarkMode className="h-4 w-4" />
+              )}
+            </button>
+          </div>
+
+          {/* Main Navigation Segmented Tabs: Schedule & Activity */}
+          <div className="mt-3 grid grid-cols-2 gap-1.5 rounded-xl border border-slate-200/90 bg-slate-100/90 p-1 dark:border-slate-700 dark:bg-boxdark-2">
+            <button
+              type="button"
+              onClick={() => router.push("/schedule")}
+              className="flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-bold text-slate-600 transition hover:text-slate-900 active:scale-95 dark:text-slate-400 dark:hover:text-white"
+            >
+              <HiOutlineCalendar className="text-sm" />
+              <span>Schedule</span>
+            </button>
+            <button
+              type="button"
+              className="flex items-center justify-center gap-1.5 rounded-lg bg-sky-500 py-1.5 text-xs font-bold text-white shadow-sm"
+            >
+              <HiOutlineWrenchScrewdriver className="text-sm" />
+              <span>Activity</span>
+            </button>
+          </div>
+        </header>
+      </div>
+
+      <div className="px-4 md:px-0">
+        {/* ================= HEADER SECTION ================= */}
+        <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-gradient-to-br from-white via-slate-50 to-primary/5 p-5 sm:p-6 shadow-sm backdrop-blur-md dark:border-slate-800 dark:from-boxdark dark:via-boxdark-2 dark:to-primary/10">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            {/* Title & Info */}
+            <div className="space-y-1.5">
+              <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-bold text-primary">
+                <FaTools className="text-xs" />
+                <span>ONGOING WORK ORDER &amp; ACTIVITY</span>
+              </div>
+              <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white sm:text-3xl">
+                Aktivitas Maintenance &amp; Perbaikan
+              </h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
+                Daftar tiket pengerjaan yang sedang berjalan (aktif) di lapangan. Pantau progres perbaikan dan perawatan rutin secara real-time.
+              </p>
+            </div>
 
               {/* Action Buttons: Refresh */}
               <div className="flex items-center gap-2">
@@ -416,7 +479,18 @@ export default function MaintenanceActivityPage() {
             </div>
           )}
         </div>
-      </DefaultLayout>
+      </div>
+  );
+
+  return (
+    <UserAuth>
+      {isSmallScreen ? (
+        <div className="min-h-screen bg-whiten text-slate-800 transition-colors duration-200 dark:bg-boxdark-2 dark:text-bodydark">
+          {content}
+        </div>
+      ) : (
+        <DefaultLayout>{content}</DefaultLayout>
+      )}
     </UserAuth>
   );
 }
