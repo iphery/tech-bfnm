@@ -5,7 +5,7 @@ import Webcam from "react-webcam";
 import { DataProvider, useProvider } from "@/app/appcontext";
 import { CommonButton } from "@/components/button";
 import { useRouter } from "next/navigation";
-import { API_URL } from "@/utils/constant";
+import { NotifySuccess, NotifyError } from "@/utils/notify";
 import axios from "axios";
 
 const CameraPage = () => {
@@ -91,32 +91,34 @@ const CameraPage = () => {
               onload={onloadImage}
               onClick={async () => {
                 setOnloadImage(true);
-                if (cameraResult == "asset_user") {
-                  const apiUrl = `${API_URL}/savinguserimage`;
-                  const response = await axios.post(apiUrl, {
+                try {
+                  const endpoint =
+                    cameraResult === "asset_user"
+                      ? "/api/savinguserimage"
+                      : "/api/savingassetimage";
+
+                  const response = await axios.post(endpoint, {
                     image: imageSrc,
                     idAsset: globalIdAsset,
                   });
 
-                  if (response.status == 200) {
+                  if (response.data?.error === 0 || response.status === 200) {
+                    NotifySuccess(
+                      cameraResult === "asset_user"
+                        ? "Foto user berhasil disimpan"
+                        : "Foto aset berhasil disimpan",
+                    );
                     setImageSrc("");
                     setGlobalIdAsset("");
                     setCameraResult("");
                     router.back();
+                  } else {
+                    NotifyError(response.data?.message || "Gagal menyimpan foto");
                   }
-                } else if (cameraResult == "asset_image") {
-                  const apiUrl = `${API_URL}/savingassetimage`;
-                  const response = await axios.post(apiUrl, {
-                    image: imageSrc,
-                    idAsset: globalIdAsset,
-                  });
-
-                  if (response.status == 200) {
-                    setImageSrc("");
-                    setGlobalIdAsset("");
-                    setCameraResult("");
-                    router.back();
-                  }
+                } catch (err) {
+                  console.error("Save image error:", err);
+                  NotifyError("Gagal menyimpan foto ke server");
+                } finally {
                   setOnloadImage(false);
                 }
               }}

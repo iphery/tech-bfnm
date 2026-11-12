@@ -123,11 +123,13 @@ export async function POST(request) {
       }
     }
 
-    // Build update fields dynamically
+    // Build update fields dynamically matching real columns in Assets table
+    // Actual columns: ["ID_Asset","Description","Manufacture","Model","No","User","Year","Class","Available","Reserve","Based","Location","PM_Category","View","Type","Image","Profile_Image","uid","divisi_glob","hp","nonactive","update_data","checking_missing_request","factory"]
     const updateFields = [];
     const updateValues = [];
 
-    const fieldMap = {
+    // Map input fields to actual table columns
+    const allowedFields = {
       Description,
       Class,
       Type,
@@ -138,17 +140,11 @@ export async function POST(request) {
       User,
       PM_Category,
       Based,
-      Capacity,
-      Power,
-      Voltage,
-      Phase,
-      Frequency,
-      Year_Manufacture,
-      Serial_Number,
+      Year: Year_Manufacture !== undefined ? Year_Manufacture : body.Year,
     };
 
-    Object.entries(fieldMap).forEach(([col, val]) => {
-      if (val !== undefined) {
+    Object.entries(allowedFields).forEach(([col, val]) => {
+      if (val !== undefined && val !== null) {
         updateFields.push(`${col} = ?`);
         updateValues.push(val);
       }

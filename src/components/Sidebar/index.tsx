@@ -469,6 +469,33 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                           setPageName={setPageName}
                         />
                       ))
+                    : parseInt(userLevel) === 3
+                    ? group.menuItems
+                        .map((menuItem) => {
+                          if (menuItem.label === "Inventory") {
+                            // Untuk teknisi (level 3), hanya izinkan submenu Inventory (cek stok)
+                            return {
+                              ...menuItem,
+                              children: menuItem.children?.filter(
+                                (c: any) => c.route === "/parts",
+                              ),
+                            };
+                          }
+                          return menuItem;
+                        })
+                        .filter(
+                          (menuItem) =>
+                            menuItem.consumer === "public" ||
+                            menuItem.label === "Inventory",
+                        )
+                        .map((menuItem, menuIndex) => (
+                          <SidebarItem
+                            key={menuIndex}
+                            item={menuItem}
+                            pageName={pageName}
+                            setPageName={setPageName}
+                          />
+                        ))
                     : group.menuItems.map((menuItem, menuIndex) =>
                         menuItem.consumer == "public" ? (
                           <SidebarItem

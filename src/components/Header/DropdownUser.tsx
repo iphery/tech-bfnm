@@ -20,7 +20,8 @@ const DropdownUser = () => {
     const l = Number(lvl);
     if (l === 0) return "Developer";
     if (l === 1) return "Supervisor";
-    if (l === 2) return "Engineering";
+    if (l === 2) return "Admin";
+    if (l === 3) return "Teknisi";
     if (l === 4) return "User";
     return "";
   };

@@ -49,7 +49,7 @@ export const CustomModal = ({
       }}
     >
       <div
-        className={`w-full max-h-[92vh] flex flex-col my-auto ${
+        className={`relative w-full max-h-[92vh] flex flex-col my-auto ${
           isSmallWidth === "sm"
             ? "sm:max-w-md"
             : isSmallWidth === "md"
@@ -61,18 +61,19 @@ export const CustomModal = ({
             : "sm:max-w-2xl"
         }`}
       >
-        <div className="flex justify-end pb-2 shrink-0">
+        <div className="relative rounded-2xl border border-stroke bg-white shadow-2xl dark:border-strokedark dark:bg-boxdark text-black dark:text-white flex flex-col overflow-hidden max-h-[92vh]">
+          {/* Close button inside modal container */}
           <button
             type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors shadow-sm"
+            aria-label="Tutup Modal"
+            className="absolute top-3.5 right-3.5 z-50 flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-black dark:bg-meta-4 dark:text-gray-300 dark:hover:bg-strokedark dark:hover:text-white transition-colors shadow-sm"
             onClick={() => onClose()}
           >
             <HiOutlineXMark className="text-xl" />
           </button>
-        </div>
-        <div className="rounded-2xl border border-stroke bg-white shadow-2xl dark:border-strokedark dark:bg-boxdark text-black dark:text-white flex flex-col overflow-hidden max-h-[calc(92vh-2.5rem)]">
+
           {title && (
-            <div className="border-b border-stroke px-5 py-3.5 dark:border-strokedark">
+            <div className="border-b border-stroke pl-5 pr-12 py-3.5 dark:border-strokedark">
               <h3 className="text-sm font-bold text-black dark:text-white">
                 {title}
               </h3>

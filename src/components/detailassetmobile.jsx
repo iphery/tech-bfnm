@@ -156,10 +156,6 @@ export default function DetailAssetMobile({ idAsset }) {
   const [editLocation, setEditLocation] = useState("");
   const [editUser, setEditUser] = useState("");
   const [editPMCategory, setEditPMCategory] = useState("");
-  const [editCapacity, setEditCapacity] = useState("");
-  const [editPower, setEditPower] = useState("");
-  const [editVoltage, setEditVoltage] = useState("");
-  const [editSerial, setEditSerial] = useState("");
   const [editYear, setEditYear] = useState("");
 
   const [editImage, setEditImage] = useState(null);
@@ -180,11 +176,7 @@ export default function DetailAssetMobile({ idAsset }) {
     setEditLocation(dataAsset.Location || "");
     setEditUser(dataAsset.User || "");
     setEditPMCategory(dataAsset.PM_Category || "");
-    setEditCapacity(dataAsset.Capacity || "");
-    setEditPower(dataAsset.Power || "");
-    setEditVoltage(dataAsset.Voltage || "");
-    setEditSerial(dataAsset.Serial_Number || "");
-    setEditYear(dataAsset.Year_Manufacture || "");
+    setEditYear(dataAsset.Year || dataAsset.Year_Manufacture || "");
 
     setEditImage(null);
     setImagePreview(
@@ -277,10 +269,6 @@ export default function DetailAssetMobile({ idAsset }) {
         Location: editLocation,
         User: editUser,
         PM_Category: editPMCategory,
-        Capacity: editCapacity,
-        Power: editPower,
-        Voltage: editVoltage,
-        Serial_Number: editSerial,
         Year_Manufacture: editYear,
         image: editImage,
         user_image: editUserImage,
@@ -808,7 +796,7 @@ export default function DetailAssetMobile({ idAsset }) {
                               </div>
                             ) : null;
                           case "3":
-                            return parseInt(userLevel) <= 2 ? (
+                            return parseInt(userLevel) <= 3 ? (
                               <button
                                 type="button"
                                 onClick={() => setModalReceivePart(true)}
@@ -1244,16 +1232,19 @@ export default function DetailAssetMobile({ idAsset }) {
                                 </span>
                               </div>
                               <div className="text-right">
-                                {Number(
-                                  item["amount"] || item["total_cost"] || 0,
-                                ) > 0 && (
-                                  <span className="font-mono block text-[11px] font-bold text-success">
-                                    Rp{" "}
-                                    {Number(
-                                      item["amount"] || item["total_cost"] || 0,
-                                    ).toLocaleString("id-ID")}
-                                  </span>
-                                )}
+                                {parseInt(userLevel) <= 2 &&
+                                  Number(
+                                    item["amount"] || item["total_cost"] || 0,
+                                  ) > 0 && (
+                                    <span className="font-mono block text-[11px] font-bold text-success">
+                                      Rp{" "}
+                                      {Number(
+                                        item["amount"] ||
+                                          item["total_cost"] ||
+                                          0,
+                                      ).toLocaleString("id-ID")}
+                                    </span>
+                                  )}
                                 <span className="bg-gray-100 rounded-md px-2 py-0.5 text-[10px] font-bold text-black dark:bg-meta-4 dark:text-white">
                                   {item["quantity"]} {item["unit"] || "pcs"}
                                 </span>
@@ -1339,34 +1330,6 @@ export default function DetailAssetMobile({ idAsset }) {
                         </span>
                       </div>
                     )}
-
-                    {/* Camera Trigger Buttons (Overlay Top Right) */}
-                    <div className="absolute right-3 top-3 flex items-center gap-2">
-                      <button
-                        type="button"
-                        title="Foto Aset"
-                        onClick={() => {
-                          setCameraResult("asset_image");
-                          setGlobalIdAsset(dataAsset.ID_Asset);
-                          router.push("/camera");
-                        }}
-                        className="flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white shadow backdrop-blur-md transition-colors hover:bg-black/70"
-                      >
-                        <MdOutlinePhotoCamera className="text-lg" />
-                      </button>
-                      <button
-                        type="button"
-                        title="Foto User"
-                        onClick={() => {
-                          setCameraResult("asset_user");
-                          setGlobalIdAsset(dataAsset.ID_Asset);
-                          router.push("/camera");
-                        }}
-                        className="flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white shadow backdrop-blur-md transition-colors hover:bg-black/70"
-                      >
-                        <MdOutlinePhotoCameraFront className="text-lg" />
-                      </button>
-                    </div>
 
                     {/* Gradient Overlay for Readable Text */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
@@ -1514,7 +1477,7 @@ export default function DetailAssetMobile({ idAsset }) {
 
                       {/* Request Perawatan (Preventive) */}
                       {openMaintenance !== 1 &&
-                        (parseInt(userLevel) <= 2 ||
+                        (parseInt(userLevel) <= 3 ||
                           (dataAsset.Type === "K" &&
                             dataAsset.Based === "KM" &&
                             parseInt(userLevel) === 4)) && (
@@ -1687,31 +1650,33 @@ export default function DetailAssetMobile({ idAsset }) {
 
                 {/* 2. PEMAKAIAN SUKU CADANG & PERKIRAAN KEBUTUHAN MESIN (Mobile) */}
                 <div className="space-y-3">
-                  {/* Card 0: Tren Biaya Maintenance & Analisis Cost */}
-                  <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
-                    <div className="mb-3 flex items-center justify-between border-b border-stroke/60 pb-2.5 dark:border-strokedark/60">
-                      <div>
-                        <h3 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-black dark:text-white">
-                          <HiOutlineChartBar className="text-base text-primary" />
-                          Tren Biaya Pemeliharaan (Cost)
-                        </h3>
-                        <p className="text-[10px] text-body dark:text-bodydark">
-                          Biaya suku cadang & servis mesin ini per bulan
-                        </p>
+                  {/* Card 0: Tren Biaya Maintenance & Analisis Cost (Hanya Level <= 2) */}
+                  {parseInt(userLevel) <= 2 && (
+                    <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
+                      <div className="mb-3 flex items-center justify-between border-b border-stroke/60 pb-2.5 dark:border-strokedark/60">
+                        <div>
+                          <h3 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-black dark:text-white">
+                            <HiOutlineChartBar className="text-base text-primary" />
+                            Tren Biaya Pemeliharaan (Cost)
+                          </h3>
+                          <p className="text-[10px] text-body dark:text-bodydark">
+                            Biaya suku cadang & servis mesin ini per bulan
+                          </p>
+                        </div>
+                        <span className="font-mono text-xs font-bold text-primary">
+                          Rp{" "}
+                          {Number(
+                            partsUsage.summary?.grand_total_cost || 0,
+                          ).toLocaleString("id-ID")}
+                        </span>
                       </div>
-                      <span className="font-mono text-xs font-bold text-primary">
-                        Rp{" "}
-                        {Number(
-                          partsUsage.summary?.grand_total_cost || 0,
-                        ).toLocaleString("id-ID")}
-                      </span>
-                    </div>
 
-                    <AssetMaintenanceCostChart
-                      costTrend={partsUsage.cost_trend || []}
-                      summary={partsUsage.summary || {}}
-                    />
-                  </div>
+                      <AssetMaintenanceCostChart
+                        costTrend={partsUsage.cost_trend || []}
+                        summary={partsUsage.summary || {}}
+                      />
+                    </div>
+                  )}
 
                   {/* Card 1: Perkiraan Kebutuhan Suku Cadang Rutin Mesin (Tabel & Paginasi 10/hal) */}
                   <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
@@ -1757,9 +1722,11 @@ export default function DetailAssetMobile({ idAsset }) {
                                 <th className="px-2.5 py-2 text-center font-semibold">
                                   Est/Bln
                                 </th>
-                                <th className="px-2.5 py-2 text-right font-semibold">
-                                  Est. Biaya/Bln
-                                </th>
+                                {parseInt(userLevel) <= 2 && (
+                                  <th className="px-2.5 py-2 text-right font-semibold">
+                                    Est. Biaya/Bln
+                                  </th>
+                                )}
                                 <th className="px-2.5 py-2 text-center font-semibold">
                                   Stok
                                 </th>
@@ -1790,14 +1757,15 @@ export default function DetailAssetMobile({ idAsset }) {
                                       <span className="block max-w-[120px] truncate text-[11px] font-semibold text-black dark:text-white">
                                         {part.description}
                                       </span>
-                                      {Number(part.unit_price || 0) > 0 && (
-                                        <span className="font-mono block text-[9px] font-semibold text-meta-3">
-                                          @Rp{" "}
-                                          {Number(
-                                            part.unit_price,
-                                          ).toLocaleString("id-ID")}
-                                        </span>
-                                      )}
+                                      {parseInt(userLevel) <= 2 &&
+                                        Number(part.unit_price || 0) > 0 && (
+                                          <span className="font-mono block text-[9px] font-semibold text-meta-3">
+                                            @Rp{" "}
+                                            {Number(
+                                              part.unit_price,
+                                            ).toLocaleString("id-ID")}
+                                          </span>
+                                        )}
                                     </td>
                                     <td className="font-mono whitespace-nowrap px-2.5 py-2 text-center text-[11px] font-bold text-black dark:text-white">
                                       {part.total_qty} {part.unit}
@@ -1809,16 +1777,18 @@ export default function DetailAssetMobile({ idAsset }) {
                                       {part.recommended_monthly_stock}{" "}
                                       {part.unit}
                                     </td>
-                                    <td className="font-mono whitespace-nowrap px-2.5 py-2 text-right text-[11px] font-bold text-primary">
-                                      {Number(part.est_monthly_cost || 0) >
-                                      0 ? (
-                                        `Rp ${Number(part.est_monthly_cost).toLocaleString("id-ID")}`
-                                      ) : (
-                                        <span className="font-normal text-body dark:text-bodydark">
-                                          Rp 0
-                                        </span>
-                                      )}
-                                    </td>
+                                    {parseInt(userLevel) <= 2 && (
+                                      <td className="font-mono whitespace-nowrap px-2.5 py-2 text-right text-[11px] font-bold text-primary">
+                                        {Number(part.est_monthly_cost || 0) >
+                                        0 ? (
+                                          `Rp ${Number(part.est_monthly_cost).toLocaleString("id-ID")}`
+                                        ) : (
+                                          <span className="font-normal text-body dark:text-bodydark">
+                                            Rp 0
+                                          </span>
+                                        )}
+                                      </td>
+                                    )}
                                     <td className="whitespace-nowrap px-2.5 py-2 text-center">
                                       <span
                                         className={`inline-block rounded-full px-1.5 py-0.5 text-[9px] font-bold ${
@@ -1898,17 +1868,19 @@ export default function DetailAssetMobile({ idAsset }) {
                         className="bg-gray-50 w-full cursor-pointer rounded-xl border border-stroke px-3 py-1.5 text-xs font-semibold text-black outline-none transition-colors focus:border-primary dark:border-strokedark dark:bg-meta-4/20 dark:text-white"
                       >
                         <option value="ALL">
-                          Semua Bulan ({allHistoryItems.length} transaksi • Rp{" "}
-                          {Number(
-                            partsUsage.summary?.grand_total_cost || 0,
-                          ).toLocaleString("id-ID")}
+                          Semua Bulan ({allHistoryItems.length} transaksi
+                          {parseInt(userLevel) <= 2
+                            ? ` • Rp ${Number(partsUsage.summary?.grand_total_cost || 0).toLocaleString("id-ID")}`
+                            : ""}
                           )
                         </option>
                         {partsUsage.monthly_breakdown?.map((m) => (
                           <option key={m.month_key} value={m.month_key}>
-                            {m.month_label} (Rp{" "}
-                            {Number(m.total_cost || 0).toLocaleString("id-ID")}{" "}
-                            • {m.total_qty} part)
+                            {m.month_label} (
+                            {parseInt(userLevel) <= 2
+                              ? `Rp ${Number(m.total_cost || 0).toLocaleString("id-ID")} • `
+                              : ""}
+                            {m.total_qty} part)
                           </option>
                         ))}
                       </select>
@@ -1934,9 +1906,11 @@ export default function DetailAssetMobile({ idAsset }) {
                                 <th className="px-2.5 py-2 text-center font-semibold">
                                   Jumlah
                                 </th>
-                                <th className="px-2.5 py-2 text-right font-semibold">
-                                  Biaya
-                                </th>
+                                {parseInt(userLevel) <= 2 && (
+                                  <th className="px-2.5 py-2 text-right font-semibold">
+                                    Biaya
+                                  </th>
+                                )}
                                 <th className="px-2.5 py-2 font-semibold">
                                   Tiket
                                 </th>
@@ -1979,28 +1953,30 @@ export default function DetailAssetMobile({ idAsset }) {
                                     <td className="font-mono whitespace-nowrap px-2.5 py-2 text-center text-xs font-bold text-warning">
                                       -{item.qty} {item.unit || "pcs"}
                                     </td>
-                                    <td className="font-mono whitespace-nowrap px-2.5 py-2 text-right text-xs font-bold text-black dark:text-white">
-                                      {Number(item.total_cost || 0) > 0 ? (
-                                        <span className="font-bold text-primary">
-                                          Rp{" "}
-                                          {Number(
-                                            item.total_cost,
-                                          ).toLocaleString("id-ID")}
-                                        </span>
-                                      ) : (
-                                        <span className="text-[10px] font-normal text-body dark:text-bodydark">
-                                          Rp 0
-                                        </span>
-                                      )}
-                                      {Number(item.unit_price || 0) > 0 && (
-                                        <span className="block text-[9px] font-normal text-body dark:text-bodydark">
-                                          @Rp{" "}
-                                          {Number(
-                                            item.unit_price,
-                                          ).toLocaleString("id-ID")}
-                                        </span>
-                                      )}
-                                    </td>
+                                    {parseInt(userLevel) <= 2 && (
+                                      <td className="font-mono whitespace-nowrap px-2.5 py-2 text-right text-xs font-bold text-black dark:text-white">
+                                        {Number(item.total_cost || 0) > 0 ? (
+                                          <span className="font-bold text-primary">
+                                            Rp{" "}
+                                            {Number(
+                                              item.total_cost,
+                                            ).toLocaleString("id-ID")}
+                                          </span>
+                                        ) : (
+                                          <span className="text-[10px] font-normal text-body dark:text-bodydark">
+                                            Rp 0
+                                          </span>
+                                        )}
+                                        {Number(item.unit_price || 0) > 0 && (
+                                          <span className="block text-[9px] font-normal text-body dark:text-bodydark">
+                                            @Rp{" "}
+                                            {Number(
+                                              item.unit_price,
+                                            ).toLocaleString("id-ID")}
+                                          </span>
+                                        )}
+                                      </td>
+                                    )}
                                     <td className="font-mono whitespace-nowrap px-2.5 py-2 text-[10px] text-body dark:text-bodydark">
                                       <span className="block font-bold">
                                         #{item.id_for}
@@ -2022,34 +1998,36 @@ export default function DetailAssetMobile({ idAsset }) {
                                 );
                               })}
 
-                              {selectedUsageMonth !== "ALL" && (
-                                <tr className="border-t-2 border-primary/20 bg-primary/5 font-bold dark:bg-primary/10">
-                                  <td
-                                    colSpan={2}
-                                    className="px-2.5 py-2 text-right text-[11px] font-bold text-black dark:text-white"
-                                  >
-                                    Total Bulan Ini:
-                                  </td>
-                                  <td className="font-mono px-2.5 py-2 text-center text-xs font-bold text-warning">
-                                    -
-                                    {currentFilteredHistory.reduce(
-                                      (acc, it) => acc + (Number(it.qty) || 0),
-                                      0,
-                                    )}
-                                  </td>
-                                  <td className="font-mono whitespace-nowrap px-2.5 py-2 text-right text-xs font-bold text-primary">
-                                    Rp{" "}
-                                    {currentFilteredHistory
-                                      .reduce(
+                              {selectedUsageMonth !== "ALL" &&
+                                parseInt(userLevel) <= 2 && (
+                                  <tr className="border-t-2 border-primary/20 bg-primary/5 font-bold dark:bg-primary/10">
+                                    <td
+                                      colSpan={2}
+                                      className="px-2.5 py-2 text-right text-[11px] font-bold text-black dark:text-white"
+                                    >
+                                      Total Bulan Ini:
+                                    </td>
+                                    <td className="font-mono px-2.5 py-2 text-center text-xs font-bold text-warning">
+                                      -
+                                      {currentFilteredHistory.reduce(
                                         (acc, it) =>
-                                          acc + (Number(it.total_cost) || 0),
+                                          acc + (Number(it.qty) || 0),
                                         0,
-                                      )
-                                      .toLocaleString("id-ID")}
-                                  </td>
-                                  <td></td>
-                                </tr>
-                              )}
+                                      )}
+                                    </td>
+                                    <td className="font-mono whitespace-nowrap px-2.5 py-2 text-right text-xs font-bold text-primary">
+                                      Rp{" "}
+                                      {currentFilteredHistory
+                                        .reduce(
+                                          (acc, it) =>
+                                            acc + (Number(it.total_cost) || 0),
+                                          0,
+                                        )
+                                        .toLocaleString("id-ID")}
+                                    </td>
+                                    <td></td>
+                                  </tr>
+                                )}
                             </tbody>
                           </table>
                         </div>
@@ -2285,19 +2263,12 @@ export default function DetailAssetMobile({ idAsset }) {
             <div>
               <h3 className="flex items-center gap-1.5 text-sm font-bold uppercase tracking-wider text-black dark:text-white">
                 <HiOutlinePencilSquare className="text-base text-primary" />
-                Edit Data & Foto #{dataAsset.ID_Asset}
+                Edit Data #{dataAsset.ID_Asset}
               </h3>
               <span className="text-[11px] text-body dark:text-bodydark">
                 Perbarui data unit atau ambil foto aset & foto user
               </span>
             </div>
-            <button
-              type="button"
-              onClick={() => setOpenEditAssetModalState(false)}
-              className="p-1 text-body hover:text-black dark:text-bodydark dark:hover:text-white"
-            >
-              <MdOutlineClose className="text-lg" />
-            </button>
           </div>
 
           <div className="max-h-[75vh] space-y-4 overflow-y-auto p-4 text-xs">
@@ -2557,44 +2528,6 @@ export default function DetailAssetMobile({ idAsset }) {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
-                    Kapasitas
-                  </label>
-                  <CommonInput
-                    input={editCapacity}
-                    type="text"
-                    placeholder="Kapasitas..."
-                    onInputChange={(val) => setEditCapacity(val)}
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
-                    Daya (Power)
-                  </label>
-                  <CommonInput
-                    input={editPower}
-                    type="text"
-                    placeholder="Power..."
-                    onInputChange={(val) => setEditPower(val)}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
-                    Tegangan (Voltage)
-                  </label>
-                  <CommonInput
-                    input={editVoltage}
-                    type="text"
-                    placeholder="Voltage..."
-                    onInputChange={(val) => setEditVoltage(val)}
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
                     Tahun Pembuatan
                   </label>
                   <CommonInput
@@ -2605,31 +2538,11 @@ export default function DetailAssetMobile({ idAsset }) {
                   />
                 </div>
               </div>
-
-              <div>
-                <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
-                  Nomor Seri (Serial No)
-                </label>
-                <CommonInput
-                  input={editSerial}
-                  type="text"
-                  placeholder="Serial number pabrik..."
-                  onInputChange={(val) => setEditSerial(val)}
-                />
-              </div>
             </div>
           </div>
 
           {/* Footer Actions */}
           <div className="bg-gray-50/50 flex items-center justify-end gap-2 border-t border-stroke px-4 py-3 dark:border-strokedark dark:bg-meta-4/20">
-            <button
-              type="button"
-              disabled={savingAsset}
-              onClick={() => setOpenEditAssetModalState(false)}
-              className="hover:bg-gray-100 rounded-xl border border-stroke px-3 py-2 text-xs font-semibold text-body transition-all dark:border-strokedark dark:text-bodydark dark:hover:bg-meta-4"
-            >
-              Batal
-            </button>
             <button
               type="button"
               disabled={savingAsset}

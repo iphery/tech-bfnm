@@ -104,10 +104,6 @@ export default function DetailAssetWeb({ idAsset }) {
   const [editLocation, setEditLocation] = useState("");
   const [editUser, setEditUser] = useState("");
   const [editPMCategory, setEditPMCategory] = useState("");
-  const [editCapacity, setEditCapacity] = useState("");
-  const [editPower, setEditPower] = useState("");
-  const [editVoltage, setEditVoltage] = useState("");
-  const [editSerial, setEditSerial] = useState("");
   const [editYear, setEditYear] = useState("");
 
   // Foto Aset
@@ -132,11 +128,7 @@ export default function DetailAssetWeb({ idAsset }) {
     setEditLocation(dataAsset.Location || "");
     setEditUser(dataAsset.User || "");
     setEditPMCategory(dataAsset.PM_Category || "");
-    setEditCapacity(dataAsset.Capacity || "");
-    setEditPower(dataAsset.Power || "");
-    setEditVoltage(dataAsset.Voltage || "");
-    setEditSerial(dataAsset.Serial_Number || "");
-    setEditYear(dataAsset.Year_Manufacture || "");
+    setEditYear(dataAsset.Year || dataAsset.Year_Manufacture || "");
 
     setEditImage(null);
     setImagePreview(
@@ -229,10 +221,6 @@ export default function DetailAssetWeb({ idAsset }) {
         Location: editLocation,
         User: editUser,
         PM_Category: editPMCategory,
-        Capacity: editCapacity,
-        Power: editPower,
-        Voltage: editVoltage,
-        Serial_Number: editSerial,
         Year_Manufacture: editYear,
         image: editImage,
         user_image: editUserImage,
@@ -677,7 +665,7 @@ export default function DetailAssetWeb({ idAsset }) {
                 <div>
                   <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-black dark:text-white">
                     <HiOutlinePencilSquare className="text-base text-primary" />
-                    Edit Data & Foto Aset #{dataAsset.ID_Asset}
+                    Edit Data #{dataAsset.ID_Asset}
                   </h3>
                   <span className="text-xs text-body dark:text-bodydark">
                     Perbarui informasi spesifikasi atau foto unit
@@ -939,54 +927,6 @@ export default function DetailAssetWeb({ idAsset }) {
 
                   <div>
                     <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
-                      Kapasitas
-                    </label>
-                    <CommonInput
-                      input={editCapacity}
-                      type="text"
-                      placeholder="Contoh: 5 Ton, 3000 L, dll..."
-                      onInputChange={(val) => setEditCapacity(val)}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
-                      Daya (Power)
-                    </label>
-                    <CommonInput
-                      input={editPower}
-                      type="text"
-                      placeholder="Contoh: 15 kW, 20 HP..."
-                      onInputChange={(val) => setEditPower(val)}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
-                      Tegangan (Voltage)
-                    </label>
-                    <CommonInput
-                      input={editVoltage}
-                      type="text"
-                      placeholder="Contoh: 380V, 220V..."
-                      onInputChange={(val) => setEditVoltage(val)}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
-                      Nomor Seri (Serial No)
-                    </label>
-                    <CommonInput
-                      input={editSerial}
-                      type="text"
-                      placeholder="Nomor seri pabrik..."
-                      onInputChange={(val) => setEditSerial(val)}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-[10px] font-semibold text-body dark:text-bodydark">
                       Tahun Pembuatan
                     </label>
                     <CommonInput
@@ -1001,14 +941,6 @@ export default function DetailAssetWeb({ idAsset }) {
 
               {/* Footer Actions */}
               <div className="bg-gray-50/50 flex items-center justify-end gap-2 border-t border-stroke px-5 py-3 dark:border-strokedark dark:bg-meta-4/20">
-                <button
-                  type="button"
-                  disabled={savingAsset}
-                  onClick={() => setOpenEditAssetModalState(false)}
-                  className="hover:bg-gray-100 rounded-xl border border-stroke px-4 py-2 text-xs font-semibold text-body transition-all dark:border-strokedark dark:text-bodydark dark:hover:bg-meta-4"
-                >
-                  Batal
-                </button>
                 <button
                   type="button"
                   disabled={savingAsset}
@@ -1034,7 +966,8 @@ export default function DetailAssetWeb({ idAsset }) {
                           Pemanasan Rutin Genset
                         </h2>
                         <p className="text-xs text-body dark:text-bodydark">
-                          Jadwal verifikasi scan dan catatan riwayat operasi pemanasan genset
+                          Jadwal verifikasi scan dan catatan riwayat operasi
+                          pemanasan genset
                         </p>
                       </div>
                     </div>
@@ -1196,7 +1129,7 @@ export default function DetailAssetWeb({ idAsset }) {
                                 </span>
                               </td>
                               <td className="px-4 py-3 text-center">
-                                {parseInt(userLevel) <= 2 &&
+                                {parseInt(userLevel) <= 3 &&
                                   parseInt(item.Step) >= 3 &&
                                   parseInt(item.Step) <= 5 && (
                                     <button
@@ -1454,15 +1387,16 @@ export default function DetailAssetWeb({ idAsset }) {
                               </span>
                             </div>
                             <div className="text-right">
-                              {Number(item.amount || item.total_cost || 0) >
-                                0 && (
-                                <span className="font-mono block text-xs font-bold text-success">
-                                  Rp{" "}
-                                  {Number(
-                                    item.amount || item.total_cost || 0,
-                                  ).toLocaleString("id-ID")}
-                                </span>
-                              )}
+                              {parseInt(userLevel) <= 2 &&
+                                Number(item.amount || item.total_cost || 0) >
+                                  0 && (
+                                  <span className="font-mono block text-xs font-bold text-success">
+                                    Rp{" "}
+                                    {Number(
+                                      item.amount || item.total_cost || 0,
+                                    ).toLocaleString("id-ID")}
+                                  </span>
+                                )}
                               <span className="font-mono rounded-md bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary">
                                 {item.quantity} {item.unit || "pcs"}
                               </span>
@@ -1494,10 +1428,14 @@ export default function DetailAssetWeb({ idAsset }) {
                                 {item.id_register}
                               </span>
                             </div>
-                            <span className="font-mono rounded-md bg-warning/10 px-2.5 py-1 font-bold text-warning">
-                              Rp{" "}
-                              {Number(item.amount || 0).toLocaleString("id-ID")}
-                            </span>
+                            {parseInt(userLevel) <= 2 && (
+                              <span className="font-mono rounded-md bg-warning/10 px-2.5 py-1 font-bold text-warning">
+                                Rp{" "}
+                                {Number(item.amount || 0).toLocaleString(
+                                  "id-ID",
+                                )}
+                              </span>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -1563,17 +1501,19 @@ export default function DetailAssetWeb({ idAsset }) {
 
                   {/* Quick Summary Badges */}
                   <div className="flex flex-wrap items-center gap-2 text-xs">
-                    <div className="bg-gray-50 rounded-xl border border-stroke/50 px-3 py-1.5 dark:border-strokedark/50 dark:bg-meta-4/20">
-                      <span className="block text-[10px] text-body dark:text-bodydark">
-                        Total Biaya Maintenance
-                      </span>
-                      <span className="font-mono font-bold text-primary">
-                        Rp{" "}
-                        {Number(
-                          partsUsage.summary?.grand_total_cost || 0,
-                        ).toLocaleString("id-ID")}
-                      </span>
-                    </div>
+                    {parseInt(userLevel) <= 2 && (
+                      <div className="bg-gray-50 rounded-xl border border-stroke/50 px-3 py-1.5 dark:border-strokedark/50 dark:bg-meta-4/20">
+                        <span className="block text-[10px] text-body dark:text-bodydark">
+                          Total Biaya Maintenance
+                        </span>
+                        <span className="font-mono font-bold text-primary">
+                          Rp{" "}
+                          {Number(
+                            partsUsage.summary?.grand_total_cost || 0,
+                          ).toLocaleString("id-ID")}
+                        </span>
+                      </div>
+                    )}
                     <div className="bg-gray-50 rounded-xl border border-stroke/50 px-3 py-1.5 dark:border-strokedark/50 dark:bg-meta-4/20">
                       <span className="block text-[10px] text-body dark:text-bodydark">
                         MTTR (Mean Time to Repair)
@@ -1607,26 +1547,28 @@ export default function DetailAssetWeb({ idAsset }) {
                   </div>
                 </div>
 
-                {/* Sub-section 0: Grafik & Analisis Biaya Pemeliharaan Mesin */}
-                <div className="rounded-2xl border border-stroke bg-white p-4 dark:border-strokedark dark:bg-boxdark/60">
-                  <div className="mb-3 flex items-center justify-between border-b border-stroke pb-3 dark:border-strokedark">
-                    <div>
-                      <h4 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-black dark:text-white">
-                        <HiOutlineArrowTrendingUp className="text-sm text-primary" />
-                        Tren Biaya Pemeliharaan Mesin per Bulan
-                      </h4>
-                      <span className="text-[11px] text-body dark:text-bodydark">
-                        Statistik pengeluaran biaya suku cadang dan jasa
-                        perbaikan mesin ini dari bulan ke bulan
-                      </span>
+                {/* Sub-section 0: Grafik & Analisis Biaya Pemeliharaan Mesin (Hanya Level <= 2) */}
+                {parseInt(userLevel) <= 2 && (
+                  <div className="rounded-2xl border border-stroke bg-white p-4 dark:border-strokedark dark:bg-boxdark/60">
+                    <div className="mb-3 flex items-center justify-between border-b border-stroke pb-3 dark:border-strokedark">
+                      <div>
+                        <h4 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-black dark:text-white">
+                          <HiOutlineArrowTrendingUp className="text-sm text-primary" />
+                          Tren Biaya Pemeliharaan Mesin per Bulan
+                        </h4>
+                        <span className="text-[11px] text-body dark:text-bodydark">
+                          Statistik pengeluaran biaya suku cadang dan jasa
+                          perbaikan mesin ini dari bulan ke bulan
+                        </span>
+                      </div>
                     </div>
-                  </div>
 
-                  <AssetMaintenanceCostChart
-                    costTrend={partsUsage.cost_trend || []}
-                    summary={partsUsage.summary || {}}
-                  />
-                </div>
+                    <AssetMaintenanceCostChart
+                      costTrend={partsUsage.cost_trend || []}
+                      summary={partsUsage.summary || {}}
+                    />
+                  </div>
+                )}
 
                 {/* Sub-section 1: Perkiraan Kebutuhan Rutin Mesin Ini (Tabel & Paginasi 10/hal) */}
                 <div>
@@ -1681,12 +1623,16 @@ export default function DetailAssetWeb({ idAsset }) {
                             <th className="px-3 py-2.5 text-center font-semibold">
                               Estimasi Kebutuhan / Bln
                             </th>
-                            <th className="px-3 py-2.5 text-right font-semibold">
-                              Harga Satuan
-                            </th>
-                            <th className="px-3 py-2.5 text-right font-semibold">
-                              Est. Biaya / Bln
-                            </th>
+                            {parseInt(userLevel) <= 2 && (
+                              <>
+                                <th className="px-3 py-2.5 text-right font-semibold">
+                                  Harga Satuan
+                                </th>
+                                <th className="px-3 py-2.5 text-right font-semibold">
+                                  Est. Biaya / Bln
+                                </th>
+                              </>
+                            )}
                             <th className="px-3 py-2.5 font-semibold">
                               Supplier Terakhir
                             </th>
@@ -1752,34 +1698,39 @@ export default function DetailAssetWeb({ idAsset }) {
                                     {part.recommended_monthly_stock} {part.unit}
                                   </span>
                                 </td>
-                                <td className="font-mono whitespace-nowrap px-3 py-2.5 text-right text-xs font-semibold text-black dark:text-white">
-                                  {Number(part.unit_price || 0) > 0 ? (
-                                    <span>
-                                      Rp{" "}
-                                      {Number(part.unit_price).toLocaleString(
-                                        "id-ID",
+                                {parseInt(userLevel) <= 2 && (
+                                  <>
+                                    <td className="font-mono whitespace-nowrap px-3 py-2.5 text-right text-xs font-semibold text-black dark:text-white">
+                                      {Number(part.unit_price || 0) > 0 ? (
+                                        <span>
+                                          Rp{" "}
+                                          {Number(
+                                            part.unit_price,
+                                          ).toLocaleString("id-ID")}
+                                        </span>
+                                      ) : (
+                                        <span className="text-[10px] text-body dark:text-bodydark">
+                                          Rp 0
+                                        </span>
                                       )}
-                                    </span>
-                                  ) : (
-                                    <span className="text-[10px] text-body dark:text-bodydark">
-                                      Rp 0
-                                    </span>
-                                  )}
-                                </td>
-                                <td className="font-mono whitespace-nowrap px-3 py-2.5 text-right text-xs font-bold text-primary">
-                                  {Number(part.est_monthly_cost || 0) > 0 ? (
-                                    <span>
-                                      Rp{" "}
-                                      {Number(
-                                        part.est_monthly_cost,
-                                      ).toLocaleString("id-ID")}
-                                    </span>
-                                  ) : (
-                                    <span className="text-[10px] text-body dark:text-bodydark">
-                                      Rp 0
-                                    </span>
-                                  )}
-                                </td>
+                                    </td>
+                                    <td className="font-mono whitespace-nowrap px-3 py-2.5 text-right text-xs font-bold text-primary">
+                                      {Number(part.est_monthly_cost || 0) >
+                                      0 ? (
+                                        <span>
+                                          Rp{" "}
+                                          {Number(
+                                            part.est_monthly_cost,
+                                          ).toLocaleString("id-ID")}
+                                        </span>
+                                      ) : (
+                                        <span className="text-[10px] text-body dark:text-bodydark">
+                                          Rp 0
+                                        </span>
+                                      )}
+                                    </td>
+                                  </>
+                                )}
                                 <td
                                   className="max-w-[130px] truncate whitespace-nowrap px-3 py-2.5 text-xs text-body dark:text-bodydark"
                                   title={part.supplier || "-"}
@@ -1886,17 +1837,19 @@ export default function DetailAssetWeb({ idAsset }) {
                         className="shadow-xs cursor-pointer rounded-xl border border-stroke bg-white px-3 py-1.5 text-xs font-semibold text-black outline-none transition-colors focus:border-primary dark:border-strokedark dark:bg-boxdark dark:text-white"
                       >
                         <option value="ALL">
-                          Semua Bulan ({allHistoryItems.length} transaksi • Rp{" "}
-                          {Number(
-                            partsUsage.summary?.grand_total_cost || 0,
-                          ).toLocaleString("id-ID")}
+                          Semua Bulan ({allHistoryItems.length} transaksi
+                          {parseInt(userLevel) <= 2
+                            ? ` • Rp ${Number(partsUsage.summary?.grand_total_cost || 0).toLocaleString("id-ID")}`
+                            : ""}
                           )
                         </option>
                         {partsUsage.monthly_breakdown?.map((m) => (
                           <option key={m.month_key} value={m.month_key}>
-                            {m.month_label} (Rp{" "}
-                            {Number(m.total_cost || 0).toLocaleString("id-ID")}{" "}
-                            • {m.total_qty} part)
+                            {m.month_label} (
+                            {parseInt(userLevel) <= 2
+                              ? `Rp ${Number(m.total_cost || 0).toLocaleString("id-ID")} • `
+                              : ""}
+                            {m.total_qty} part)
                           </option>
                         ))}
                       </select>
@@ -1922,12 +1875,16 @@ export default function DetailAssetWeb({ idAsset }) {
                           <th className="px-3 py-2.5 text-center font-semibold">
                             Jumlah (Qty)
                           </th>
-                          <th className="px-3 py-2.5 text-right font-semibold">
-                            Harga Satuan
-                          </th>
-                          <th className="px-3 py-2.5 text-right font-semibold">
-                            Total Biaya
-                          </th>
+                          {parseInt(userLevel) <= 2 && (
+                            <>
+                              <th className="px-3 py-2.5 text-right font-semibold">
+                                Harga Satuan
+                              </th>
+                              <th className="px-3 py-2.5 text-right font-semibold">
+                                Total Biaya
+                              </th>
+                            </>
+                          )}
                           <th className="px-3 py-2.5 font-semibold">
                             Supplier / Sumber
                           </th>
@@ -1987,29 +1944,33 @@ export default function DetailAssetWeb({ idAsset }) {
                                   <td className="font-mono whitespace-nowrap px-3 py-2.5 text-center font-bold text-warning">
                                     -{item.qty} {item.unit || "pcs"}
                                   </td>
-                                  <td className="font-mono whitespace-nowrap px-3 py-2.5 text-right text-xs font-semibold text-body dark:text-bodydark">
-                                    {Number(item.unit_price || 0) > 0 ? (
-                                      `Rp ${Number(item.unit_price).toLocaleString("id-ID")}`
-                                    ) : (
-                                      <span className="text-[10px] text-body dark:text-bodydark">
-                                        Rp 0
-                                      </span>
-                                    )}
-                                  </td>
-                                  <td className="font-mono whitespace-nowrap px-3 py-2.5 text-right text-xs font-bold text-black dark:text-white">
-                                    {Number(item.total_cost || 0) > 0 ? (
-                                      <span className="font-bold text-primary">
-                                        Rp{" "}
-                                        {Number(item.total_cost).toLocaleString(
-                                          "id-ID",
+                                  {parseInt(userLevel) <= 2 && (
+                                    <>
+                                      <td className="font-mono whitespace-nowrap px-3 py-2.5 text-right text-xs font-semibold text-body dark:text-bodydark">
+                                        {Number(item.unit_price || 0) > 0 ? (
+                                          `Rp ${Number(item.unit_price).toLocaleString("id-ID")}`
+                                        ) : (
+                                          <span className="text-[10px] text-body dark:text-bodydark">
+                                            Rp 0
+                                          </span>
                                         )}
-                                      </span>
-                                    ) : (
-                                      <span className="text-[10px] text-body dark:text-bodydark">
-                                        Rp 0
-                                      </span>
-                                    )}
-                                  </td>
+                                      </td>
+                                      <td className="font-mono whitespace-nowrap px-3 py-2.5 text-right text-xs font-bold text-black dark:text-white">
+                                        {Number(item.total_cost || 0) > 0 ? (
+                                          <span className="font-bold text-primary">
+                                            Rp{" "}
+                                            {Number(
+                                              item.total_cost,
+                                            ).toLocaleString("id-ID")}
+                                          </span>
+                                        ) : (
+                                          <span className="text-[10px] text-body dark:text-bodydark">
+                                            Rp 0
+                                          </span>
+                                        )}
+                                      </td>
+                                    </>
+                                  )}
                                   <td className="whitespace-nowrap px-3 py-2.5 text-xs text-body dark:text-bodydark">
                                     <span className="block font-medium text-black dark:text-white">
                                       {item.supplier || "-"}
@@ -2047,37 +2008,38 @@ export default function DetailAssetWeb({ idAsset }) {
                               );
                             })}
 
-                            {selectedUsageMonth !== "ALL" && (
-                              <tr className="border-t-2 border-primary/20 bg-primary/5 font-bold dark:bg-primary/10">
-                                <td
-                                  colSpan={5}
-                                  className="px-3 py-2.5 text-right font-bold text-black dark:text-white"
-                                >
-                                  Total Biaya Part Bulan Ini (
-                                  {selectedUsageMonth}):
-                                </td>
-                                <td className="font-mono px-3 py-2.5 text-center font-bold text-warning">
-                                  -
-                                  {currentFilteredHistory.reduce(
-                                    (acc, it) => acc + (Number(it.qty) || 0),
-                                    0,
-                                  )}{" "}
-                                  unit
-                                </td>
-                                <td></td>
-                                <td className="font-mono whitespace-nowrap px-3 py-2.5 text-right font-bold text-primary">
-                                  Rp{" "}
-                                  {currentFilteredHistory
-                                    .reduce(
-                                      (acc, it) =>
-                                        acc + (Number(it.total_cost) || 0),
+                            {selectedUsageMonth !== "ALL" &&
+                              parseInt(userLevel) <= 2 && (
+                                <tr className="border-t-2 border-primary/20 bg-primary/5 font-bold dark:bg-primary/10">
+                                  <td
+                                    colSpan={5}
+                                    className="px-3 py-2.5 text-right font-bold text-black dark:text-white"
+                                  >
+                                    Total Biaya Part Bulan Ini (
+                                    {selectedUsageMonth}):
+                                  </td>
+                                  <td className="font-mono px-3 py-2.5 text-center font-bold text-warning">
+                                    -
+                                    {currentFilteredHistory.reduce(
+                                      (acc, it) => acc + (Number(it.qty) || 0),
                                       0,
-                                    )
-                                    .toLocaleString("id-ID")}
-                                </td>
-                                <td colSpan={4}></td>
-                              </tr>
-                            )}
+                                    )}{" "}
+                                    unit
+                                  </td>
+                                  <td></td>
+                                  <td className="font-mono whitespace-nowrap px-3 py-2.5 text-right font-bold text-primary">
+                                    Rp{" "}
+                                    {currentFilteredHistory
+                                      .reduce(
+                                        (acc, it) =>
+                                          acc + (Number(it.total_cost) || 0),
+                                        0,
+                                      )
+                                      .toLocaleString("id-ID")}
+                                  </td>
+                                  <td colSpan={4}></td>
+                                </tr>
+                              )}
                           </>
                         )}
                       </tbody>

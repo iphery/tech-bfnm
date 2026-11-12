@@ -157,7 +157,7 @@ export default function ListPart() {
 
   if (!isClient) return null;
 
-  if (userLevel !== "" && parseInt(userLevel) > 2) {
+  if (userLevel !== "" && parseInt(userLevel) > 3) {
     return (
       <UserAuth>
         <div className="flex min-h-screen flex-col items-center justify-center p-6 text-center bg-whiten dark:bg-boxdark-2 text-black dark:text-white">
@@ -165,7 +165,7 @@ export default function ListPart() {
             <BsBoxSeam className="mx-auto text-4xl text-warning mb-3" />
             <h2 className="text-lg font-bold mb-1">Akses Khusus Tim Pemeliharaan</h2>
             <p className="text-xs text-body dark:text-bodydark mb-5 leading-relaxed">
-              Menu inventaris dan suku cadang hanya dapat diakses oleh teknisi dan tim pemeliharaan (Role Level 2).
+              Menu inventaris dan suku cadang hanya dapat diakses oleh teknisi dan tim pemeliharaan.
             </p>
             <button
               type="button"
@@ -240,49 +240,51 @@ export default function ListPart() {
               </div>
             </div>
 
-            {/* Quick Filter & Shortcuts */}
-            <div className="flex items-center gap-2 px-4 py-2 overflow-x-auto scrollbar-none text-xs">
-              <button
-                type="button"
-                onClick={() => router.push("/partsusage")}
-                className="flex shrink-0 items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 font-semibold text-primary shadow-sm dark:bg-primary/20 dark:text-primary"
-              >
-                <HiOutlineChartBar className="text-primary text-sm" />
-                <span>Summary Penggunaan</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => router.push("/partsin")}
-                className="flex shrink-0 items-center gap-1.5 rounded-full border border-stroke bg-white px-3 py-1.5 font-medium text-black shadow-sm dark:border-strokedark dark:bg-boxdark dark:text-white"
-              >
-                <HiOutlineArrowDownTray className="text-success" />
-                <span>Stock In</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => router.push("/partsout")}
-                className="flex shrink-0 items-center gap-1.5 rounded-full border border-stroke bg-white px-3 py-1.5 font-medium text-black shadow-sm dark:border-strokedark dark:bg-boxdark dark:text-white"
-              >
-                <HiOutlineArrowUpTray className="text-warning" />
-                <span>Stock Out</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => router.push("/partsorder")}
-                className="flex shrink-0 items-center gap-1.5 rounded-full border border-stroke bg-white px-3 py-1.5 font-medium text-black shadow-sm dark:border-strokedark dark:bg-boxdark dark:text-white"
-              >
-                <HiOutlineDocumentText className="text-primary" />
-                <span>PO Order</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => router.push("/partstransaction")}
-                className="flex shrink-0 items-center gap-1.5 rounded-full border border-stroke bg-white px-3 py-1.5 font-medium text-black shadow-sm dark:border-strokedark dark:bg-boxdark dark:text-white"
-              >
-                <BsBoxSeam className="text-meta-5" />
-                <span>Mutasi Stok</span>
-              </button>
-            </div>
+            {/* Quick Filter & Shortcuts (Hanya untuk Level <= 2) */}
+            {parseInt(userLevel) <= 2 && (
+              <div className="flex items-center gap-2 px-4 py-2 overflow-x-auto scrollbar-none text-xs">
+                <button
+                  type="button"
+                  onClick={() => router.push("/partsusage")}
+                  className="flex shrink-0 items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 font-semibold text-primary shadow-sm dark:bg-primary/20 dark:text-primary"
+                >
+                  <HiOutlineChartBar className="text-primary text-sm" />
+                  <span>Summary Penggunaan</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push("/partsin")}
+                  className="flex shrink-0 items-center gap-1.5 rounded-full border border-stroke bg-white px-3 py-1.5 font-medium text-black shadow-sm dark:border-strokedark dark:bg-boxdark dark:text-white"
+                >
+                  <HiOutlineArrowDownTray className="text-success" />
+                  <span>Stock In</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push("/partsout")}
+                  className="flex shrink-0 items-center gap-1.5 rounded-full border border-stroke bg-white px-3 py-1.5 font-medium text-black shadow-sm dark:border-strokedark dark:bg-boxdark dark:text-white"
+                >
+                  <HiOutlineArrowUpTray className="text-warning" />
+                  <span>Stock Out</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push("/partsorder")}
+                  className="flex shrink-0 items-center gap-1.5 rounded-full border border-stroke bg-white px-3 py-1.5 font-medium text-black shadow-sm dark:border-strokedark dark:bg-boxdark dark:text-white"
+                >
+                  <HiOutlineDocumentText className="text-primary" />
+                  <span>PO Order</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push("/partstransaction")}
+                  className="flex shrink-0 items-center gap-1.5 rounded-full border border-stroke bg-white px-3 py-1.5 font-medium text-black shadow-sm dark:border-strokedark dark:bg-boxdark dark:text-white"
+                >
+                  <BsBoxSeam className="text-meta-5" />
+                  <span>Mutasi Stok</span>
+                </button>
+              </div>
+            )}
 
             {/* List of Spare Part Cards */}
             <div className="p-4 space-y-2.5">
@@ -366,61 +368,63 @@ export default function ListPart() {
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setModalNewPart(true)}
-                    className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-white shadow hover:bg-opacity-90 active:scale-[0.99] transition-all"
-                  >
-                    <MdAddToPhotos className="text-base" />
-                    <span>Tambah Part Baru</span>
-                  </button>
+                {parseInt(userLevel) <= 2 && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setModalNewPart(true)}
+                      className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-white shadow hover:bg-opacity-90 active:scale-[0.99] transition-all"
+                    >
+                      <MdAddToPhotos className="text-base" />
+                      <span>Tambah Part Baru</span>
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => router.push("/partsin")}
-                    className="flex items-center gap-2 rounded-xl border border-stroke bg-white px-4 py-2.5 text-xs font-semibold text-black hover:bg-gray-50 dark:border-strokedark dark:bg-boxdark dark:text-white dark:hover:bg-meta-4/20 transition-all shadow-sm"
-                  >
-                    <HiOutlineArrowDownTray className="text-success text-base" />
-                    <span>Stock In</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => router.push("/partsin")}
+                      className="flex items-center gap-2 rounded-xl border border-stroke bg-white px-4 py-2.5 text-xs font-semibold text-black hover:bg-gray-50 dark:border-strokedark dark:bg-boxdark dark:text-white dark:hover:bg-meta-4/20 transition-all shadow-sm"
+                    >
+                      <HiOutlineArrowDownTray className="text-success text-base" />
+                      <span>Stock In</span>
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => router.push("/partsout")}
-                    className="flex items-center gap-2 rounded-xl border border-stroke bg-white px-4 py-2.5 text-xs font-semibold text-black hover:bg-gray-50 dark:border-strokedark dark:bg-boxdark dark:text-white dark:hover:bg-meta-4/20 transition-all shadow-sm"
-                  >
-                    <BsCartPlus className="text-warning text-base" />
-                    <span>Stock Out</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => router.push("/partsout")}
+                      className="flex items-center gap-2 rounded-xl border border-stroke bg-white px-4 py-2.5 text-xs font-semibold text-black hover:bg-gray-50 dark:border-strokedark dark:bg-boxdark dark:text-white dark:hover:bg-meta-4/20 transition-all shadow-sm"
+                    >
+                      <BsCartPlus className="text-warning text-base" />
+                      <span>Stock Out</span>
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => router.push("/partsorder")}
-                    className="flex items-center gap-2 rounded-xl border border-stroke bg-white px-4 py-2.5 text-xs font-semibold text-black hover:bg-gray-50 dark:border-strokedark dark:bg-boxdark dark:text-white dark:hover:bg-meta-4/20 transition-all shadow-sm"
-                  >
-                    <HiOutlineDocumentText className="text-primary text-base" />
-                    <span>PO Order</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => router.push("/partsorder")}
+                      className="flex items-center gap-2 rounded-xl border border-stroke bg-white px-4 py-2.5 text-xs font-semibold text-black hover:bg-gray-50 dark:border-strokedark dark:bg-boxdark dark:text-white dark:hover:bg-meta-4/20 transition-all shadow-sm"
+                    >
+                      <HiOutlineDocumentText className="text-primary text-base" />
+                      <span>PO Order</span>
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => router.push("/partstransaction")}
-                    className="flex items-center gap-2 rounded-xl border border-stroke bg-white px-4 py-2.5 text-xs font-semibold text-black hover:bg-gray-50 dark:border-strokedark dark:bg-boxdark dark:text-white dark:hover:bg-meta-4/20 transition-all shadow-sm"
-                  >
-                    <BsBoxSeam className="text-meta-5 text-base" />
-                    <span>Mutasi Stok</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => router.push("/partstransaction")}
+                      className="flex items-center gap-2 rounded-xl border border-stroke bg-white px-4 py-2.5 text-xs font-semibold text-black hover:bg-gray-50 dark:border-strokedark dark:bg-boxdark dark:text-white dark:hover:bg-meta-4/20 transition-all shadow-sm"
+                    >
+                      <BsBoxSeam className="text-meta-5 text-base" />
+                      <span>Mutasi Stok</span>
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => router.push("/partsusage")}
-                    className="flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/10 px-4 py-2.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-all shadow-sm"
-                  >
-                    <HiOutlineChartBar className="text-primary text-base" />
-                    <span>Summary Penggunaan</span>
-                  </button>
-                </div>
+                    <button
+                      type="button"
+                      onClick={() => router.push("/partsusage")}
+                      className="flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/10 px-4 py-2.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-all shadow-sm"
+                    >
+                      <HiOutlineChartBar className="text-primary text-base" />
+                      <span>Summary Penggunaan</span>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Data Table Card */}

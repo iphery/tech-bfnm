@@ -583,7 +583,7 @@ export default function Home() {
               <span className="text-[10px] mt-0.5">Maintenance</span>
             </button>
 
-            {parseInt(userLevel) <= 2 && (
+            {parseInt(userLevel) <= 3 && (
               <button
                 type="button"
                 onClick={() => router.push("/parts")}
