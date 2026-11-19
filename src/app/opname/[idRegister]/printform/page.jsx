@@ -56,34 +56,39 @@ export default function Page() {
   }, [loading, dataOpname]);
 
   return (
-    <div className="min-h-screen bg-white p-4 text-black">
-      <div className="page-header mb-3">
-        <div className="flex items-center justify-between">
-          <b className="text-base font-bold">
-            Laporan Inventory Spare Part Bengkel
-          </b>
-          <i className="text-sm">PT Balifoam Nusamegah</i>
-        </div>
-        <div className="mt-1 text-sm">{`Period : ${formatDateLocal(startPeriod)} ~ ${formatDateLocal(endPeriod)}`}</div>
-      </div>
-      <div className="page-content">
-        <table className="border-gray-400 w-full border-collapse border">
-          <thead>
-            <tr className="bg-gray-100 text-xs">
-              <th className="border-gray-400 w-10 border p-1.5 text-center">
-                No
-              </th>
-              <th className="border-gray-400 w-[250px] border p-1.5 text-left">
-                Nama
-              </th>
-              <th className="border-gray-400 border p-1.5 text-left">Detail</th>
-              <th className="border-gray-400 border p-1.5 text-left">Lokasi</th>
-              <th className="border-gray-400 w-24 border p-1.5 text-center">
-                Stok
-              </th>
-            </tr>
-          </thead>
-          <tbody>
+    <div className="min-h-screen bg-white p-2 text-black print:p-0">
+      <table className="border-gray-400 w-full border-collapse border">
+        <thead>
+          {/* Header Judul & Periode di dalam thead agar diulang di setiap halaman cetak */}
+          <tr className="border-none">
+            <th colSpan={5} className="border-none pb-3 text-left font-normal">
+              <div className="flex items-center justify-between">
+                <b className="text-base font-bold text-black">
+                  Laporan Stok Opname Spare Part Bengkel (Form Fisik)
+                </b>
+                <i className="text-sm font-normal text-gray-700">PT Balifoam Nusamegah</i>
+              </div>
+              <div className="mt-1 text-sm font-medium text-black">
+                {`Periode : ${formatDateLocal(startPeriod)} ~ ${formatDateLocal(endPeriod)}`}
+              </div>
+            </th>
+          </tr>
+
+          <tr className="bg-gray-100 text-xs">
+            <th className="border-gray-400 w-10 border p-1.5 text-center">
+              No
+            </th>
+            <th className="border-gray-400 w-[250px] border p-1.5 text-left">
+              Nama
+            </th>
+            <th className="border-gray-400 border p-1.5 text-left">Detail</th>
+            <th className="border-gray-400 border p-1.5 text-left">Lokasi</th>
+            <th className="border-gray-400 w-24 border p-1.5 text-center">
+              Stok Fisik
+            </th>
+          </tr>
+        </thead>
+        <tbody>
             {loading ? (
               <tr>
                 <td colSpan={5} className="p-4 text-center text-xs">
@@ -119,7 +124,6 @@ export default function Page() {
             )}
           </tbody>
         </table>
-      </div>
     </div>
   );
 }

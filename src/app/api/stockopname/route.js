@@ -32,7 +32,7 @@ async function handleStockOpname(request) {
 
     const trimmedSearch = (search || '').trim();
     if (trimmedSearch) {
-      whereClause = "WHERE (stock_opname.id_register LIKE ? OR User.Name LIKE ?)";
+      whereClause = "WHERE (stock_opname.id_report LIKE ? OR User.Name LIKE ?)";
       const pattern = `%${trimmedSearch}%`;
       queryParams.push(pattern, pattern);
       countParams.push(pattern, pattern);
@@ -50,8 +50,16 @@ async function handleStockOpname(request) {
       total = countResult[0]?.total ? Number(countResult[0].total) : 0;
     }
 
+    // Jangan SELECT kolom `result` (longtext berisi 1.100+ part JSON raksasa) di daftar list,
+    // karena kolom `result` hanya dibutuhkan saat membuka detail audit /opname/[idRegister].
     let queryStr = `
-      SELECT stock_opname.*, User.Name
+      SELECT 
+        stock_opname.id_report,
+        stock_opname.start_date,
+        stock_opname.end_date,
+        stock_opname.created_by,
+        stock_opname.created_at,
+        User.Name
       FROM stock_opname
       LEFT JOIN User ON User.Uid = stock_opname.created_by
       ${whereClause}

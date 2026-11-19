@@ -1,28 +1,33 @@
 @media print {
-    body{
+    @page {
+        margin: 12mm 10mm 12mm 10mm;
+    }
+
+    body {
         background-color: #fff;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
 
     th, td {
-        font-size:10px;
-        border: 1px solid #ddd;
+        font-size: 10px;
+        border: 1px solid #444;
     }
 
-    
-
-
-    thead{
-        display:table-header-group;/*repeat table headers on each page*/
-
+    thead {
+        display: table-header-group !important; /* repeat table headers on each printed page */
     }
 
-    tbody{
-        display:table-row-group;
+    tbody {
+        display: table-row-group;
     }
 
-    tfoot{
-        display:table-footer-group;/*repeat table footers on each page*/
+    tr {
+        page-break-inside: avoid;
+        break-inside: avoid;
     }
 
+    tfoot {
+        display: table-footer-group; /* repeat table footers on each page */
+    }
 }
-
