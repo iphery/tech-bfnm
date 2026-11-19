@@ -17,8 +17,8 @@ export async function POST(request) {
     const [rows] = await pool.query(
       `SELECT 
         r.ID_Request, r.ID_Asset, r.Time_Request, r.Time_Response, r.Time_Repair_Complete,
-        r.Problem, r.Solution, r.User, r.POS_Required, r.Time_POS, r.Time_POS_Complete,
-        a.Type, a.Class, a.Manufacture, a.Model, a.Description, a.No
+        r.Problem, r.Solution, r.Requestor, r.Technician, r.POS_Required, r.Time_POS, r.Time_POS_Complete,
+        a.Type, a.Class, a.Manufacture, a.Model, a.Description, a.No, a.User as Asset_User
        FROM Request r
        LEFT JOIN Assets a ON a.ID_Asset = r.ID_Asset
        WHERE UPPER(a.Type) = ?
@@ -76,7 +76,7 @@ export async function POST(request) {
         problem: row.Problem || '-',
         solution: row.Solution || '-',
         repair_time: Number(repairTime.toFixed(2)),
-        user: row.User || '-',
+        user: row.Requestor || row.Asset_User || '-',
         time_request: formattedDate,
       };
     });
