@@ -11,6 +11,7 @@ export default function Page() {
   const [dataOpname, setDataOpname] = useState([]);
   const [startPeriod, setStartPeriod] = useState("");
   const [endPeriod, setEndPeriod] = useState("");
+  const [loading, setLoading] = useState(true);
 
   const fetch_data = async () => {
     try {
@@ -21,13 +22,18 @@ export default function Page() {
       if (response.status === 200 && response.data?.response?.[0]) {
         const array = response.data["response"][0];
         const listOpname = array.result;
-        const parsedList = typeof listOpname === "string" ? JSON.parse(listOpname) : (listOpname || []);
+        const parsedList =
+          typeof listOpname === "string"
+            ? JSON.parse(listOpname)
+            : listOpname || [];
         setDataOpname(parsedList);
         setStartPeriod(array.start_date || "");
         setEndPeriod(array.end_date || "");
       }
     } catch (err) {
       console.error("Gagal memuat form print opname:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -35,48 +41,82 @@ export default function Page() {
     fetch_data();
   }, [params.idRegister]);
 
-  // Otomatis membuka dialog print preview setelah data berhasil dimuat
+  // Beri sinyal siap cetak ke parent window saat data sudah dirender
   useEffect(() => {
-    if (dataOpname.length > 0) {
+    if (!loading && dataOpname.length > 0) {
       const timer = setTimeout(() => {
-        window.print();
-      }, 500);
+        if (window.self !== window.top) {
+          window.parent.postMessage({ type: "DOC_READY_TO_PRINT" }, "*");
+        } else {
+          window.print();
+        }
+      }, 300);
       return () => clearTimeout(timer);
     }
-  }, [dataOpname]);
+  }, [loading, dataOpname]);
 
   return (
-    <div>
-      <div className="page-header">
+    <div className="min-h-screen bg-white p-4 text-black">
+      <div className="page-header mb-3">
         <div className="flex items-center justify-between">
-          <b>Laporan Inventory Spare Part Bengkel</b>
+          <b className="text-base font-bold">
+            Laporan Inventory Spare Part Bengkel
+          </b>
           <i className="text-sm">PT Balifoam Nusamegah</i>
         </div>
-        <div className="text-sm">{`Period : ${formatDateLocal(startPeriod)} ~ ${formatDateLocal(endPeriod)}`}</div>
+        <div className="mt-1 text-sm">{`Period : ${formatDateLocal(startPeriod)} ~ ${formatDateLocal(endPeriod)}`}</div>
       </div>
       <div className="page-content">
-        <table className="">
+        <table className="border-gray-400 w-full border-collapse border">
           <thead>
-            <tr className="text-sm">
-              <th>No</th>
-              <th className="w-[250px]">Nama</th>
-              <th>Detail</th>
-              <th>Lokasi</th>
-              <th className="w-[100px]">Stok</th>
+            <tr className="bg-gray-100 text-xs">
+              <th className="border-gray-400 w-10 border p-1.5 text-center">
+                No
+              </th>
+              <th className="border-gray-400 w-[250px] border p-1.5 text-left">
+                Nama
+              </th>
+              <th className="border-gray-400 border p-1.5 text-left">Detail</th>
+              <th className="border-gray-400 border p-1.5 text-left">Lokasi</th>
+              <th className="border-gray-400 w-24 border p-1.5 text-center">
+                Stok
+              </th>
             </tr>
           </thead>
           <tbody>
-            {dataOpname.map((item, index) => {
-              return (
-                <tr key={index}>
-                  <td className="text-center text-xs">{index + 1}</td>
-                  <td className=" text-xs">{item["description"]}</td>
-                  <td className=" text-xs">{item["vendor_code"]}</td>
-                  <td className=" text-xs">{item["location"]}</td>
-                  <td className="text-center text-xs"></td>
-                </tr>
-              );
-            })}
+            {loading ? (
+              <tr>
+                <td colSpan={5} className="p-4 text-center text-xs">
+                  Memuat data opname...
+                </td>
+              </tr>
+            ) : dataOpname.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="p-4 text-center text-xs">
+                  Tidak ada data opname.
+                </td>
+              </tr>
+            ) : (
+              dataOpname.map((item, index) => {
+                return (
+                  <tr key={index}>
+                    <td className="border-gray-400 border p-1 text-center text-xs">
+                      {index + 1}
+                    </td>
+                    <td className="border-gray-400 border p-1 text-xs font-medium">
+                      {item["description"].toUpperCase()}
+                    </td>
+                    <td className="border-gray-400 font-mono border p-1 text-xs">
+                      {item["vendor_code"].toUpperCase() || "-"}
+                    </td>
+                    <td className="border-gray-400 border p-1 text-xs">
+                      {item["location"].toUpperCase() || "-"}
+                    </td>
+                    <td className="border-gray-400 border p-1 text-center text-xs"></td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>

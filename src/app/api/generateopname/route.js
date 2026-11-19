@@ -1,63 +1,17 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
 
-async function get_transaction_for_part(pool, id_part, start_date, end_date) {
-  const [infos] = await pool.query('SELECT description, vendor_code, location, unit, remark, initial_stock FROM parts WHERE id_part = ?', [id_part]);
-  const info = infos[0] || {};
-  const description = info.description || '';
-  const vendor_code = info.vendor_code || '';
-  const location = info.location || '';
-  const unit = info.unit || '';
-  const remark = info.remark || '';
-  const init_stock = Number(info.initial_stock || 0);
-
-  const [beforeResult] = await pool.query(
-    'SELECT SUM(qty) as total_qty FROM stock_summary WHERE id_part = ? AND DATE(date) < ?',
-    [id_part, start_date]
-  );
-  const before_date_qty = beforeResult[0]?.total_qty ? Number(beforeResult[0].total_qty) : 0;
-  const before_date = before_date_qty + init_stock;
-
-  const [inResult] = await pool.query(
-    `SELECT SUM(quantity) as total_in FROM stock_summary 
-     WHERE id_part = ? AND DATE(date) >= ? AND DATE(date) <= ? AND type = 'in'`,
-    [id_part, start_date, end_date]
-  );
-  const stock_in_qty = inResult[0]?.total_in ? Number(inResult[0].total_in) : 0;
-
-  const [outResult] = await pool.query(
-    `SELECT SUM(quantity) as total_out FROM stock_summary 
-     WHERE id_part = ? AND DATE(date) >= ? AND DATE(date) <= ? AND type = 'out'`,
-    [id_part, start_date, end_date]
-  );
-  const stock_out_qty = outResult[0]?.total_out ? Number(outResult[0].total_out) : 0;
-
-  const balance = (before_date + stock_in_qty) - stock_out_qty;
-  const diff = balance > 0 ? -1 * balance : 0;
-
-  return {
-    initial: before_date,
-    in: stock_in_qty,
-    out: stock_out_qty,
-    balance: balance,
-    actual: 0,
-    checked_by: '',
-    checked_at: '',
-    description: description,
-    vendor_code: vendor_code,
-    location: location,
-    unit: unit,
-    remark: remark,
-    id_part: id_part,
-    diff: diff,
-    checked_id: '',
-  };
-}
-
 export async function POST(request) {
   try {
     const body = await request.json();
     const { start: start_date, end: end_date, uid: created_by } = body;
+
+    if (!start_date || !end_date) {
+      return NextResponse.json(
+        { error: 'Tanggal mulai dan tanggal akhir wajib diisi' },
+        { status: 400 }
+      );
+    }
 
     // Check system setting for part status visibility
     let activeStatusFilter = 'aktif';
@@ -70,14 +24,73 @@ export async function POST(request) {
       activeStatusFilter = 'aktif';
     }
 
-    const statusQuery = activeStatusFilter === 'all' ? "SELECT id_part FROM parts" : "SELECT id_part FROM parts WHERE status = 'Aktif'";
-    const [parts] = await pool.query(statusQuery);
+    const whereClause =
+      activeStatusFilter === 'all' ? '' : "WHERE p.status = 'Aktif'";
 
-    const result = [];
-    for (const part of parts) {
-      const data = await get_transaction_for_part(pool, part.id_part, start_date, end_date);
-      result.push(data);
-    }
+    // Bulk Query: Fetch parts and stock balance in a single optimized query
+    const [rows] = await pool.query(
+      `
+      SELECT 
+        p.id_part,
+        p.description,
+        p.vendor_code,
+        p.location,
+        p.unit,
+        p.remark,
+        COALESCE(p.initial_stock, 0) as init_stock,
+        COALESCE(ss_before.before_qty, 0) as before_qty,
+        COALESCE(ss_in.in_qty, 0) as in_qty,
+        COALESCE(ss_out.out_qty, 0) as out_qty
+      FROM parts p
+      LEFT JOIN (
+        SELECT id_part, SUM(qty) as before_qty
+        FROM stock_summary
+        WHERE DATE(date) < ?
+        GROUP BY id_part
+      ) ss_before ON ss_before.id_part = p.id_part
+      LEFT JOIN (
+        SELECT id_part, SUM(quantity) as in_qty
+        FROM stock_summary
+        WHERE DATE(date) >= ? AND DATE(date) <= ? AND type = 'in'
+        GROUP BY id_part
+      ) ss_in ON ss_in.id_part = p.id_part
+      LEFT JOIN (
+        SELECT id_part, SUM(quantity) as out_qty
+        FROM stock_summary
+        WHERE DATE(date) >= ? AND DATE(date) <= ? AND type = 'out'
+        GROUP BY id_part
+      ) ss_out ON ss_out.id_part = p.id_part
+      ${whereClause}
+      ORDER BY p.description ASC
+    `,
+      [start_date, start_date, end_date, start_date, end_date]
+    );
+
+    const result = rows.map((r) => {
+      const before_date = Number(r.before_qty || 0) + Number(r.init_stock || 0);
+      const stock_in_qty = Number(r.in_qty || 0);
+      const stock_out_qty = Number(r.out_qty || 0);
+      const balance = before_date + stock_in_qty - stock_out_qty;
+      const diff = balance > 0 ? -1 * balance : 0;
+
+      return {
+        initial: before_date,
+        in: stock_in_qty,
+        out: stock_out_qty,
+        balance: balance,
+        actual: 0,
+        checked_by: '',
+        checked_at: '',
+        description: r.description || '',
+        vendor_code: r.vendor_code || '',
+        location: r.location || '',
+        unit: r.unit || '',
+        remark: r.remark || '',
+        id_part: r.id_part,
+        diff: diff,
+        checked_id: '',
+      };
+    });
 
     const now = new Date();
     const pad = (n) => String(n).padStart(2, '0');
@@ -87,10 +100,20 @@ export async function POST(request) {
     await pool.query(
       `INSERT INTO stock_opname (id_report, start_date, end_date, result, created_by, created_at)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [id_report, start_date, end_date, JSON.stringify(result), created_by, created_at]
+      [
+        id_report,
+        start_date,
+        end_date,
+        JSON.stringify(result),
+        created_by || '',
+        created_at,
+      ]
     );
 
-    return NextResponse.json({ response: 'Successfull' });
+    return NextResponse.json({
+      response: 'Laporan Stock Opname berhasil digenerate',
+      id_report,
+    });
   } catch (error) {
     console.error('generateopname error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

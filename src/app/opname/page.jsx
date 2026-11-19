@@ -21,6 +21,7 @@ import {
   HiOutlineClipboardDocumentCheck,
   HiOutlineCalendar,
   HiOutlineArrowRight,
+  HiOutlineTrash,
 } from "react-icons/hi2";
 import { BsBoxSeam } from "react-icons/bs";
 
@@ -53,6 +54,30 @@ export default function StockOpnamePage() {
   const [startDate, setStartDate] = useState(getFirstDate());
   const [endDate, setEndDate] = useState(new Date().toISOString().substring(0, 10));
   const [ongenerate, setOngenerate] = useState(false);
+
+  // Delete State
+  const [deleteId, setDeleteId] = useState(null);
+  const [modalDelete, setModalDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    setDeleting(true);
+    try {
+      const res = await axios.post("/api/deleteopname", { id_report: deleteId });
+      if (res.status === 200) {
+        NotifySuccess("Laporan Stock Opname berhasil dihapus");
+        setModalDelete(false);
+        setDeleteId(null);
+        fetch_data(desktopPage, keyword, false);
+      }
+    } catch (e) {
+      const errMsg = e.response?.data?.error || "Gagal menghapus laporan opname";
+      NotifyError(errMsg);
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   // Server-Side Fetch
   const fetch_data = async (targetPage = 1, searchKeyword = keyword, isAppend = false) => {
@@ -112,7 +137,8 @@ export default function StockOpnamePage() {
         fetch_data(1, keyword, false);
       }
     } catch (e) {
-      NotifyError("Gagal men-generate laporan opname");
+      const errMsg = e.response?.data?.error || "Gagal men-generate laporan opname";
+      NotifyError(errMsg);
     } finally {
       setOngenerate(false);
     }
@@ -244,7 +270,21 @@ export default function StockOpnamePage() {
                       <div className="flex items-center justify-between border-t border-stroke/60 pt-2 text-[11px] text-body dark:border-strokedark/60 dark:text-bodydark">
                         <span>Dibuat: {item.Name || "-"}</span>
                         <span>{formatDateTime(item.created_at)}</span>
-                        <HiOutlineArrowRight className="text-xs group-hover:translate-x-1 transition-transform" />
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            title="Hapus Laporan"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteId(item.id_report);
+                              setModalDelete(true);
+                            }}
+                            className="p-1 rounded-lg text-danger hover:bg-danger/10 transition-colors"
+                          >
+                            <HiOutlineTrash className="text-sm" />
+                          </button>
+                          <HiOutlineArrowRight className="text-xs group-hover:translate-x-1 transition-transform" />
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -360,16 +400,30 @@ export default function StockOpnamePage() {
                                 {formatDateTime(item.created_at)}
                               </td>
                               <td className="py-3 px-4 text-center">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    router.push(`/opname/${item.id_report}`);
-                                  }}
-                                  className="rounded-lg border border-stroke px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-primary hover:text-white dark:border-strokedark transition-colors"
-                                >
-                                  Buka Audit
-                                </button>
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      router.push(`/opname/${item.id_report}`);
+                                    }}
+                                    className="rounded-lg border border-stroke px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-primary hover:text-white dark:border-strokedark transition-colors"
+                                  >
+                                    Buka Audit
+                                  </button>
+                                  <button
+                                    type="button"
+                                    title="Hapus Laporan Opname"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setDeleteId(item.id_report);
+                                      setModalDelete(true);
+                                    }}
+                                    className="p-1.5 rounded-lg border border-stroke text-danger hover:bg-danger hover:text-white dark:border-strokedark transition-colors"
+                                  >
+                                    <HiOutlineTrash className="text-sm" />
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           ))
@@ -458,6 +512,47 @@ export default function StockOpnamePage() {
                   disabled={ongenerate}
                   onClick={create_new}
                 />
+              </div>
+            </div>
+          </CustomModal>
+        )}
+
+        {/* Modal Konfirmasi Hapus */}
+        {modalDelete && (
+          <CustomModal
+            isOpen={modalDelete}
+            onClose={() => {
+              if (!deleting) setModalDelete(false);
+            }}
+            title="Konfirmasi Hapus Laporan"
+            isSmallWidth="sm"
+          >
+            <div className="space-y-4 text-xs">
+              <p className="text-body dark:text-bodydark">
+                Apakah Anda yakin ingin menghapus laporan stock opname{" "}
+                <span className="font-mono font-bold text-black dark:text-white">
+                  {deleteId}
+                </span>
+                ? Tindakan ini tidak dapat dibatalkan.
+              </p>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-stroke dark:border-strokedark">
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={() => setModalDelete(false)}
+                  className="rounded-xl border border-stroke px-4 py-2 text-xs font-semibold text-body hover:bg-gray-100 dark:border-strokedark dark:text-bodydark dark:hover:bg-meta-4 transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={handleDelete}
+                  className="rounded-xl bg-danger px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-danger/90 disabled:opacity-50 transition"
+                >
+                  {deleting ? "Menghapus..." : "Hapus Laporan"}
+                </button>
               </div>
             </div>
           </CustomModal>

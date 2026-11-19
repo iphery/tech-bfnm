@@ -42,6 +42,58 @@ export default function DetailOpname({ params }) {
   const [savingActual, setSavingActual] = useState(false);
   const { setOpnameIdRegister } = useProvider();
   const [onloadChecked, setOnloadChecked] = useState(false);
+  const [printingDoc, setPrintingDoc] = useState(""); // "laporan" | "form" | ""
+
+  const printDocument = (type) => {
+    setPrintingDoc(type);
+    const url =
+      type === "laporan"
+        ? `/opname/${idRegister}/printout`
+        : `/opname/${idRegister}/printform`;
+
+    // Pastikan listener message terpasang untuk mendengarkan saat data di dalam iframe sudah selesai dirender
+    const handleMessage = (event) => {
+      if (event.data && event.data.type === "DOC_READY_TO_PRINT") {
+        window.removeEventListener("message", handleMessage);
+        const iframe = document.getElementById("directPrintFrame");
+        if (iframe && iframe.contentWindow) {
+          try {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+          } catch (err) {
+            console.error("Print dialog error:", err);
+          } finally {
+            setPrintingDoc("");
+          }
+        }
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+
+    // Ambil atau buat iframe untuk mencetak langsung
+    let iframe = document.getElementById("directPrintFrame");
+    if (!iframe) {
+      iframe = document.createElement("iframe");
+      iframe.id = "directPrintFrame";
+      // Gunakan style off-screen dengan ukuran nyata agar browser merender seluruh halaman dan CSS tabel
+      iframe.style.position = "fixed";
+      iframe.style.left = "-9999px";
+      iframe.style.top = "0";
+      iframe.style.width = "1024px";
+      iframe.style.height = "768px";
+      iframe.style.border = "0";
+      document.body.appendChild(iframe);
+    }
+
+    iframe.src = url;
+
+    // Fallback timer jika postMessage terhalang
+    setTimeout(() => {
+      window.removeEventListener("message", handleMessage);
+      setPrintingDoc("");
+    }, 10000);
+  };
 
   const [info, setInfo] = useState({
     name: "",
@@ -54,6 +106,10 @@ export default function DetailOpname({ params }) {
   const [uid, setUid] = useState("");
   const [userName, setUserName] = useState("");
   const [keyword, setKeyword] = useState("");
+
+  // Pagination states (25 items per page to prevent heavy DOM rendering)
+  const pageSize = 25;
+  const [currentPage, setCurrentPage] = useState(1);
 
   const fetch_data = async () => {
     try {
@@ -107,6 +163,7 @@ export default function DetailOpname({ params }) {
   }, [idRegister]);
 
   useEffect(() => {
+    setCurrentPage(1);
     if (!keyword.trim()) {
       setFilteredList(opnameData);
       return;
@@ -120,6 +177,12 @@ export default function DetailOpname({ params }) {
     });
     setFilteredList(filtered);
   }, [opnameData, keyword]);
+
+  const totalPages = Math.ceil(filteredList.length / pageSize) || 1;
+  const paginatedList = filteredList.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
 
   const checkAllItems = async () => {
     setOnloadChecked(true);
@@ -209,26 +272,22 @@ export default function DetailOpname({ params }) {
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => {
-                setOpnameIdRegister(idRegister);
-                router.push(`/opname/${idRegister}/printout`);
-              }}
-              className="flex items-center gap-1 rounded-xl border border-stroke px-3 py-1.5 text-xs font-medium text-black hover:bg-gray-50 dark:border-strokedark dark:text-white dark:hover:bg-meta-4/20 transition-colors"
+              disabled={Boolean(printingDoc)}
+              onClick={() => printDocument("laporan")}
+              className="flex items-center gap-1.5 rounded-xl border border-stroke px-3 py-1.5 text-xs font-medium text-black hover:bg-gray-50 dark:border-strokedark dark:text-white dark:hover:bg-meta-4/20 transition-colors disabled:opacity-50"
             >
               <HiOutlinePrinter className="text-sm" />
-              <span>Print Laporan</span>
+              <span>{printingDoc === "laporan" ? "Menyiapkan..." : "Print Laporan"}</span>
             </button>
 
             <button
               type="button"
-              onClick={() => {
-                setOpnameIdRegister(idRegister);
-                router.push(`/opname/${idRegister}/printform`);
-              }}
-              className="flex items-center gap-1 rounded-xl border border-stroke px-3 py-1.5 text-xs font-medium text-black hover:bg-gray-50 dark:border-strokedark dark:text-white dark:hover:bg-meta-4/20 transition-colors"
+              disabled={Boolean(printingDoc)}
+              onClick={() => printDocument("form")}
+              className="flex items-center gap-1.5 rounded-xl border border-stroke px-3 py-1.5 text-xs font-medium text-black hover:bg-gray-50 dark:border-strokedark dark:text-white dark:hover:bg-meta-4/20 transition-colors disabled:opacity-50"
             >
               <HiOutlinePrinter className="text-sm" />
-              <span>Form Cetak</span>
+              <span>{printingDoc === "form" ? "Menyiapkan..." : "Form Cetak"}</span>
             </button>
 
             <button
@@ -289,14 +348,15 @@ export default function DetailOpname({ params }) {
           </div>
 
           <span className="text-xs text-body dark:text-bodydark">
-            Menampilkan {filteredList.length} item suku cadang
+            Menampilkan {filteredList.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}-
+            {Math.min(currentPage * pageSize, filteredList.length)} dari {filteredList.length} item
           </span>
         </div>
 
         {isSmallScreen ? (
           /* Mobile Card Feed */
           <div className="space-y-2.5 pt-3">
-            {filteredList.map((item, index) => {
+            {paginatedList.map((item, index) => {
               const diff = Number(item.diff || 0);
               const isChecked = Boolean(item.checked_by);
 
@@ -381,7 +441,7 @@ export default function DetailOpname({ params }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-stroke dark:divide-strokedark">
-                {filteredList.map((item, index) => {
+                {paginatedList.map((item, index) => {
                   const diff = Number(item.diff || 0);
                   const isChecked = Boolean(item.checked_by);
 
@@ -450,6 +510,84 @@ export default function DetailOpname({ params }) {
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-stroke pt-3.5 dark:border-strokedark text-xs">
+            <span className="text-body dark:text-bodydark">
+              Halaman <span className="font-semibold text-black dark:text-white">{currentPage}</span> dari{" "}
+              <span className="font-semibold text-black dark:text-white">{totalPages}</span>
+            </span>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                disabled={currentPage <= 1}
+                onClick={() => setCurrentPage(1)}
+                className="rounded-lg border border-stroke px-2.5 py-1 font-semibold text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 disabled:opacity-40 transition"
+              >
+                &laquo;
+              </button>
+              <button
+                type="button"
+                disabled={currentPage <= 1}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                className="rounded-lg border border-stroke px-3 py-1 font-semibold text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 disabled:opacity-40 transition"
+              >
+                Sebelumnya
+              </button>
+
+              <div className="flex items-center gap-1 px-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((page) => {
+                    return (
+                      page === 1 ||
+                      page === totalPages ||
+                      Math.abs(page - currentPage) <= 1
+                    );
+                  })
+                  .map((page, idx, arr) => {
+                    const prev = arr[idx - 1];
+                    return (
+                      <React.Fragment key={page}>
+                        {prev && page - prev > 1 && (
+                          <span className="px-1 text-body opacity-50">...</span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setCurrentPage(page)}
+                          className={`min-w-[28px] h-7 rounded-lg text-xs font-semibold transition ${
+                            currentPage === page
+                              ? "bg-primary text-white"
+                              : "border border-stroke text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4"
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      </React.Fragment>
+                    );
+                  })}
+              </div>
+
+              <button
+                type="button"
+                disabled={currentPage >= totalPages}
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                className="rounded-lg border border-stroke px-3 py-1 font-semibold text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 disabled:opacity-40 transition"
+              >
+                Selanjutnya
+              </button>
+              <button
+                type="button"
+                disabled={currentPage >= totalPages}
+                onClick={() => setCurrentPage(totalPages)}
+                className="rounded-lg border border-stroke px-2.5 py-1 font-semibold text-black dark:border-strokedark dark:text-white hover:bg-gray-100 dark:hover:bg-meta-4 disabled:opacity-40 transition"
+              >
+                &raquo;
+              </button>
+            </div>
           </div>
         )}
       </div>
