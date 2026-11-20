@@ -64,6 +64,8 @@ export default function DetailAssetMobile({ idAsset }) {
   const [isClient, setIsClient] = useState(false);
 
   const [dataAsset, setDataAsset] = useState({});
+  const [activeCM, setActiveCM] = useState(null);
+  const [activePM, setActivePM] = useState(null);
   const [dataService, setDataService] = useState([]);
   const [mttr, setMttr] = useState(0);
   const [totalRepairHours, setTotalRepairHours] = useState(0);
@@ -312,6 +314,8 @@ export default function DetailAssetMobile({ idAsset }) {
       if (response.status === 200 && response.data?.detail?.length > 0) {
         const detail = response.data["detail"][0];
         setDataAsset(detail);
+        setActiveCM(response.data["active_cm"] || null);
+        setActivePM(response.data["active_pm"] || null);
         setOpenService(response.data["open_service"]);
         setOpenMaintenance(response.data["open_maintenance"]);
         setLastSeen(response.data["last_seen"]);
@@ -1392,6 +1396,61 @@ export default function DetailAssetMobile({ idAsset }) {
                             ? "Dalam Pengerjaan"
                             : "Siap Digunakan (Ready)"}
                       </span>
+                    </div>
+
+                    {/* Status Perbaikan & Perawatan Berdasarkan Step */}
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      {/* Perbaikan (CM) */}
+                      <div className="rounded-xl border border-stroke/80 bg-gray-50/70 p-2.5 dark:border-strokedark/80 dark:bg-meta-4/20 space-y-1">
+                        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-body dark:text-bodydark">
+                          <HiOutlineWrenchScrewdriver className="text-sm text-danger" />
+                          <span>Perbaikan (CM)</span>
+                        </div>
+                        {activeCM ? (
+                          <div className="flex flex-col gap-0.5">
+                            <span
+                              className={`inline-block w-fit rounded-full px-2 py-0.5 text-[10px] font-bold text-white shadow-xs ${
+                                RepairStatus(String(activeCM.Step))?.color || "bg-danger"
+                              }`}
+                            >
+                              {RepairStatus(String(activeCM.Step))?.status} (Step {activeCM.Step})
+                            </span>
+                            <span className="text-[10px] text-body dark:text-bodydark truncate" title={activeCM.Problem}>
+                              {activeCM.Problem || "Sedang ditangani"}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="inline-block rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-semibold text-success">
+                            Normal (Tidak Ada CM)
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Perawatan (PM) */}
+                      <div className="rounded-xl border border-stroke/80 bg-gray-50/70 p-2.5 dark:border-strokedark/80 dark:bg-meta-4/20 space-y-1">
+                        <div className="flex items-center gap-1.5 text-[11px] font-semibold text-body dark:text-bodydark">
+                          <HiOutlineCalendar className="text-sm text-meta-5" />
+                          <span>Perawatan (PM)</span>
+                        </div>
+                        {activePM ? (
+                          <div className="flex flex-col gap-0.5">
+                            <span
+                              className={`inline-block w-fit rounded-full px-2 py-0.5 text-[10px] font-bold text-white shadow-xs ${
+                                RepairStatus(String(activePM.Step))?.color || "bg-meta-5"
+                              }`}
+                            >
+                              {RepairStatus(String(activePM.Step))?.status} (Step {activePM.Step})
+                            </span>
+                            <span className="text-[10px] text-body dark:text-bodydark truncate">
+                              {activePM.Technician ? `Teknisi: ${activePM.Technician}` : "Menunggu teknisi"}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="inline-block rounded-full bg-slate-100 dark:bg-meta-4/40 px-2 py-0.5 text-[10px] font-medium text-slate-500 dark:text-slate-400">
+                            Sesuai Jadwal
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 text-xs">

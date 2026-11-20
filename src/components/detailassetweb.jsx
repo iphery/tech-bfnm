@@ -56,6 +56,8 @@ export default function DetailAssetWeb({ idAsset }) {
   const router = useRouter();
 
   const [dataAsset, setDataAsset] = useState({});
+  const [activeCM, setActiveCM] = useState(null);
+  const [activePM, setActivePM] = useState(null);
   const [dataService, setDataService] = useState([]);
   const [mttr, setMttr] = useState(0);
   const [totalRepairHours, setTotalRepairHours] = useState(0);
@@ -262,6 +264,8 @@ export default function DetailAssetWeb({ idAsset }) {
       });
       if (response.status === 200 && response.data?.detail?.length > 0) {
         setDataAsset(response.data.detail[0]);
+        setActiveCM(response.data.active_cm || null);
+        setActivePM(response.data.active_pm || null);
       }
     } catch (e) {
       console.error("fetch_data error:", e);
@@ -474,8 +478,9 @@ export default function DetailAssetWeb({ idAsset }) {
                 </div>
               </div>
 
-              {/* Status Badge */}
-              <div className="flex items-center gap-2">
+              {/* Status Badges */}
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Status Kesiapan Unit */}
                 <span
                   className={`rounded-full px-3 py-1 text-xs font-bold ${
                     dataAsset.Available === 1 && dataAsset.Reserve === 1
@@ -491,6 +496,42 @@ export default function DetailAssetWeb({ idAsset }) {
                       ? "Dalam Pengerjaan"
                       : "Siap Operasi (Ready)"}
                 </span>
+
+                {/* Status Perbaikan (Corrective Maintenance) */}
+                {activeCM ? (
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold text-white shadow-sm ${
+                      RepairStatus(String(activeCM.Step))?.color || "bg-danger"
+                    }`}
+                    title={`Tiket Perbaikan: #${activeCM.ID_Request} - ${activeCM.Problem || ""}`}
+                  >
+                    <HiOutlineWrenchScrewdriver className="text-sm" />
+                    <span>Perbaikan: {RepairStatus(String(activeCM.Step))?.status} (Step {activeCM.Step})</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-meta-4/40 px-2.5 py-1 text-xs font-medium text-slate-500 dark:text-slate-400">
+                    <HiOutlineWrenchScrewdriver className="text-sm opacity-60" />
+                    <span>Perbaikan: Normal</span>
+                  </span>
+                )}
+
+                {/* Status Perawatan (Preventive Maintenance) */}
+                {activePM ? (
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold text-white shadow-sm ${
+                      RepairStatus(String(activePM.Step))?.color || "bg-meta-5"
+                    }`}
+                    title={`Tiket Perawatan: #${activePM.ID_Request}`}
+                  >
+                    <HiOutlineCalendar className="text-sm" />
+                    <span>Perawatan: {RepairStatus(String(activePM.Step))?.status} (Step {activePM.Step})</span>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-meta-4/40 px-2.5 py-1 text-xs font-medium text-slate-500 dark:text-slate-400">
+                    <HiOutlineCalendar className="text-sm opacity-60" />
+                    <span>Perawatan: Terjadwal</span>
+                  </span>
+                )}
               </div>
             </div>
 
@@ -1121,7 +1162,7 @@ export default function DetailAssetWeb({ idAsset }) {
                               </td>
                               <td className="px-4 py-3 text-center">
                                 <span
-                                  className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white ${
+                                  className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-xs ${
                                     cardStatus.color || "bg-primary"
                                   }`}
                                 >

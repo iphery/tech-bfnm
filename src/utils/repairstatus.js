@@ -1,7 +1,9 @@
 export const RepairStatus = (step) => {
+  const stepStr = String(step || "").trim();
   let status = "Issued";
-  let cardColor = "bg-red";
-  switch (step) {
+  let cardColor = "bg-danger";
+
+  switch (stepStr) {
     case "2":
       status = "Responsed";
       cardColor = "bg-warning";
@@ -26,10 +28,12 @@ export const RepairStatus = (step) => {
       status = "Accepted";
       cardColor = "bg-success";
       break;
-
+    case "1":
     default:
-      "";
+      status = "Issued";
+      cardColor = "bg-danger";
+      break;
   }
 
-  return { status: status, color: cardColor };
+  return { status, color: cardColor };
 };
