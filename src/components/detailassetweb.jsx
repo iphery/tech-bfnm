@@ -43,6 +43,7 @@ import {
   HiOutlinePhoto,
   HiOutlineArrowPath,
   HiOutlineXMark,
+  HiOutlineTrash,
 } from "react-icons/hi2";
 import { FaPlus, FaCheckSquare } from "react-icons/fa";
 import { MdCheckBox, MdCheckBoxOutlineBlank } from "react-icons/md";
@@ -325,6 +326,32 @@ export default function DetailAssetWeb({ idAsset }) {
     }
   };
 
+  const handleDeleteCaseImage = async (imageName) => {
+    if (parseInt(userLevel) > 3) {
+      NotifyError("Hanya untuk role 3 ke bawah");
+      return;
+    }
+    if (!confirm("Hapus foto dokumentasi ini?")) return;
+
+    try {
+      const res = await axios.post("/api/deletecaseimage", {
+        imageName,
+        idRequest: selectedCase?.ID_Request,
+      });
+      if (res.status === 200 && res.data.success) {
+        NotifySuccess("Foto berhasil dihapus");
+        if (selectedCase?.ID_Request) {
+          fetch_detail_service(selectedCase.ID_Request);
+        }
+      } else {
+        NotifyError(res.data.message || "Gagal menghapus foto");
+      }
+    } catch (err) {
+      console.error("delete image error:", err);
+      NotifyError("Gagal menghapus foto");
+    }
+  };
+
   const fetch_stock = async () => {
     try {
       const response = await axios.post("/api/stocklist");
@@ -508,7 +535,7 @@ export default function DetailAssetWeb({ idAsset }) {
                     title={`Tiket Perbaikan: #${activeCM.ID_Request} - ${activeCM.Problem || ""}`}
                   >
                     <HiOutlineWrenchScrewdriver className="text-sm" />
-                    <span>Perbaikan: {RepairStatus(String(activeCM.Step))?.status} (Step {activeCM.Step})</span>
+                    <span>Perbaikan: {RepairStatus(String(activeCM.Step))?.status}</span>
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-meta-4/40 px-2.5 py-1 text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -525,7 +552,7 @@ export default function DetailAssetWeb({ idAsset }) {
                     title={`Tiket Perawatan: #${activePM.ID_Request}`}
                   >
                     <HiOutlineCalendar className="text-sm" />
-                    <span>Perawatan: {RepairStatus(String(activePM.Step))?.status} (Step {activePM.Step})</span>
+                    <span>Perawatan: {RepairStatus(String(activePM.Step))?.status}</span>
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-meta-4/40 px-2.5 py-1 text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -1555,6 +1582,21 @@ export default function DetailAssetWeb({ idAsset }) {
                               <span className="text-[10px] opacity-60">Tidak ditemukan</span>
                             </div>
                             <div className="pointer-events-none absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/20" />
+
+                            {/* Tombol Hapus Khusus Role <= 3 */}
+                            {parseInt(userLevel) <= 3 && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteCaseImage(item.Image_Name);
+                                }}
+                                className="absolute top-1.5 right-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-danger text-white shadow-md hover:bg-danger/80 active:scale-95"
+                                title="Hapus foto ini"
+                              >
+                                <HiOutlineTrash className="text-xs" />
+                              </button>
+                            )}
                           </div>
                         ))}
                       </div>

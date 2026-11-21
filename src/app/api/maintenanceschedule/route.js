@@ -68,6 +68,35 @@ export async function GET(request) {
 
     const servicedSet = new Set(servicedRows.map((r) => String(r.ID_Asset).trim()));
 
+    // 2b. Query batch: Tiket aktif (Step < 7) untuk status Perbaikan (CM) & Perawatan (PM)
+    const [openTickets] = await pool.query(
+      `SELECT ID_Asset, Maintenance_Type, Step, ID_Request, Problem 
+       FROM Request 
+       WHERE Step < 7 
+       ORDER BY Time_Request DESC`
+    );
+
+    const activeCMMap = new Map();
+    const activePMMap = new Map();
+
+    for (const ot of openTickets || []) {
+      const aId = String(ot.ID_Asset || '').trim();
+      if (!aId) continue;
+      if (ot.Maintenance_Type === 'CM' && !activeCMMap.has(aId)) {
+        activeCMMap.set(aId, {
+          step: ot.Step,
+          id_request: ot.ID_Request,
+          problem: ot.Problem || '',
+        });
+      } else if (ot.Maintenance_Type === 'PM' && !activePMMap.has(aId)) {
+        activePMMap.set(aId, {
+          step: ot.Step,
+          id_request: ot.ID_Request,
+          problem: ot.Problem || '',
+        });
+      }
+    }
+
     // 3. Deklarasi kriteria interval per jenis Type Aset (satuan bulan)
     const typeIntervals = {
       AP: 1,
@@ -143,13 +172,18 @@ export async function GET(request) {
           }
         }
 
-        const isServiced = servicedSet.has(String(asset.ID_Asset).trim());
+        const assetKey = String(asset.ID_Asset).trim();
+        const isServiced = servicedSet.has(assetKey);
+        const activeCM = activeCMMap.get(assetKey) || null;
+        const activePM = activePMMap.get(assetKey) || null;
 
         const scheduleItem = {
           ...asset,
           factory: asset.factory || '',
           new_schedule: `${assignedDate} ${timePart}`,
           is_serviced: isServiced,
+          active_cm: activeCM,
+          active_pm: activePM,
         };
 
         finalData.push(scheduleItem);
@@ -177,6 +211,8 @@ export async function GET(request) {
           location: item.Location,
           pm_category: item.PM_Category,
           is_serviced: item.is_serviced,
+          active_cm: item.active_cm,
+          active_pm: item.active_pm,
         });
       }
     }

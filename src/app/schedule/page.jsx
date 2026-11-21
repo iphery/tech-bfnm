@@ -3,11 +3,13 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useMediaQuery } from "react-responsive";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import UserAuth from "@/components/auth";
 import { PageLoader } from "@/components/loader";
 import { NotifyError, NotifySuccess } from "@/utils/notify";
+import { RepairStatus } from "@/utils/repairstatus";
 import useColorMode from "@/hooks/useColorMode";
 
 // Icons
@@ -29,6 +31,7 @@ import {
   HiOutlineMapPin,
   HiOutlineCheck,
   HiOutlineWrenchScrewdriver,
+  HiOutlineArrowTopRightOnSquare,
 } from "react-icons/hi2";
 import {
   FaIndustry,
@@ -486,12 +489,43 @@ export default function MaintenanceSchedulePage() {
                       >
                         <div className="overflow-hidden pr-2">
                           <div className="flex items-center gap-1.5">
-                            <span className="font-mono font-bold text-primary">
-                              {item.id_asset}
-                            </span>
+                            <Link
+                              href={`/asset/${item.id_asset}`}
+                              target="_blank"
+                              onClick={(e) => e.stopPropagation()}
+                              className="group inline-flex items-center gap-0.5 font-mono font-bold text-primary hover:underline"
+                              title="Buka detail aset terkait"
+                            >
+                              <span>{item.id_asset}</span>
+                              <HiOutlineArrowTopRightOnSquare className="text-[10px] opacity-70 group-hover:opacity-100" />
+                            </Link>
                             <span className="py-0.2 rounded bg-slate-100 px-1 text-[9px] font-bold text-slate-600 dark:bg-meta-4 dark:text-slate-300">
                               {item.type}
                             </span>
+                            {item.active_cm && (
+                              <span
+                                className="rounded-full px-1.5 py-0.2 text-[9px] font-bold text-white shadow-xs"
+                                style={{
+                                  backgroundColor:
+                                    RepairStatus(String(item.active_cm.step))?.hexColor ||
+                                    "#D34053",
+                                }}
+                              >
+                                CM: {RepairStatus(String(item.active_cm.step))?.status}
+                              </span>
+                            )}
+                            {item.active_pm && (
+                              <span
+                                className="rounded-full px-1.5 py-0.2 text-[9px] font-bold text-white shadow-xs"
+                                style={{
+                                  backgroundColor:
+                                    RepairStatus(String(item.active_pm.step))?.hexColor ||
+                                    "#259AE6",
+                                }}
+                              >
+                                PM: {RepairStatus(String(item.active_pm.step))?.status}
+                              </span>
+                            )}
                           </div>
                           <div className="truncate text-[11px] text-slate-700 dark:text-slate-300">
                             {item.description}
@@ -941,28 +975,34 @@ export default function MaintenanceSchedulePage() {
                       <tr className="border-b border-slate-200 bg-slate-50 font-bold text-slate-700 dark:border-slate-800 dark:bg-meta-4/20 dark:text-slate-200">
                         <th
                           className="px-3.5 py-2.5 text-center"
-                          style={{ width: "5%" }}
+                          style={{ width: "4%" }}
                         >
                           #
                         </th>
-                        <th className="px-3.5 py-2.5" style={{ width: "20%" }}>
+                        <th className="px-3.5 py-2.5" style={{ width: "16%" }}>
                           ID Aset
                         </th>
-                        <th className="px-3.5 py-2.5" style={{ width: "35%" }}>
+                        <th className="px-3.5 py-2.5" style={{ width: "24%" }}>
                           Deskripsi Mesin &amp; Lokasi
                         </th>
-                        <th className="px-3.5 py-2.5" style={{ width: "25%" }}>
+                        <th className="px-3.5 py-2.5" style={{ width: "18%" }}>
                           Model / Manufaktur
                         </th>
                         <th
                           className="px-3.5 py-2.5 text-center"
-                          style={{ width: "15%" }}
+                          style={{ width: "13%" }}
                         >
                           Tipe / Kategori
                         </th>
                         <th
                           className="px-3.5 py-2.5 text-center"
                           style={{ width: "15%" }}
+                        >
+                          Status Perbaikan / Perawatan
+                        </th>
+                        <th
+                          className="px-3.5 py-2.5 text-center"
+                          style={{ width: "10%" }}
                         >
                           Aksi
                         </th>
@@ -988,9 +1028,15 @@ export default function MaintenanceSchedulePage() {
                             </td>
                             <td className="px-3.5 py-2.5">
                               <div className="flex items-center gap-1.5">
-                                <span className="font-mono font-bold text-primary">
-                                  {item.ID_Asset}
-                                </span>
+                                <Link
+                                  href={`/asset/${item.ID_Asset}`}
+                                  target="_blank"
+                                  className="group inline-flex items-center gap-1 font-mono font-bold text-primary hover:underline"
+                                  title="Buka detail aset terkait"
+                                >
+                                  <span>{item.ID_Asset}</span>
+                                  <HiOutlineArrowTopRightOnSquare className="text-xs opacity-70 group-hover:opacity-100 transition-opacity" />
+                                </Link>
                                 {item.is_serviced && (
                                   <span
                                     className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-300"
@@ -1003,7 +1049,13 @@ export default function MaintenanceSchedulePage() {
                             </td>
                             <td className="px-3.5 py-2.5">
                               <div className="font-semibold text-slate-800 dark:text-white">
-                                {item.Description}
+                                <Link
+                                  href={`/asset/${item.ID_Asset}`}
+                                  target="_blank"
+                                  className="hover:text-primary transition-colors"
+                                >
+                                  {item.Description}
+                                </Link>
                               </div>
                               {item.Location && (
                                 <div className="mt-0.5 inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600 dark:bg-boxdark-2 dark:text-slate-400">
@@ -1033,6 +1085,50 @@ export default function MaintenanceSchedulePage() {
                                 {item.PM_Category && (
                                   <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600 dark:bg-meta-4 dark:text-slate-300">
                                     {item.PM_Category}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-3.5 py-2.5 text-center">
+                              <div className="flex flex-col items-center justify-center gap-1">
+                                {item.active_cm && (
+                                  <span
+                                    className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold text-white shadow-xs"
+                                    style={{
+                                      backgroundColor:
+                                        RepairStatus(String(item.active_cm.step))?.hexColor ||
+                                        "#D34053",
+                                    }}
+                                    title={`Perbaikan: #${item.active_cm.id_request} - ${item.active_cm.problem || ""}`}
+                                  >
+                                    <HiOutlineWrenchScrewdriver className="text-[10px]" />
+                                    <span>
+                                      CM: {RepairStatus(String(item.active_cm.step))?.status}
+                                    </span>
+                                  </span>
+                                )}
+
+                                {item.active_pm && (
+                                  <span
+                                    className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold text-white shadow-xs"
+                                    style={{
+                                      backgroundColor:
+                                        RepairStatus(String(item.active_pm.step))?.hexColor ||
+                                        "#259AE6",
+                                    }}
+                                    title={`Perawatan: #${item.active_pm.id_request}`}
+                                  >
+                                    <HiOutlineCalendar className="text-[10px]" />
+                                    <span>
+                                      PM: {RepairStatus(String(item.active_pm.step))?.status}
+                                    </span>
+                                  </span>
+                                )}
+
+                                {!item.active_cm && !item.active_pm && (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500 dark:bg-meta-4/30 dark:text-slate-400">
+                                    <HiOutlineCheckCircle className="text-[10px] text-emerald-500" />
+                                    <span>Normal</span>
                                   </span>
                                 )}
                               </div>

@@ -314,6 +314,32 @@ export default function DetailAssetMobile({ idAsset }) {
     }
   };
 
+  const handleDeleteCaseImage = async (imageName) => {
+    if (parseInt(userLevel) > 3) {
+      NotifyError("Hanya untuk level 3 ke bawah");
+      return;
+    }
+    if (!confirm("Hapus foto dokumentasi ini?")) return;
+
+    try {
+      const res = await axios.post("/api/deletecaseimage", {
+        imageName,
+        idRequest: selectedCase?.ID_Request,
+      });
+      if (res.status === 200 && res.data.success) {
+        NotifySuccess("Foto berhasil dihapus");
+        if (selectedCase?.ID_Request) {
+          fetch_detail_service(selectedCase.ID_Request);
+        }
+      } else {
+        NotifyError(res.data.message || "Gagal menghapus foto");
+      }
+    } catch (err) {
+      console.error("delete image error:", err);
+      NotifyError("Gagal menghapus foto");
+    }
+  };
+
   const handleImageFileChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -1477,6 +1503,21 @@ export default function DetailAssetMobile({ idAsset }) {
                                 <span className="text-[10px] line-clamp-1 opacity-60">Tidak ditemukan</span>
                               </div>
                               <div className="pointer-events-none absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/20" />
+
+                              {/* Tombol Hapus Khusus Role <= 3 */}
+                              {parseInt(userLevel) <= 3 && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteCaseImage(item["Image_Name"]);
+                                  }}
+                                  className="absolute top-1.5 right-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-danger text-white shadow-md hover:bg-danger/80 active:scale-95"
+                                  title="Hapus foto ini"
+                                >
+                                  <RiDeleteBin2Line className="text-xs" />
+                                </button>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -1607,7 +1648,7 @@ export default function DetailAssetMobile({ idAsset }) {
                                   "#D34053",
                               }}
                             >
-                              {RepairStatus(String(activeCM.Step))?.status} (Step {activeCM.Step})
+                              {RepairStatus(String(activeCM.Step))?.status}
                             </span>
                             <span className="text-[10px] text-body dark:text-bodydark truncate" title={activeCM.Problem}>
                               {activeCM.Problem || "Sedang ditangani"}
@@ -1636,7 +1677,7 @@ export default function DetailAssetMobile({ idAsset }) {
                                   "#259AE6",
                               }}
                             >
-                              {RepairStatus(String(activePM.Step))?.status} (Step {activePM.Step})
+                              {RepairStatus(String(activePM.Step))?.status}
                             </span>
                             <span className="text-[10px] text-body dark:text-bodydark truncate">
                               {activePM.Technician ? `Teknisi: ${activePM.Technician}` : "Menunggu teknisi"}
