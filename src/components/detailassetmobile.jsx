@@ -170,6 +170,15 @@ export default function DetailAssetMobile({ idAsset }) {
   const [cameraFacing, setCameraFacing] = useState("environment");
   const webcamRef = useRef(null);
 
+  // Multi-photo Camera States for Case (Role <= 3)
+  const [modalCaseCamera, setModalCaseCamera] = useState(false);
+  const [isCaseCameraFullscreen, setIsCaseCameraFullscreen] = useState(false);
+  const [caseCapturedPhotos, setCaseCapturedPhotos] = useState([]);
+  const [isSavingCasePhotos, setIsSavingCasePhotos] = useState(false);
+  const [caseCameraFacing, setCaseCameraFacing] = useState("environment");
+  const caseWebcamRef = useRef(null);
+  const [previewImageModal, setPreviewImageModal] = useState(null);
+
   const openEditAssetModal = () => {
     setEditDesc(dataAsset.Description || "");
     setEditManufacture(dataAsset.Manufacture || "");
@@ -219,6 +228,89 @@ export default function DetailAssetMobile({ idAsset }) {
       } else {
         NotifyError("Gagal mengambil foto. Pastikan kamera diizinkan.");
       }
+    }
+  };
+
+  // Handlers for Case Multi-photo Camera (Role <= 3)
+  const handleCaptureCasePhoto = () => {
+    if (caseWebcamRef.current) {
+      const screenshot = caseWebcamRef.current.getScreenshot();
+      if (screenshot) {
+        setCaseCapturedPhotos((prev) => [...prev, screenshot]);
+        NotifySuccess("Foto berhasil diambil");
+        // Kembalikan ke tampilan modal setelah ambil foto
+        setIsCaseCameraFullscreen(false);
+        setModalCaseCamera(true);
+      } else {
+        NotifyError("Gagal mengambil foto");
+      }
+    }
+  };
+
+  const handleRemoveCapturedPhoto = (index) => {
+    setCaseCapturedPhotos((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const handleFileInputCasePhotos = (e) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const newPhotos = [];
+    let count = 0;
+    const fileArr = Array.from(files);
+    for (const file of fileArr) {
+      if (file.size > 10 * 1024 * 1024) {
+        NotifyError(`File ${file.name} melebihi 10MB`);
+        continue;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (reader.result) {
+          newPhotos.push(reader.result);
+        }
+        count++;
+        if (count === fileArr.length) {
+          if (newPhotos.length > 0) {
+            setCaseCapturedPhotos((prev) => [...prev, ...newPhotos]);
+            NotifySuccess(`${newPhotos.length} foto ditambahkan`);
+          }
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUploadCasePhotos = async () => {
+    if (caseCapturedPhotos.length === 0) {
+      NotifyError("Belum ada foto yang diambil");
+      return;
+    }
+    if (!selectedCase?.ID_Request) {
+      NotifyError("ID Tiket tidak valid");
+      return;
+    }
+
+    setIsSavingCasePhotos(true);
+    try {
+      const res = await axios.post("/api/uploadcaseimage", {
+        idRequest: selectedCase.ID_Request,
+        images: caseCapturedPhotos,
+        uid: uid || "system",
+      });
+
+      if (res.status === 200 && res.data.success) {
+        NotifySuccess(res.data.message || "Foto berhasil disimpan");
+        setCaseCapturedPhotos([]);
+        setModalCaseCamera(false);
+        fetch_detail_service(selectedCase.ID_Request);
+      } else {
+        NotifyError(res.data.message || "Gagal menyimpan foto");
+      }
+    } catch (err) {
+      console.error("handleUploadCasePhotos error:", err);
+      NotifyError("Terjadi kesalahan saat mengunggah foto");
+    } finally {
+      setIsSavingCasePhotos(false);
     }
   };
 
@@ -664,10 +756,12 @@ export default function DetailAssetMobile({ idAsset }) {
                         </div>
                         <div className="flex shrink-0 flex-col items-end gap-1">
                           <span
-                            className={`rounded-full px-2.5 py-1 text-xs font-semibold text-white ${
-                              RepairStatus(selectedCase.Step)?.color ||
-                              "bg-primary"
-                            }`}
+                            className="rounded-full px-2.5 py-1 text-xs font-semibold text-white shadow-xs"
+                            style={{
+                              backgroundColor:
+                                RepairStatus(selectedCase.Step)?.hexColor ||
+                                "#3C50E0",
+                            }}
                           >
                             {RepairStatus(selectedCase.Step)?.status}
                           </span>
@@ -787,11 +881,28 @@ export default function DetailAssetMobile({ idAsset }) {
                                 <button
                                   type="button"
                                   onClick={() => {
+                                    if (galleryList.length === 0) {
+                                      NotifyError(
+                                        "Wajib upload/ambil foto dokumentasi sebelum menyelesaikan perbaikan."
+                                      );
+                                      return;
+                                    }
                                     setCaseLoaderCompleted(true);
                                     setUpdatedStep("completed");
                                   }}
-                                  disabled={caseLoaderCompleted}
-                                  className="rounded-xl bg-success px-3 py-2.5 text-xs font-semibold text-white shadow transition-all hover:bg-opacity-90"
+                                  disabled={
+                                    caseLoaderCompleted || galleryList.length === 0
+                                  }
+                                  title={
+                                    galleryList.length === 0
+                                      ? "Wajib upload/ambil foto dokumentasi terlebih dahulu"
+                                      : ""
+                                  }
+                                  className={`rounded-xl px-3 py-2.5 text-xs font-semibold text-white shadow transition-all ${
+                                    galleryList.length === 0
+                                      ? "cursor-not-allowed bg-gray-400 opacity-60"
+                                      : "bg-success hover:bg-opacity-90"
+                                  }`}
                                 >
                                   {caseLoaderCompleted
                                     ? "Menyimpan..."
@@ -814,11 +925,28 @@ export default function DetailAssetMobile({ idAsset }) {
                               <button
                                 type="button"
                                 onClick={() => {
+                                  if (galleryList.length === 0) {
+                                    NotifyError(
+                                      "Wajib upload/ambil foto dokumentasi sebelum menyelesaikan perbaikan."
+                                    );
+                                    return;
+                                  }
                                   setCaseLoaderCompleted(true);
                                   setUpdatedStep("completed");
                                 }}
-                                disabled={caseLoaderCompleted}
-                                className="flex w-full items-center justify-center gap-2 rounded-xl bg-success px-4 py-3 font-semibold text-white shadow transition-all hover:bg-opacity-90"
+                                disabled={
+                                  caseLoaderCompleted || galleryList.length === 0
+                                }
+                                title={
+                                  galleryList.length === 0
+                                    ? "Wajib upload/ambil foto dokumentasi terlebih dahulu"
+                                    : ""
+                                }
+                                className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 font-semibold text-white shadow transition-all ${
+                                  galleryList.length === 0
+                                    ? "cursor-not-allowed bg-gray-400 opacity-60"
+                                    : "bg-success hover:bg-opacity-90"
+                                }`}
                               >
                                 <span>
                                   {caseLoaderCompleted
@@ -1288,28 +1416,81 @@ export default function DetailAssetMobile({ idAsset }) {
                       </div>
                     )}
 
-                    {/* Gallery Images */}
-                    {galleryList.length > 0 && (
-                      <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
-                        <span className="mb-2 block text-xs font-bold uppercase tracking-wider text-black dark:text-white">
-                          Foto Dokumentasi
-                        </span>
-                        <div className="scrollbar-thin flex gap-2 overflow-x-auto pb-2">
+                    {/* Gallery Images & Camera Upload (Role <= 3) */}
+                    <div className="rounded-2xl border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
+                      <div className="mb-3 flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <HiOutlinePhoto className="text-base text-primary" />
+                          <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-white">
+                            Foto Dokumentasi
+                          </span>
+                          {galleryList.length > 0 && (
+                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                              {galleryList.length}
+                            </span>
+                          )}
+                        </div>
+
+                        {parseInt(userLevel) <= 3 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsCaseCameraFullscreen(true);
+                            }}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-3 py-1.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-primary/90 active:scale-95"
+                          >
+                            <HiOutlineCamera className="text-sm" />
+                            <span>Ambil Foto</span>
+                          </button>
+                        )}
+                      </div>
+
+                      {galleryList.length > 0 ? (
+                        <div className="scrollbar-thin flex gap-2.5 overflow-x-auto pb-2">
                           {galleryList.map((item, idx) => (
                             <div
                               key={idx}
-                              className="relative h-28 w-36 shrink-0 overflow-hidden rounded-xl border border-stroke dark:border-strokedark"
+                              onClick={() =>
+                                setPreviewImageModal(
+                                  `${IMAGE_GALLERY}/${item["Image_Name"]}`
+                                )
+                              }
+                              className="group relative h-28 w-36 shrink-0 cursor-pointer overflow-hidden rounded-xl border border-stroke shadow-xs transition-all hover:scale-[1.02] dark:border-strokedark"
                             >
                               <img
-                                alt="Gallery"
-                                className="h-full w-full object-cover"
+                                alt={`Dokumentasi ${idx + 1}`}
+                                className="h-full w-full object-cover transition-transform group-hover:scale-105"
                                 src={`${IMAGE_GALLERY}/${item["Image_Name"]}`}
+                                onError={(e) => {
+                                  e.currentTarget.onerror = null;
+                                  e.currentTarget.src = `/images/cases/${item["Image_Name"]}`;
+                                }}
                               />
+                              <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/20" />
                             </div>
                           ))}
                         </div>
-                      </div>
-                    )}
+                      ) : (
+                        <div className="rounded-xl border border-dashed border-stroke py-6 text-center dark:border-strokedark">
+                          <HiOutlineCamera className="mx-auto mb-1.5 text-2xl text-body dark:text-bodydark opacity-50" />
+                          <p className="text-xs text-body dark:text-bodydark">
+                            Belum ada foto dokumentasi untuk kasus ini.
+                          </p>
+                          {parseInt(userLevel) <= 3 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsCaseCameraFullscreen(true);
+                              }}
+                              className="mt-2.5 inline-flex items-center gap-1 rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/10 dark:bg-meta-4 dark:text-white"
+                            >
+                              <HiOutlineCamera className="text-sm" />
+                              <span>Ambil Foto</span>
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </>
                 )}
               </div>
@@ -1409,9 +1590,12 @@ export default function DetailAssetMobile({ idAsset }) {
                         {activeCM ? (
                           <div className="flex flex-col gap-0.5">
                             <span
-                              className={`inline-block w-fit rounded-full px-2 py-0.5 text-[10px] font-bold text-white shadow-xs ${
-                                RepairStatus(String(activeCM.Step))?.color || "bg-danger"
-                              }`}
+                              className="inline-block w-fit rounded-full px-2 py-0.5 text-[10px] font-bold text-white shadow-xs"
+                              style={{
+                                backgroundColor:
+                                  RepairStatus(String(activeCM.Step))?.hexColor ||
+                                  "#D34053",
+                              }}
                             >
                               {RepairStatus(String(activeCM.Step))?.status} (Step {activeCM.Step})
                             </span>
@@ -1435,9 +1619,12 @@ export default function DetailAssetMobile({ idAsset }) {
                         {activePM ? (
                           <div className="flex flex-col gap-0.5">
                             <span
-                              className={`inline-block w-fit rounded-full px-2 py-0.5 text-[10px] font-bold text-white shadow-xs ${
-                                RepairStatus(String(activePM.Step))?.color || "bg-meta-5"
-                              }`}
+                              className="inline-block w-fit rounded-full px-2 py-0.5 text-[10px] font-bold text-white shadow-xs"
+                              style={{
+                                backgroundColor:
+                                  RepairStatus(String(activePM.Step))?.hexColor ||
+                                  "#259AE6",
+                              }}
                             >
                               {RepairStatus(String(activePM.Step))?.status} (Step {activePM.Step})
                             </span>
@@ -1658,9 +1845,11 @@ export default function DetailAssetMobile({ idAsset }) {
                                 )}
                               </div>
                               <span
-                                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold text-white ${
-                                  cardStatus.color || "bg-primary"
-                                }`}
+                                className="rounded-full px-2 py-0.5 text-[10px] font-semibold text-white shadow-xs"
+                                style={{
+                                  backgroundColor:
+                                    cardStatus.hexColor || "#3C50E0",
+                                }}
                               >
                                 {cardStatus.status}
                               </span>
@@ -2612,6 +2801,280 @@ export default function DetailAssetMobile({ idAsset }) {
             </button>
           </div>
         </CustomModal>
+
+        {/* ================= KAMERA FULL SCREEN OVERLAY ================= */}
+        {isCaseCameraFullscreen && (
+          <div className="fixed inset-0 z-99999 flex flex-col bg-black">
+            {/* Top Bar */}
+            <div className="flex items-center justify-between p-4 bg-black/60 text-white backdrop-blur-xs">
+              <span className="font-semibold text-sm">
+                #{selectedCase?.ID_Request || ""}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCaseCameraFacing((prev) =>
+                      prev === "environment" ? "user" : "environment"
+                    )
+                  }
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm active:scale-95 transition-all"
+                  aria-label="Switch Camera"
+                >
+                  <HiOutlineArrowPath className="text-lg" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCaseCameraFullscreen(false);
+                    if (caseCapturedPhotos.length > 0) {
+                      setModalCaseCamera(true);
+                    }
+                  }}
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30"
+                  aria-label="Close Camera"
+                >
+                  <MdOutlineClose className="text-xl" />
+                </button>
+              </div>
+            </div>
+
+            {/* Viewfinder Full Screen */}
+            <div className="relative flex-1 flex items-center justify-center overflow-hidden bg-black">
+              <Webcam
+                audio={false}
+                ref={caseWebcamRef}
+                screenshotFormat="image/jpeg"
+                screenshotQuality={0.88}
+                videoConstraints={{
+                  facingMode: caseCameraFacing,
+                  width: { ideal: 1920 },
+                  height: { ideal: 1080 },
+                }}
+                onUserMediaError={(err) => {
+                  console.error("Camera access error:", err);
+                  NotifyError("Izin kamera ditolak.");
+                  setIsCaseCameraFullscreen(false);
+                  setModalCaseCamera(true);
+                }}
+                className="h-full w-full object-cover"
+              />
+            </div>
+
+            {/* Bottom Shutter Controls */}
+            <div className="flex items-center justify-around p-6 bg-black/80 pb-10">
+              {/* Thumbnail existing photos if any */}
+              <div className="w-16">
+                {caseCapturedPhotos.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsCaseCameraFullscreen(false);
+                      setModalCaseCamera(true);
+                    }}
+                    className="relative h-12 w-12 overflow-hidden rounded-xl border-2 border-white shadow"
+                  >
+                    <img
+                      src={caseCapturedPhotos[caseCapturedPhotos.length - 1]}
+                      alt="Last shot"
+                      className="h-full w-full object-cover"
+                    />
+                    <span className="absolute bottom-0 right-0 rounded-tl bg-primary px-1 text-[9px] font-bold text-white">
+                      {caseCapturedPhotos.length}
+                    </span>
+                  </button>
+                )}
+              </div>
+
+              {/* Shutter Button */}
+              <button
+                type="button"
+                onClick={handleCaptureCasePhoto}
+                className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-white bg-primary p-1 shadow-2xl transition-transform active:scale-90"
+                aria-label="Ambil Foto"
+              >
+                <div className="h-16 w-16 rounded-full border-2 border-white bg-white/30 flex items-center justify-center">
+                  <HiOutlineCamera className="text-2xl text-white" />
+                </div>
+              </button>
+
+              {/* File Picker shortcut */}
+              <div className="w-16 flex justify-end">
+                <label className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-xl bg-white/20 text-white hover:bg-white/30">
+                  <HiOutlinePhoto className="text-xl" />
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={(e) => {
+                      handleFileInputCasePhotos(e);
+                      setIsCaseCameraFullscreen(false);
+                      setModalCaseCamera(true);
+                    }}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ================= MODAL MULTI-PHOTO PREVIEW & SAVE ================= */}
+        <CustomModal
+          isOpen={modalCaseCamera}
+          onClose={() => {
+            if (!isSavingCasePhotos) {
+              setModalCaseCamera(false);
+            }
+          }}
+          title={`Dokumentasi Kasus #${selectedCase?.ID_Request || ""}`}
+          maxWidth="max-w-md"
+        >
+          <div className="flex flex-col max-h-[85vh]">
+            <div className="space-y-3 overflow-y-auto p-4 text-xs">
+              {/* Button Re-open Full Screen Camera & File Picker */}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModalCaseCamera(false);
+                    setIsCaseCameraFullscreen(true);
+                  }}
+                  className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-white shadow-sm hover:bg-primary/90 active:scale-95 transition-all"
+                >
+                  <HiOutlineCamera className="text-sm" />
+                  <span>Ambil Foto Tambahan</span>
+                </button>
+
+                <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl bg-gray-100 px-3 py-2 text-xs font-semibold text-primary shadow-xs border border-stroke hover:bg-gray-200 dark:border-strokedark dark:bg-meta-4 dark:text-white">
+                  <HiOutlinePhoto className="text-sm" />
+                  <span>Pilih Berkas</span>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleFileInputCasePhotos}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              {/* List of Captured Photos (Multi-photo preview) */}
+              <div className="space-y-1.5 pt-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-black dark:text-white">
+                    Foto Siap Disimpan ({caseCapturedPhotos.length})
+                  </span>
+                  {caseCapturedPhotos.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setCaseCapturedPhotos([])}
+                      className="text-[11px] text-danger hover:underline"
+                    >
+                      Hapus Semua
+                    </button>
+                  )}
+                </div>
+
+                {caseCapturedPhotos.length > 0 ? (
+                  <div className="scrollbar-thin flex gap-2 overflow-x-auto pb-1.5">
+                    {caseCapturedPhotos.map((photo, index) => (
+                      <div
+                        key={index}
+                        className="relative h-24 w-28 shrink-0 overflow-hidden rounded-xl border border-stroke shadow-xs dark:border-strokedark"
+                      >
+                        <img
+                          src={photo}
+                          alt={`Preview ${index + 1}`}
+                          className="h-full w-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCapturedPhoto(index)}
+                          className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-danger text-white shadow hover:bg-danger/80"
+                        >
+                          <MdOutlineClose className="text-xs" />
+                        </button>
+                        <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1 text-[9px] font-bold text-white">
+                          #{index + 1}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-stroke p-4 text-center text-body dark:border-strokedark dark:text-bodydark">
+                    <span className="text-[11px]">
+                      Belum ada foto yang diambil.
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="bg-gray-50/50 flex items-center justify-end gap-2 border-t border-stroke px-4 py-3 dark:border-strokedark dark:bg-meta-4/20">
+              <button
+                type="button"
+                disabled={isSavingCasePhotos}
+                onClick={() => setModalCaseCamera(false)}
+                className="rounded-xl border border-stroke bg-white px-3.5 py-2 text-xs font-semibold text-body hover:bg-gray-100 dark:border-strokedark dark:bg-boxdark dark:text-bodydark"
+              >
+                Tutup
+              </button>
+
+              <button
+                type="button"
+                disabled={isSavingCasePhotos || caseCapturedPhotos.length === 0}
+                onClick={handleUploadCasePhotos}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-primary/90 disabled:opacity-50"
+              >
+                {isSavingCasePhotos ? (
+                  <>
+                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    <span>Menyimpan...</span>
+                  </>
+                ) : (
+                  <>
+                    <TfiSave className="text-sm" />
+                    <span>Simpan ({caseCapturedPhotos.length}) Foto</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </CustomModal>
+
+        {/* ================= MODAL FULL PREVIEW IMAGE ================= */}
+        {previewImageModal && (
+          <div
+            className="fixed inset-0 z-9999 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+            onClick={() => setPreviewImageModal(null)}
+          >
+            <div
+              className="relative max-h-[90vh] max-w-lg overflow-hidden rounded-2xl bg-black shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setPreviewImageModal(null)}
+                className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-transform hover:scale-110 active:scale-95"
+              >
+                <MdOutlineClose className="text-lg" />
+              </button>
+              <img
+                src={previewImageModal}
+                alt="Preview Dokumentasi"
+                className="max-h-[85vh] w-auto object-contain"
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  const parts = previewImageModal.split("/");
+                  const filename = parts[parts.length - 1];
+                  e.currentTarget.src = `/images/cases/${filename}`;
+                }}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </UserAuth>
   );

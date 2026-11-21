@@ -500,9 +500,8 @@ export default function DetailAssetWeb({ idAsset }) {
                 {/* Status Perbaikan (Corrective Maintenance) */}
                 {activeCM ? (
                   <span
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold text-white shadow-sm ${
-                      RepairStatus(String(activeCM.Step))?.color || "bg-danger"
-                    }`}
+                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold text-white shadow-sm"
+                    style={{ backgroundColor: RepairStatus(String(activeCM.Step))?.hexColor || "#D34053" }}
                     title={`Tiket Perbaikan: #${activeCM.ID_Request} - ${activeCM.Problem || ""}`}
                   >
                     <HiOutlineWrenchScrewdriver className="text-sm" />
@@ -518,9 +517,8 @@ export default function DetailAssetWeb({ idAsset }) {
                 {/* Status Perawatan (Preventive Maintenance) */}
                 {activePM ? (
                   <span
-                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold text-white shadow-sm ${
-                      RepairStatus(String(activePM.Step))?.color || "bg-meta-5"
-                    }`}
+                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold text-white shadow-sm"
+                    style={{ backgroundColor: RepairStatus(String(activePM.Step))?.hexColor || "#259AE6" }}
                     title={`Tiket Perawatan: #${activePM.ID_Request}`}
                   >
                     <HiOutlineCalendar className="text-sm" />
@@ -1162,9 +1160,8 @@ export default function DetailAssetWeb({ idAsset }) {
                               </td>
                               <td className="px-4 py-3 text-center">
                                 <span
-                                  className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-xs ${
-                                    cardStatus.color || "bg-primary"
-                                  }`}
+                                  className="inline-block rounded-full px-2.5 py-0.5 text-[10px] font-bold text-white shadow-xs"
+                                  style={{ backgroundColor: cardStatus.hexColor || "#3C50E0" }}
                                 >
                                   {cardStatus.status}
                                 </span>
