@@ -9,7 +9,7 @@ import { PageCard, PageCardLimited } from "@/components/card";
 import { CommonInput } from "@/components/input";
 import { PageLoader } from "./loader";
 import { CustomModal } from "./modal";
-import { IMAGE_ASSET, IMAGE_USER } from "@/utils/constant";
+import { IMAGE_ASSET, IMAGE_USER, IMAGE_GALLERY } from "@/utils/constant";
 import paginateData from "@/utils/pagination";
 import {
   formatDate,
@@ -83,6 +83,8 @@ export default function DetailAssetWeb({ idAsset }) {
   const [openImageUser, setOpenImageUser] = useState(false);
   const [partList, setPartList] = useState([]);
   const [servisList, setServisList] = useState([]);
+  const [galleryList, setGalleryList] = useState([]);
+  const [selectedPreviewImage, setSelectedPreviewImage] = useState(null);
   const [transactionStock, setTransactionStock] = useState([]);
   const [userLevel, setUserLevel] = useState("");
 
@@ -316,6 +318,7 @@ export default function DetailAssetWeb({ idAsset }) {
       if (response.status === 200) {
         setPartList(response.data.parts || []);
         setServisList(response.data.servis || []);
+        setGalleryList(response.data.galleries || []);
       }
     } catch (e) {
       console.error("fetch_detail_service error:", e);
@@ -1513,6 +1516,40 @@ export default function DetailAssetWeb({ idAsset }) {
                       </div>
                     </div>
                   )}
+
+                  {/* Foto Dokumentasi Perbaikan / Perawatan */}
+                  {galleryList.length > 0 && (
+                    <div className="rounded-xl border border-stroke p-4 dark:border-strokedark">
+                      <h4 className="mb-3 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-black dark:text-white">
+                        <HiOutlinePhoto className="text-base text-primary" />
+                        <span>Foto Dokumentasi ({galleryList.length})</span>
+                      </h4>
+                      <div className="flex flex-wrap gap-3">
+                        {galleryList.map((item, index) => (
+                          <div
+                            key={index}
+                            onClick={() =>
+                              setSelectedPreviewImage(
+                                `${IMAGE_GALLERY}/${item.Image_Name}`
+                              )
+                            }
+                            className="group relative h-28 w-36 cursor-pointer overflow-hidden rounded-xl border border-stroke shadow-xs transition-transform hover:scale-105 dark:border-strokedark"
+                          >
+                            <img
+                              src={`${IMAGE_GALLERY}/${item.Image_Name}`}
+                              alt={`Dokumentasi ${index + 1}`}
+                              className="h-full w-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = `/images/cases/${item.Image_Name}`;
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/20" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </PageCard>
             )}
@@ -2129,6 +2166,38 @@ export default function DetailAssetWeb({ idAsset }) {
             </PageCard>
           </div>
         </DefaultLayout>
+      )}
+
+      {/* Modal Zoom Preview Foto Dokumentasi */}
+      {selectedPreviewImage && (
+        <div
+          className="fixed inset-0 z-99999 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+          onClick={() => setSelectedPreviewImage(null)}
+        >
+          <div
+            className="relative max-h-[90vh] max-w-2xl overflow-hidden rounded-2xl bg-black p-2 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setSelectedPreviewImage(null)}
+              className="absolute top-4 right-4 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-transform hover:scale-110 active:scale-95"
+            >
+              <HiOutlineXMark className="text-xl" />
+            </button>
+            <img
+              src={selectedPreviewImage}
+              alt="Preview Dokumentasi"
+              className="max-h-[85vh] w-auto rounded-xl object-contain"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                const parts = selectedPreviewImage.split("/");
+                const filename = parts[parts.length - 1];
+                e.currentTarget.src = `/images/cases/${filename}`;
+              }}
+            />
+          </div>
+        </div>
       )}
     </UserAuth>
   );

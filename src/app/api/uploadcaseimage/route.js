@@ -74,7 +74,31 @@ export async function POST(request) {
       // Format matches existing naming convention: ID_Request + Timestamp + index + ext
       const filename = `${cleanIdRequest}${baseTimeStr}${i + 1}.${ext}`;
 
-      // Write to available target directories
+      // 1. Coba upload ke remote server balifoam via upload.php
+      try {
+        const phpRes = await fetch(
+          "https://balifoam.com/mita/mobile/flutter/image_case/upload.php",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              image: cleanBase64,
+              idRequest,
+              filename,
+            }),
+          }
+        );
+        if (phpRes.ok) {
+          const phpData = await phpRes.json();
+          if (phpData.error === 0) {
+            console.log("Uploaded remotely to balifoam:", filename);
+          }
+        }
+      } catch (uploadErr) {
+        console.error("Remote upload to balifoam error:", uploadErr.message);
+      }
+
+      // 2. Write to local available target directories
       for (const dir of targetDirs) {
         try {
           if (fs.existsSync(dir)) {
