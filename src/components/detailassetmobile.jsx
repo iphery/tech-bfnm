@@ -1455,7 +1455,7 @@ export default function DetailAssetMobile({ idAsset }) {
                                   `${IMAGE_GALLERY}/${item["Image_Name"]}`
                                 )
                               }
-                              className="group relative h-28 w-36 shrink-0 cursor-pointer overflow-hidden rounded-xl border border-stroke shadow-xs transition-all hover:scale-[1.02] dark:border-strokedark"
+                              className="group relative flex h-28 w-36 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-xl border border-stroke bg-gray-100 shadow-xs transition-all hover:scale-[1.02] dark:border-strokedark dark:bg-meta-4/40"
                             >
                               <img
                                 alt={`Dokumentasi ${idx + 1}`}
@@ -1463,10 +1463,20 @@ export default function DetailAssetMobile({ idAsset }) {
                                 src={`${IMAGE_GALLERY}/${item["Image_Name"]}`}
                                 onError={(e) => {
                                   e.currentTarget.onerror = null;
-                                  e.currentTarget.src = `/images/cases/${item["Image_Name"]}`;
+                                  e.currentTarget.style.display = "none";
+                                  if (e.currentTarget.nextElementSibling) {
+                                    e.currentTarget.nextElementSibling.style.display = "flex";
+                                  }
                                 }}
                               />
-                              <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/20" />
+                              <div
+                                style={{ display: "none" }}
+                                className="flex h-full w-full flex-col items-center justify-center p-2 text-center text-body dark:text-bodydark"
+                              >
+                                <HiOutlinePhoto className="text-xl opacity-40 mb-1" />
+                                <span className="text-[10px] line-clamp-1 opacity-60">Tidak ditemukan</span>
+                              </div>
+                              <div className="pointer-events-none absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/20" />
                             </div>
                           ))}
                         </div>
