@@ -199,7 +199,12 @@ export default function PartsIn() {
     setListOrder((prev) => prev.filter((_, idx) => idx !== index));
   };
 
+  const isFormIncomplete =
+    !inputDate || !inputDPM.trim() || listOrder.length === 0;
+
   const save_item = async () => {
+    if (loadingSubmit || isFormIncomplete) return;
+
     let hasErr = false;
     if (!inputDate) {
       setInputDateError(true);
@@ -553,11 +558,16 @@ export default function PartsIn() {
 
         <div className="pt-4 mt-4 border-t border-stroke dark:border-strokedark">
           <CommonButtonFull
-            label="Simpan Pengajuan DPM"
-            disabled={loadingSubmit}
+            label={loadingSubmit ? "Menyimpan Pengajuan DPM..." : "Simpan Pengajuan DPM"}
+            disabled={loadingSubmit || isFormIncomplete}
             onload={loadingSubmit}
             onClick={save_item}
           />
+          {isFormIncomplete && (
+            <span className="block mt-2 text-center text-xs text-body dark:text-bodydark italic">
+              Lengkapi tanggal, nomor DPM, dan minimal 1 item suku cadang untuk menyimpan.
+            </span>
+          )}
         </div>
       </div>
     </div>

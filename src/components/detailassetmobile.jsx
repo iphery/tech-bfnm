@@ -900,16 +900,11 @@ export default function DetailAssetMobile({ idAsset }) {
                             const isChecklistComplete2 =
                               !isPMCase2 ||
                               (pmList.length > 0 &&
-                                pmList.every((item) => {
-                                  if (item.widget === "C")
-                                    return Boolean(item.checked);
-                                  if (item.widget === "T")
-                                    return Boolean(
-                                      item.value &&
-                                        String(item.value).trim() !== "",
-                                    );
-                                  return true;
-                                }));
+                                pmList.some((item) =>
+                                  item.widget === "C"
+                                    ? Boolean(item.checked)
+                                    : Boolean(item.value && String(item.value).trim() !== "")
+                                ));
                             const isCompleteBlocked2 =
                               caseLoaderCompleted ||
                               !hasPhoto2 ||
@@ -999,16 +994,11 @@ export default function DetailAssetMobile({ idAsset }) {
                             const isChecklistComplete4 =
                               !isPMCase4 ||
                               (pmList.length > 0 &&
-                                pmList.every((item) => {
-                                  if (item.widget === "C")
-                                    return Boolean(item.checked);
-                                  if (item.widget === "T")
-                                    return Boolean(
-                                      item.value &&
-                                        String(item.value).trim() !== "",
-                                    );
-                                  return true;
-                                }));
+                                pmList.some((item) =>
+                                  item.widget === "C"
+                                    ? Boolean(item.checked)
+                                    : Boolean(item.value && String(item.value).trim() !== "")
+                                ));
                             const isCompleteBlocked4 =
                               caseLoaderCompleted ||
                               !hasPhoto4 ||

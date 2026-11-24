@@ -34,9 +34,13 @@ export const CommonButtonColor = ({
 export const CommonButtonFull = ({ label, onload, disabled, onClick }) => {
   return (
     <button
-      onClick={onClick}
-      className="w-full cursor-default rounded-sm border border-bodydark bg-buttonnormal p-3 text-sm text-white shadow-md hover:bg-buttonhover"
-      disabled={disabled}
+      onClick={disabled || onload ? undefined : onClick}
+      className={`w-full rounded-sm border border-bodydark bg-buttonnormal p-3 text-sm text-white shadow-md transition-all ${
+        disabled || onload
+          ? "cursor-not-allowed opacity-50 hover:bg-buttonnormal"
+          : "cursor-pointer hover:bg-buttonhover"
+      }`}
+      disabled={disabled || onload}
     >
       {onload ? <ButtonLoader color={"white"} /> : label}
     </button>
