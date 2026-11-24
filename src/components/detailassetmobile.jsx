@@ -889,6 +889,33 @@ export default function DetailAssetMobile({ idAsset }) {
                               </button>
                             );
                           case "2":
+                            const hasSolution2 = Boolean(
+                              (selectedCase?.Solution &&
+                                selectedCase.Solution.trim() !== "") ||
+                                (caseSolution && caseSolution.trim() !== ""),
+                            );
+                            const hasPhoto2 = galleryList.length > 0;
+                            const isPMCase2 =
+                              selectedCase?.Maintenance_Type === "PM";
+                            const isChecklistComplete2 =
+                              !isPMCase2 ||
+                              (pmList.length > 0 &&
+                                pmList.every((item) => {
+                                  if (item.widget === "C")
+                                    return Boolean(item.checked);
+                                  if (item.widget === "T")
+                                    return Boolean(
+                                      item.value &&
+                                        String(item.value).trim() !== "",
+                                    );
+                                  return true;
+                                }));
+                            const isCompleteBlocked2 =
+                              caseLoaderCompleted ||
+                              !hasPhoto2 ||
+                              !hasSolution2 ||
+                              !isChecklistComplete2;
+
                             return uid === selectedCase.ID_Tech ? (
                               <div className="grid grid-cols-2 gap-2">
                                 <button
@@ -907,25 +934,39 @@ export default function DetailAssetMobile({ idAsset }) {
                                 <button
                                   type="button"
                                   onClick={() => {
-                                    if (galleryList.length === 0) {
+                                    if (!hasPhoto2) {
                                       NotifyError(
-                                        "Wajib upload/ambil foto dokumentasi sebelum menyelesaikan perbaikan."
+                                        "Wajib upload/ambil foto dokumentasi sebelum menyelesaikan perbaikan/perawatan.",
+                                      );
+                                      return;
+                                    }
+                                    if (!hasSolution2) {
+                                      NotifyError(
+                                        "Wajib mengisi Solusi / Tindakan sebelum menyelesaikan perbaikan/perawatan.",
+                                      );
+                                      return;
+                                    }
+                                    if (!isChecklistComplete2) {
+                                      NotifyError(
+                                        "Wajib mengisi dan melengkapi Checklist Perawatan Rutin.",
                                       );
                                       return;
                                     }
                                     setCaseLoaderCompleted(true);
                                     setUpdatedStep("completed");
                                   }}
-                                  disabled={
-                                    caseLoaderCompleted || galleryList.length === 0
-                                  }
+                                  disabled={isCompleteBlocked2}
                                   title={
-                                    galleryList.length === 0
+                                    !hasPhoto2
                                       ? "Wajib upload/ambil foto dokumentasi terlebih dahulu"
-                                      : ""
+                                      : !hasSolution2
+                                        ? "Wajib mengisi solusi terlebih dahulu"
+                                        : !isChecklistComplete2
+                                          ? "Wajib melengkapi checklist perawatan terlebih dahulu"
+                                          : ""
                                   }
                                   className={`rounded-xl px-3 py-2.5 text-xs font-semibold text-white shadow transition-all ${
-                                    galleryList.length === 0
+                                    isCompleteBlocked2
                                       ? "cursor-not-allowed bg-gray-400 opacity-60"
                                       : "bg-success hover:bg-opacity-90"
                                   }`}
@@ -947,29 +988,70 @@ export default function DetailAssetMobile({ idAsset }) {
                               </button>
                             ) : null;
                           case "4":
+                            const hasSolution4 = Boolean(
+                              (selectedCase?.Solution &&
+                                selectedCase.Solution.trim() !== "") ||
+                                (caseSolution && caseSolution.trim() !== ""),
+                            );
+                            const hasPhoto4 = galleryList.length > 0;
+                            const isPMCase4 =
+                              selectedCase?.Maintenance_Type === "PM";
+                            const isChecklistComplete4 =
+                              !isPMCase4 ||
+                              (pmList.length > 0 &&
+                                pmList.every((item) => {
+                                  if (item.widget === "C")
+                                    return Boolean(item.checked);
+                                  if (item.widget === "T")
+                                    return Boolean(
+                                      item.value &&
+                                        String(item.value).trim() !== "",
+                                    );
+                                  return true;
+                                }));
+                            const isCompleteBlocked4 =
+                              caseLoaderCompleted ||
+                              !hasPhoto4 ||
+                              !hasSolution4 ||
+                              !isChecklistComplete4;
+
                             return uid === selectedCase.ID_Tech ? (
                               <button
                                 type="button"
                                 onClick={() => {
-                                  if (galleryList.length === 0) {
+                                  if (!hasPhoto4) {
                                     NotifyError(
-                                      "Wajib upload/ambil foto dokumentasi sebelum menyelesaikan perbaikan."
+                                      "Wajib upload/ambil foto dokumentasi sebelum menyelesaikan perbaikan/perawatan.",
+                                    );
+                                    return;
+                                  }
+                                  if (!hasSolution4) {
+                                    NotifyError(
+                                      "Wajib mengisi Solusi / Tindakan sebelum menyelesaikan perbaikan/perawatan.",
+                                    );
+                                    return;
+                                  }
+                                  if (!isChecklistComplete4) {
+                                    NotifyError(
+                                      "Wajib mengisi dan melengkapi Checklist Perawatan Rutin.",
                                     );
                                     return;
                                   }
                                   setCaseLoaderCompleted(true);
                                   setUpdatedStep("completed");
                                 }}
-                                disabled={
-                                  caseLoaderCompleted || galleryList.length === 0
-                                }
+                                disabled={isCompleteBlocked4}
                                 title={
-                                  galleryList.length === 0
+                                  !hasPhoto4
                                     ? "Wajib upload/ambil foto dokumentasi terlebih dahulu"
-                                    : ""
+                                    : !hasSolution4
+                                      ? "Wajib mengisi solusi terlebih dahulu"
+                                      : !isChecklistComplete4
+                                        ? "Wajib melengkapi checklist perawatan terlebih dahulu"
+                                        : ""
                                 }
                                 className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 font-semibold text-white shadow transition-all ${
-                                  galleryList.length === 0
+                                  isCompleteBlocked4
                                     ? "cursor-not-allowed bg-gray-400 opacity-60"
                                     : "bg-success hover:bg-opacity-90"
                                 }`}
